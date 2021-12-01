@@ -1,7 +1,11 @@
+# Author: Hobs Towler
+# Date: 12/1/2021
+# Description:
+
 from tkinter import *
 from tkinter import ttk
-from calculations import *
-from assumptions import *
+from main import *
+from income import *
 
 
 def import_scenarios():
@@ -9,6 +13,21 @@ def import_scenarios():
     Imports scenarios from the Scenarios folder.
     :return:
     """
+    pass
+
+def import_expenses():
+    pass
+
+
+def import_jobs():
+    pass
+
+
+def import_incomes():
+    pass
+
+
+def import_loans():
     pass
 
 
@@ -39,6 +58,8 @@ class LoanDetail(Context):
 
 root = Tk()
 root.title("test")
+
+scene = Scenario()
 
 mainframe = ttk.Frame(root, padding="3 3 12 12")
 mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
