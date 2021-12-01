@@ -48,19 +48,92 @@ class Job:
         self._post_tax = Expenses()
 
 class TaxBracket:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, name, type="Federal", state="None", status="Single") -> None:
+        self._brackets = []
+        self._name = name
+        self._type = type
+        self._state = state
+        self._status = status
+
+        self.valid_types = ["STATE","FEDERAL","LOCAL"]
+        self.valid_status = ["SINGLE","MARRIED, JOINT","MARRIED, SEPARATE","HEAD OF HOUSEHOLD"]
+
+    def change_name(self, new_name):
+        if new_name.isalpha():
+            self._name = new_name.capitalize
+
+    def name(self):
+        return self._name
+
+    def change_type(self, new_type):
+        if new_type.isalpha() and new_type.upper() in self.valid_types:
+            self._type = new_type.capitalize()
+
+    def tax_type(self):
+        return self._type
+
+    def change_state(self, new_state):
+        if new_state.isalpha():
+            self._state = new_state
+
+    def get_state(self):
+        return self._state
+
+    def define_brackets(self, brackets):
+        if len(brackets) < 1:
+            return
+        
+        self._brackets = []
+        for b in brackets:
+            if len(b) == 2:
+                self.add_range(b[0], b[1])
+
+    def add_range(self, upper_range, rate):
+        if upper_range == None:
+            upper_range = 1000000000
+        if not isinstance(upper_range,(int,float)) or not isinstance(rate, (int,float)):
+            return
+        index = self.get_range(upper_range)
+        if index == None:
+            self._brackets.append([upper_range, rate/100])
+            self._brackets.sort()
+        else:
+            self._brackets[index] = [upper_range,rate/100]
+
+    def get_range(self, upper_range):
+        for r in self._brackets:
+            if r[0] == upper_range:
+                return self._brackets.index(r)
+        return None
+
+    def calculate(self, income):
+        taxed_amount = 0
+        for i in range(0, len(self._brackets)):
+            if i == 0:
+                if income >= self._brackets[i][0]:
+                    taxed_amount += self._brackets[i][0] * self._brackets[i][1]
+                else:
+                    taxed_amount += income * self._brackets[i][1]
+            else:
+                lower_range = self._brackets[i-1][0]
+                upper_range = self._brackets[i][0]
+                if income >= upper_range:
+                    taxed_amount += (upper_range - lower_range) * self._brackets[i][1]
+                elif income < upper_range and income > lower_range:
+                    taxed_amount += (income - lower_range) * self._brackets[i][1]
+        
+        return [round(taxed_amount,2), round(100 * taxed_amount / income, 4)]
+
 
 class Loan:
-    def __init__(self, total=0, rate=1, length=60):
+    def __init__(self, label, total=0, rate=1, length=60):
         self._total = total
+        self.label = label
         self._rate = float(rate/100)
         self._length = length
         self._principal = total * .8
 
         self._loan_start = "01/01/1999"
-
-        self._months = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30, 7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
 
     def set_amount(self, new_amount):
         self._total = new_amount
@@ -88,8 +161,8 @@ class Loan:
 
 
 class Mortgage(Loan):
-    def __init__(self, total=100000, rate=1, length=60) -> None:
-        super().__init__(total=total, rate=rate, length=length)
+    def __init__(self, label, total=100000, rate=1, length=60) -> None:
+        super().__init__(label=label, total=total, rate=rate, length=length)
 
         self._pmi_required = True
         self._PMI_rate = .005
@@ -208,11 +281,11 @@ class Auto(Loan):
         super().__init__(total=total, rate=rate, length=length)
 
 
-mort = Mortgage(280000, 3.25, 360)
-print(mort.PMI())
-print(mort.mortgage_monthly())
-print(mort.mortgage_total())
-print(mort.amortization_schedule())
+mort = Mortgage("test mortgage", 280000, 3.25, 360)
+#print(mort.PMI())
+#print(mort.mortgage_monthly())
+#print(mort.mortgage_total())
+#print(mort.amortization_schedule())
 
 expense = Expenses()
 expense.add("car", 1500)
@@ -222,3 +295,15 @@ expense.add("something", "thing")
 print(expense.total())
 expense.reset()
 print(expense.total())
+
+bracket = TaxBracket("test bracket")
+bracket.add_range(50000,6)
+bracket.add_range(20000,5)
+bracket.add_range(1000,4)
+bracket.add_range(1000,4.2)
+bracket.add_range(20000,5.1)
+bracket.add_range(None,12)
+print(bracket._brackets)
+print(bracket.calculate(10000))
+print(bracket.calculate(15678))
+print(bracket.get_range(2000))
