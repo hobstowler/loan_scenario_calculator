@@ -1,6 +1,9 @@
 class Scenario:
     def __init__(self) -> None:
-        pass
+        self._jobs = set({})
+        self._incomes = set({})
+        self._expenses = set({})
+        self._loans = set({})
 
 
 class Income:
@@ -9,7 +12,7 @@ class Income:
         self._pay_periods = 26
 
 
-class Expenses:
+class Expense:
     def __init__(self):
         self._expenses = {}
 
@@ -44,8 +47,29 @@ class Job:
         self._title = "Blank"
         self._company = "Some Company"
         self._income = Income()
-        self._pre_tax = Expenses()
-        self._post_tax = Expenses()
+        self._pre_tax = Expense()
+        self._post_tax = Expense()
+
+    def get_income(self):
+        return self._income
+
+    def get_pretax(self):
+        return self._pre_tax
+
+    def get_posttax(self):
+        return self._post_tax
+
+    def set_company(self, new_company):
+        if new_company.isalnum():
+            self._company = new_company
+    
+    def company(self):
+        return self._company
+
+    def set_title(self, new_title):
+        if new_title.isalnum():
+            self._title = new_title
+
 
 class TaxBracket:
     def __init__(self, name, type="Federal", state="None", status="Single") -> None:
@@ -287,7 +311,7 @@ mort = Mortgage("test mortgage", 280000, 3.25, 360)
 #print(mort.mortgage_total())
 #print(mort.amortization_schedule())
 
-expense = Expenses()
+expense = Expense()
 expense.add("car", 1500)
 expense.add("food", 150)
 expense.add("fOod", 250.111)
