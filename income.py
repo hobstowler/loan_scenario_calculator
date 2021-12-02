@@ -282,11 +282,6 @@ class TaxBracket:
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
 
-mort = Mortgage("test mortgage", 280000, 3.25, 360)
-#print(mort.PMI())
-#print(mort.mortgage_monthly())
-#print(mort.mortgage_total())
-#print(mort.amortization_schedule())
 
 expense = Expenses()
 expense.add("car", 1500)

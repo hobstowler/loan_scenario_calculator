@@ -12,13 +12,28 @@ class Loan:
 
         self._loan_start = "01/01/1999"
 
-    def set_amount(self, new_amount):
-        self._total = new_amount
+    def set_total(self, new_total):
+        """
+        Sets the total value of the item for which the loan was taken out.
+        :param new_total: The new total value.
+        :return: Nothing.
+        """
+        self._total = new_total
 
     def set_rate(self, new_rate):
+        """
+        Sets the rate for the loan.
+        :param new_rate: The new rate
+        :return: Nothing.
+        """
         self._rate = new_rate
 
     def set_length(self, new_length):
+        """
+        Sets the length of the loan in months.
+        :param new_length: New length in months
+        :return: Nothing
+        """
         self._length = new_length
 
     def get_amount(self):
@@ -30,11 +45,15 @@ class Loan:
     def get_length(self):
         return self._length
 
-    def calculate_schedule(self, amount, rate, length):
-        pass
-
-    def amortization_schedule(self):
-        pass
+    # TO DO: factor in a prorated amount and use the start of the loan
+    def amortization_schedule(self, extra_amount=0) -> dict:
+        principal = self._principal
+        schedule = {0: principal}
+        for i in range(1, self._length + 1):
+            interest = self._m_interest(principal)
+            principal = round(principal + interest - self._m_payment - extra_amount, 2)
+            schedule.update({i: [principal, interest, extra_amount]})
+        return schedule
 
 
 class Mortgage(Loan):
@@ -56,7 +75,7 @@ class Mortgage(Loan):
         self._m_payment = self.mortgage_monthly()
         self._t_payment = self.mortgage_total()
 
-    def mortgage_monthly(self):
+    def mortgage_monthly(self) -> float:
         """
         Calculates the monthly mortgage payment based on rate and length of the loan. This is the amount without taxes,
         insurance, PMI, or HOA
@@ -67,7 +86,7 @@ class Mortgage(Loan):
         denominator = ((1 + monthly_rate) ** self._length) - 1
         return round(numerator/denominator,2)
 
-    def mortgage_total(self):
+    def mortgage_total(self) -> float:
         """
         Sums the total of the mortgage, monthly property tax, PMI, insurance, and HOA.
         :return: The monthly total.
@@ -78,7 +97,7 @@ class Mortgage(Loan):
         return round(self.mortgage_monthly() + (self._property_tax / 12) + self.PMI() + self._insurance + self._hoa, 2)
 
     #TO DO: may need to reconsider this calculation.
-    def PMI(self, principal=None):
+    def PMI(self, principal=None) -> float:
         """
         Returns the PMI amount if PMI is required and the remaining principal is greater than 80% of the total.
         :return: The PMI amount if required.
@@ -92,7 +111,7 @@ class Mortgage(Loan):
         else:
             return 0
 
-    def set_PMI_rate(self, new_pmi_rate):
+    def set_PMI_rate(self, new_pmi_rate) -> None:
         """
         Sets the PMI rate. PMI is a yearly percentage of your total loan amount at origination. Typically between 0.5%
         and 2% depending on various factors like credit score.
@@ -101,39 +120,28 @@ class Mortgage(Loan):
         """
         self._PMI_rate = new_pmi_rate
 
-    def no_PMI(self):
+    def no_PMI(self) -> None:
         """
         Indicates that PMI is not required for this mortgage.
         :return: Nothing.
         """
         self._pmi_required = False
 
-    def req_PMI(self):
+    def req_PMI(self) -> None:
         """
         Indicates that PMI is required for this mortgage.
         :return: Nothing.
         """
         self._pmi_required = True
 
-    def is_PMI_required(self):
+    def is_PMI_required(self) -> bool:
         """
         Checks to see if PMI is required.
         :return: True if PMI is required.
         """
         return self._pmi_required
 
-    #TO DO: factor in a prorated amount and use the start of the loan
-    def amortization_schedule(self):
-        principal = self._principal
-        schedule = {0: principal}
-        for i in range(1, self._length+1):
-            interest = self._m_interest(principal)
-            principal = round(principal + interest - self._m_payment, 2)
-            schedule.update({i: principal})
-        return schedule
-
-
-    def _m_interest(self, amount):
+    def _m_interest(self, amount) -> float:
         """
         Calculates the monthly interest for a given amount and month.
         To be called when calculating amortization schedule.
@@ -141,9 +149,9 @@ class Mortgage(Loan):
         :param month: The month for which interest is to be calculated.
         :return: The amount of interest accrued that month
         """
-        return round(amount * (self._rate / 12) , 2)
+        return round(amount * (self._rate / 12), 2)
 
-    def set_property_tax(self, tax_amount):
+    def set_property_tax(self, tax_amount) -> float:
         """
         Sets a user-defined property tax and sets the override flag.
         :param tax_amount: The yearly amount of property tax.
@@ -154,7 +162,7 @@ class Mortgage(Loan):
         return self.calculate_property_tax()
 
 
-    def set_property_tax_rate(self, new_rate):
+    def set_property_tax_rate(self, new_rate) -> float:
         """
         Changes the tax rate and recalculates the property tax.
         :param new_rate: The new tax rate.
@@ -163,7 +171,7 @@ class Mortgage(Loan):
         self._property_tax_rate = new_rate
         return self.calculate_property_tax()
 
-    def clear_property_tax(self):
+    def clear_property_tax(self) -> None:
         """
         clears a user-defined property tax and sets the override flag back.
         :return: The calculated tax.
@@ -171,7 +179,7 @@ class Mortgage(Loan):
         self._property_tax_override = False
         return self.calculate_property_tax()
 
-    def calculate_property_tax(self):
+    def calculate_property_tax(self) -> float:
         """
         Calculates the yearly property tax for a defined tax rate.
         :return: The calculated tax.
@@ -189,3 +197,12 @@ class VariableRateMortgage(Mortgage):
 class Auto(Loan):
     def __init__(self, total=0, rate=1, length=60):
         super().__init__(total=total, rate=rate, length=length)
+
+
+
+
+mort = Mortgage("test mortgage", 280000, 3.25, 360)
+print(mort.PMI())
+print(mort.mortgage_monthly())
+print(mort.mortgage_total())
+print(mort.amortization_schedule())
