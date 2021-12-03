@@ -67,27 +67,30 @@ scenarios = load_scenarios()
 root = Tk()
 root.title("test")
 
-mainframe = ttk.Frame(root, padding="3 3 12 12")
-mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
-root.columnconfigure(0, weight=1)
-root.rowconfigure(0, weight=1)
+mainframe = ttk.Frame(root)
 
-feet = StringVar()
-feet_entry = ttk.Entry(mainframe, width=7, textvariable=feet)
-feet_entry.grid(column=2, row=1, sticky=(W, E))
+left_pane = ttk.Frame(mainframe)
+left_pane.grid(column=0, row=0)
+middle_pane = ttk.Frame(mainframe)
+middle_pane.grid(column=1, row=0)
+right_pane = ttk.Frame(mainframe)
+right_pane.grid(column=2, row=0)
 
-meters = StringVar()
-ttk.Label(mainframe, textvariable=meters).grid(column=2, row=2, sticky=(W, E))
+nav_menu = ttk.Frame(left_pane, width=300, height=50, padding=6)
+nav_menu.grid(column=0, row=0)
+left_drawer = ttk.Frame(left_pane, borderwidth=2, relief='ridge', width=300, height=500, padding=6)
+left_drawer.grid(column=0, row=1)
 
-ttk.Button(mainframe, text="Calculate", command=calculate).grid(column=3, row=3, sticky=W)
+info_label = ttk.Frame(middle_pane, borderwidth=2, relief='ridge', width=300, height=50, padding=6).grid(column=1, row=0)
 
-ttk.Label(mainframe, text="feet2").grid(column=3, row=1, sticky=W)
-ttk.Label(mainframe, text="is equivalent to").grid(column=1, row=2, sticky=E)
-ttk.Label(mainframe, text="meters").grid(column=3, row=2, sticky=W)
+stat_panel = ttk.Frame(right_pane, borderwidth=2, relief='ridge', width=500, height=550, padding=6).grid(column=2, row=0, rowspan=2)
 
-for child in mainframe.winfo_children():
-    child.grid_configure(padx=5, pady=5)
-feet_entry.focus()
-root.bind("<Return>", calculate)
+scenario_button = ttk.Button(nav_menu, text="Scenarios", width=10).grid(column=0, row=0)
+job_button = ttk.Button(nav_menu, text="Jobs", width=10).grid(column=2, row=0)
+loan_button = ttk.Button(nav_menu, text="Loans", width=10).grid(column=3, row=0)
+expense_button = ttk.Button(nav_menu, text="Expenses", width=10).grid(column=4, row=0)
+
+
+
 
 root.mainloop()
