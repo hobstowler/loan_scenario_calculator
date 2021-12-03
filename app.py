@@ -84,6 +84,8 @@ left_drawer.grid(column=0, row=1)
 
 detail_label = ttk.Frame(middle_pane, borderwidth=2, relief='ridge', width=300, height=50, padding=6)
 detail_label.grid(column=0, row=0)
+d_label = ttk.Label(detail_label, text="DETAIL")
+d_label.grid(column=0, row=0)
 detail_panel = ttk.Frame(middle_pane, width=300, height=500, padding=6)
 detail_panel.grid(column=0, row=1)
 
