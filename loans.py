@@ -2,6 +2,9 @@
 # Date: 12/1/2021
 # Description:
 
+import datetime
+
+
 class Loan:
     def __init__(self, label, total=10000, rate=1, length=60):
         self._total = total
@@ -10,7 +13,7 @@ class Loan:
         self._length = length
         self._principal = total * .8
 
-        self._loan_start = "01/01/1999"
+        self._loan_start = datetime.datetime(2021)
 
     def set_total(self, new_total):
         """
@@ -40,6 +43,9 @@ class Loan:
         return self._total
 
     def get_rate(self):
+        """
+
+        """
         return self._rate
 
     def get_length(self):
