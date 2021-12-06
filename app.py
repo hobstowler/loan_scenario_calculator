@@ -8,24 +8,36 @@ from main import *
 from income import *
 from dataload import *
 
+style = ttk.Style()
+style.configure("Blue.test", background="red")
+
 def change_to_scenario():
-    #d_label.set("Scenario")
-    print("SCENARIOS")
+    d_label.set("Scenario")
+    scenario_button.state(['active'])
+    #print("SCENARIOS")
 
 
 def change_to_loans():
-    #d_label.set("Loans")
-    print("LOANS")
+    d_label.set("Loans")
+    loan_button.state(['active'])
+    #print("LOANS")
 
 
 def change_to_jobs():
-    #d_label.set("Jobs")
-    print("JOBS")
+    d_label.set("Jobs")
+    for x in nav_menu.winfo_children():
+        if x.winfo_class() == 'TButton':
+            pass
+            #x.configure(background="blue")
+    job_button.configure(style="Blue.test")
+    #print("JOBS")
 
 
 def change_to_expenses():
-    #d_label.set("Expenses")
-    print("EXPENSES")
+    d_label.set("Expenses")
+
+    expense_button.state(['active'])
+    #print("EXPENSES")
 
 
 def open_scenario():
@@ -97,12 +109,21 @@ stat_panel = ttk.Frame(right_pane, borderwidth=2, relief='ridge', width=500, hei
 stat_panel.grid(column=0, row=0, rowspan=2)
 
 
-scenario_button = ttk.Button(nav_menu, text="Scenarios", width=10, command=change_to_scenario).grid(column=0, row=0)
-job_button = ttk.Button(nav_menu, text="Jobs", width=10, command=change_to_jobs).grid(column=2, row=0)
-loan_button = ttk.Button(nav_menu, text="Loans", width=10, command=change_to_loans).grid(column=3, row=0)
-expense_button = ttk.Button(nav_menu, text="Expenses", width=10, command=change_to_expenses).grid(column=4, row=0)
+scenario_button = ttk.Button(nav_menu, text="Scenarios", width=10, command=change_to_scenario)
+scenario_button.grid(column=0, row=0, sticky=S)
+job_button = ttk.Button(nav_menu, text="Jobs", width=10, command=change_to_jobs)
+job_button.grid(column=2, row=0, sticky=S)
+job_button.configure(background="red")
+loan_button = ttk.Button(nav_menu, text="Loans", width=10, command=change_to_loans)
+loan_button.grid(column=3, row=0, sticky=S)
+expense_button = ttk.Button(nav_menu, text="Expenses", width=10, command=change_to_expenses)
+expense_button.grid(column=4, row=0, sticky=S)
 
 
-
+def print_hierarchy(w, depth=0):
+    print('  '*depth + w.winfo_class() + ' w=' + str(w.winfo_width()) + ' h=' + str(w.winfo_height()) + ' x=' + str(w.winfo_x()) + ' y=' + str(w.winfo_y()))
+    for i in w.winfo_children():
+        print_hierarchy(i, depth+1)
+print_hierarchy(root)
 
 root.mainloop()
