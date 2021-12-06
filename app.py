@@ -6,38 +6,39 @@ from tkinter import *
 from tkinter import ttk
 from main import *
 from income import *
+from dataload import *
+
+def change_to_scenario():
+    #d_label.set("Scenario")
+    print("SCENARIOS")
 
 
-def load_scenarios() -> list:
-    """
-    Imports scenarios from the Scenarios folder.
-    :return:
-    """
+def change_to_loans():
+    #d_label.set("Loans")
+    print("LOANS")
+
+
+def change_to_jobs():
+    #d_label.set("Jobs")
+    print("JOBS")
+
+
+def change_to_expenses():
+    #d_label.set("Expenses")
+    print("EXPENSES")
+
+
+def open_scenario():
     pass
 
-
-def load_expenses() -> list:
+def open_loan():
     pass
 
-
-def load_jobs() -> list:
+def open_job():
     pass
 
-
-def load_incomes() -> list:
+def open_expense():
     pass
-
-
-def load_loans() -> list:
-    pass
-
-
-def calculate(*args):
-    try:
-        value = float(feet.get())
-        meters.set(int(0.3048 * value * 10000.0 + 0.5)/10000.0)
-    except ValueError:
-        pass
 
 
 class MenuBar:
@@ -84,8 +85,11 @@ left_drawer.grid(column=0, row=1)
 
 detail_label = ttk.Frame(middle_pane, borderwidth=2, relief='ridge', width=300, height=50, padding=6)
 detail_label.grid(column=0, row=0)
-d_label = ttk.Label(detail_label, text="DETAIL")
-d_label.grid(column=0, row=0)
+d_label = StringVar()
+dd_label = ttk.Label(detail_label)
+dd_label.grid(column=0, row=0)
+d_label.set("DETAIL")
+dd_label['textvariable'] = d_label
 detail_panel = ttk.Frame(middle_pane, width=300, height=500, padding=6)
 detail_panel.grid(column=0, row=1)
 
@@ -93,10 +97,10 @@ stat_panel = ttk.Frame(right_pane, borderwidth=2, relief='ridge', width=500, hei
 stat_panel.grid(column=0, row=0, rowspan=2)
 
 
-scenario_button = ttk.Button(nav_menu, text="Scenarios", width=10).grid(column=0, row=0)
-job_button = ttk.Button(nav_menu, text="Jobs", width=10).grid(column=2, row=0)
-loan_button = ttk.Button(nav_menu, text="Loans", width=10).grid(column=3, row=0)
-expense_button = ttk.Button(nav_menu, text="Expenses", width=10).grid(column=4, row=0)
+scenario_button = ttk.Button(nav_menu, text="Scenarios", width=10, command=change_to_scenario).grid(column=0, row=0)
+job_button = ttk.Button(nav_menu, text="Jobs", width=10, command=change_to_jobs).grid(column=2, row=0)
+loan_button = ttk.Button(nav_menu, text="Loans", width=10, command=change_to_loans).grid(column=3, row=0)
+expense_button = ttk.Button(nav_menu, text="Expenses", width=10, command=change_to_expenses).grid(column=4, row=0)
 
 
 

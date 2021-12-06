@@ -13,7 +13,7 @@ class Loan:
         self._length = length
         self._principal = total * .8
 
-        self._loan_start = datetime.datetime(2021)
+        #self._loan_start = datetime.datetime(2021)
 
     def set_total(self, new_total):
         """
@@ -40,19 +40,33 @@ class Loan:
         self._length = new_length
 
     def get_amount(self):
+        """
+        Returns the total amount without down payment.
+        @return: The total amount for the loan.
+        """
         return self._total
 
     def get_rate(self):
         """
-
+        Returns the rate for the loan.
+        @return: The rate.
         """
         return self._rate
 
     def get_length(self):
+        """
+        Returns the length of the loan in months.
+        @return: The length in months
+        """
         return self._length
 
     # TO DO: factor in a prorated amount and use the start of the loan
     def amortization_schedule(self, extra_amount=0) -> dict:
+        """
+        Calculates the amortization schedule with extra payments for the loan and returns the schedule as a dictionary.
+        @param extra_amount: The amount of extra payment per month
+        @return: The amortization schedule.
+        """
         principal = self._principal
         schedule = {0: principal}
         for i in range(1, self._length + 1):
