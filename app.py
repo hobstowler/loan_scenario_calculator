@@ -130,12 +130,18 @@ class BottomMenu:
             .grid(column=0, row=0, sticky=W + E)
         tk.Button(frame, name="new_item", text="New...", command=create_new) \
             .grid(column=1, row=0, sticky=W + E)
-        tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item) \
-            .grid(column=2, row=0, sticky=W + E)
-        tk.Checkbutton(frame, name="delete_check").grid(column=3, row=0)
+        self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item)
+        self._del_button.grid(column=2, row=0, sticky=W + E)
+        tk.Checkbutton(frame, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
         # add buttons to global dictionary variable
         update_buttons(frame)
+
+    def toggle_delete(self):
+        if self._del_button['state'] == "disabled":
+            self._del_button['state'] = "active"
+        else:
+            self._del_button['state'] = "disabled"
 
 
 class LeftPanel:
