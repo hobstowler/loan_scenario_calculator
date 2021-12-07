@@ -28,3 +28,4 @@ three.grid(column=2, row=3)
 ok.grid(column=3, row=3)
 cancel.grid(column=4, row=3)
 
+root.mainloop()

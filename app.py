@@ -9,28 +9,6 @@ from income import *
 from dataload import *
 
 
-
-
-def change_to_scenario():
-    change_label("Pick a Scenario", "nav_menu")
-    button = get_button("scenario_button", "nav_menu")
-
-
-def change_to_loans():
-    change_label("Pick a Loan", "nav_menu")
-    button = get_button("loan_button", "nav_menu")
-
-
-def change_to_jobs():
-    change_label("Pick a Job", "nav_menu")
-    button = get_button("job_button", "nav_menu")
-
-
-def change_to_expenses():
-    change_label("Pick an Expense", "nav_menu")
-    button = get_button("expense_button", "nav_menu")
-
-
 def get_button(button_name: str, context: str) -> tk.Button:
     for b in buttons.get(context):
         if b.winfo_name() == button_name:
@@ -62,8 +40,6 @@ def open_job():
 def open_expense():
     pass
 
-def create_new():
-    pass
 
 def edit_item():
     pass
@@ -96,6 +72,7 @@ class NavMenu:
         self._loan_text = "Pick a Loan."
         self._expense_text = "Pick an Expense."
         self._context_text = [self._scenario_text, self._job_text, self._loan_text, self._expense_text]
+        self._context = 0
 
         tk.Button(nav_menu, name="scenario_button", text="Scenarios", width=8, command=lambda: self.set_context(0))\
             .grid(column=0, row=0, sticky=W+E)
@@ -114,6 +91,10 @@ class NavMenu:
 
     def set_context(self, context: int):
         self._label['text'] = self._context_text[context]
+        self._context = context
+
+    def get_context(self) -> int:
+        return self._context
 
 
 class BottomMenu:
@@ -128,7 +109,7 @@ class BottomMenu:
         # Buttons for the bottom menu. Edit, New, and Delete.
         tk.Button(frame, name="edit_item", text="Edit...", command=edit_item) \
             .grid(column=0, row=0, sticky=W + E)
-        tk.Button(frame, name="new_item", text="New...", command=create_new) \
+        tk.Button(frame, name="new_item", text="New...", command=lambda: mid_panel.populate(left_panel.nav().get_context())) \
             .grid(column=1, row=0, sticky=W + E)
         self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item)
         self._del_button.grid(column=2, row=0, sticky=W + E)
@@ -147,6 +128,7 @@ class BottomMenu:
 class LeftPanel:
     def __init__(self, parent: tk.Tk):
         panel = tk.Frame(parent)
+        self.frame = panel
         panel.grid(column=0, row=0)
         self._nav_menu = NavMenu(panel)
         _create_left_drawer(panel)
@@ -162,6 +144,7 @@ class LeftPanel:
 class MidPanel:
     def __init__(self, parent: tk.Tk):
         panel = tk.Frame(parent)
+        self.frame = panel
         panel.grid(column=1, row=0, sticky=N+S)
 
         detail_label = tk.Frame(panel, name="detail_label", width=300, height=100)
@@ -171,8 +154,74 @@ class MidPanel:
         dd_label.grid(column=0, row=0)
         d_label.set("DETAIL")
         dd_label['textvariable'] = d_label
-        detail_panel = tk.Frame(panel, width=300, height=500)
-        detail_panel.grid(column=0, row=2)
+
+        self.detail_panel = tk.Frame(panel, name="detail_panel", width=300, height=500)
+        self.detail_panel.grid(column=0, row=2, sticky=N+E+S+W)
+
+    # TODO make this form-based
+    def populate(self, context: int):
+        for c in self.detail_panel.winfo_children():
+            c.destroy()
+        if context == 0:
+            return
+        if context == 1:
+            return
+        if context == 2:
+            self.pop_loan()
+        if context == 3:
+            return
+
+    def pop_loan(self):
+        panel = self.detail_panel
+        tk.Label(panel, text="Name").grid(column=0, row=0)
+        tk.Entry(panel, width=20).grid(column=1, row=0)
+
+        tk.Label(panel, text="Loan Amount").grid(column=0, row=1)
+        loan_amount = StringVar()
+        loan_amount.set("test")
+        tk.Entry(panel, width=20, textvariable=loan_amount).grid(column=1, row=1)
+
+        tk.Label(panel, text="Down Payment").grid(column=0, row=2)
+        tk.Entry(panel, width=20).grid(column=1, row=2)
+        tk.Checkbutton(panel, name="down_percent", text="Percentage").grid(column=2,row=2)
+
+        tk.Label(panel, text="Rate").grid(column=0, row=3)
+        tk.Entry(panel, width=20).grid(column=1, row=3)
+        self.show_bottom_menu()
+
+    def show_bottom_menu(self):
+        """
+        "Shows" the bottom menu in the middle panel by creating it.
+        :return: None
+        """
+        bMenu = tk.Frame(self.frame, name="bottom_menu")
+        bMenu.grid(column=0, row=3, sticky=W + E)
+        for i in range(5):
+            bMenu.columnconfigure(i, weight=1)
+            if i % 2 == 0:
+                #add padding frames between the two buttons
+                tk.Frame(bMenu).grid(column=i, row=0)
+        tk.Button(bMenu, text="Cancel", command=lambda: self.clear()).grid(column=1, row=0, sticky=W + E)
+        tk.Button(bMenu, text="Save").grid(column=3, row=0, sticky=W + E)
+
+    def hide_bottom_menu(self):
+        """
+        Usually called by clear(). "Hides" the bottom menu for the middle panel by destroying the frame.
+        :return: None
+        """
+        for c in self.frame.winfo_children():
+            if c.winfo_name() == "bottom_menu":
+                c.destroy()
+
+    def clear(self):
+        """
+        Clears the context from the middle panel.
+        :return: None
+        """
+        for c in self.detail_panel.winfo_children():
+            c.destroy()
+        self.hide_bottom_menu()
+
 
 
 class RightPanel:
@@ -191,40 +240,30 @@ def _create_left_drawer(root, context: str="none") -> tk.Frame:
     return left_drawer
 
 
+# declare global variables
+buttons = {}
+labels = {}
 
-
-
-allow_delete = False
+# load the data
 loans = load_loans()
 jobs = load_jobs()
 expenses = load_expenses()
 incomes = load_incomes()
 scenarios = load_scenarios()
-buttons = {}
-labels = {}
 
-#create the root
+# create the root
 root = Tk()
 root.title("Loan Calculator")
 
-#create the three main panels.
+# create the three main panels.
 left_panel = LeftPanel(root)
 mid_panel = MidPanel(root)
 right_panel = RightPanel(root)
 
-
-
-
-
-
-
-
-
-def print_hierarchy(w, depth=0):
+#def print_hierarchy(w, depth=0):
     #print('  '*depth + w.winfo_class() + ' w=' + str(w.winfo_width()) + ' h=' + str(w.winfo_height()) + ' x=' + str(w.winfo_x()) + ' y=' + str(w.winfo_y()))
-    for i in w.winfo_children():
-        print_hierarchy(i, depth+1)
-print_hierarchy(root)
-
+    #for i in w.winfo_children():
+        #print_hierarchy(i, depth+1)
+#print_hierarchy(root)
 
 root.mainloop()
