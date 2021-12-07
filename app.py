@@ -9,25 +9,6 @@ from income import *
 from dataload import *
 
 
-def get_button(button_name: str, context: str) -> tk.Button:
-    for b in buttons.get(context):
-        if b.winfo_name() == button_name:
-            return b
-
-
-def change_label(label_text: str, context: str) -> None:
-    for c in labels.get(context).winfo_children():
-        if c.winfo_class() == "Label":
-            c['text'] = label_text
-
-
-def update_buttons(parent: tk.Frame) -> None:
-    temp_list = []
-    for x in parent.winfo_children():
-        temp_list.append(x)
-    buttons.update({parent.winfo_name(): temp_list})
-
-
 def open_scenario():
     pass
 
@@ -62,17 +43,15 @@ class NavMenu:
         nav_menu = tk.Frame(parent, name="nav_menu", width=300, height=30)
         nav_menu.grid(column=0, row=0, sticky=N+W+S+E, pady=(0, 0), padx=0)
 
-        nav_menu.columnconfigure(0, weight=1)
-        nav_menu.columnconfigure(1, weight=1)
-        nav_menu.columnconfigure(2, weight=1)
-        nav_menu.columnconfigure(3, weight=1)
-
         self._scenario_text = "Pick a Scenario."
         self._job_text = "Pick a Job."
         self._loan_text = "Pick a Loan."
         self._expense_text = "Pick an Expense."
         self._context_text = [self._scenario_text, self._job_text, self._loan_text, self._expense_text]
-        self._context = 0
+        self._context = 2
+
+        for i in range(4):
+            nav_menu.columnconfigure(i, weight=1)
 
         tk.Button(nav_menu, name="scenario_button", text="Scenarios", width=8, command=lambda: self.set_context(0))\
             .grid(column=0, row=0, sticky=W+E)
@@ -86,9 +65,6 @@ class NavMenu:
         self._label = tk.Label(nav_menu, name="nav_label", text=self._context_text[0])
         self._label.grid(column=0, row=1, columnspan=4)
 
-        update_buttons(nav_menu)
-        labels.update({"nav_menu": nav_menu})
-
     def set_context(self, context: int):
         self._label['text'] = self._context_text[context]
         self._context = context
@@ -99,7 +75,7 @@ class NavMenu:
 
 class BottomMenu:
     def __init__(self, parent: tk.Frame) -> None:
-        frame = tk.Frame(parent, name="left_botttom_menu", width=300, height=50)
+        frame = tk.Frame(parent, name="left_bottom_menu", width=300, height=50)
         frame.grid(column=0, row=2, sticky=N + W + S + E)
 
         frame.columnconfigure(0, weight=1)
@@ -114,9 +90,6 @@ class BottomMenu:
         self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item)
         self._del_button.grid(column=2, row=0, sticky=W + E)
         tk.Checkbutton(frame, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
-
-        # add buttons to global dictionary variable
-        update_buttons(frame)
 
     def toggle_delete(self):
         if self._del_button['state'] == "disabled":
@@ -147,16 +120,15 @@ class MidPanel:
         self.frame = panel
         panel.grid(column=1, row=0, sticky=N+S)
 
-        detail_label = tk.Frame(panel, name="detail_label", width=300, height=100)
-        detail_label.grid(column=0, row=0, sticky=N+S, pady=(26,0), rowspan=2)
-        d_label = StringVar()
-        dd_label = tk.Label(detail_label)
-        dd_label.grid(column=0, row=0)
-        d_label.set("DETAIL")
-        dd_label['textvariable'] = d_label
+        self._label = StringVar()
+        detail_label = tk.Label(panel, name="detail_label", textvariable=self._label, width=20)
+        detail_label.grid(column=0, row=0, sticky=N+S+W+E, pady=(26, 0))
+        detail_label.grid_propagate(False)
+        self._label.set("DETAIL")
 
-        self.detail_panel = tk.Frame(panel, name="detail_panel", width=300, height=500)
-        self.detail_panel.grid(column=0, row=2, sticky=N+E+S+W)
+        self.detail_panel = tk.Frame(panel, name="detail_panel", borderwidth=2, relief='sunken',width=300, height=500)
+        self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
+        self.detail_panel.grid_propagate(False)
 
     # TODO make this form-based
     def populate(self, context: int):
@@ -195,7 +167,7 @@ class MidPanel:
         :return: None
         """
         bMenu = tk.Frame(self.frame, name="bottom_menu")
-        bMenu.grid(column=0, row=3, sticky=W + E)
+        bMenu.grid(column=0, row=2, sticky=N + W + S + E)
         for i in range(5):
             bMenu.columnconfigure(i, weight=1)
             if i % 2 == 0:
@@ -236,6 +208,7 @@ class RightPanel:
 def _create_left_drawer(root, context: str="none") -> tk.Frame:
     left_drawer = tk.Frame(root, borderwidth=2, relief='sunken', width=300, height=500)
     left_drawer.grid(column=0, row=1, sticky=N+W+S+E)
+    left_drawer.grid_propagate(False)
 
     return left_drawer
 
