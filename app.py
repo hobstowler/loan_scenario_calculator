@@ -47,7 +47,7 @@ class LeftPanel:
 
         # nav menu variables
         self._nav_label = None
-        self._context = 2
+        self._context = 0
         self._context_text = [
             "Pick a Scenario.",
             "Pick a Job.",
@@ -55,7 +55,6 @@ class LeftPanel:
             "Pick an Expense.",
             "Pick a Tax Bracket"
         ]
-
         # drawer variables
 
         # bottom menu variables
@@ -66,21 +65,23 @@ class LeftPanel:
         self._drawer = self.create_drawer()
         self._bottom_menu = self.create_bottom_menu()
 
+        self.set_context(2)
+
     def create_nav_menu(self):
         nav_menu = tk.Frame(self.frame, name="nav_menu", width=400, height=30)
         nav_menu.grid(column=0, row=0, sticky=N + W + S + E, pady=(0, 0), padx=0)
         for i in range(5):
             nav_menu.columnconfigure(i, weight=1)
 
-        tk.Button(nav_menu, name="scenario_button", text="Scenarios", width=10, command=lambda: self.set_context(0)) \
+        ttk.Button(nav_menu, name="scenario_button", text="Scenarios", width=10, command=lambda: self.set_context(0)) \
             .grid(column=0, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="job_button", text="Jobs", width=10, command=lambda: self.set_context(1)) \
+        ttk.Button(nav_menu, name="job_button", text="Jobs", width=10, command=lambda: self.set_context(1)) \
             .grid(column=1, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="loan_button", text="Loans", width=10, command=lambda: self.set_context(2)) \
+        ttk.Button(nav_menu, name="loan_button", text="Loans", width=10, command=lambda: self.set_context(2)) \
             .grid(column=2, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="expense_button", text="Expenses", width=10, command=lambda: self.set_context(3)) \
+        ttk.Button(nav_menu, name="expense_button", text="Expenses", width=10, command=lambda: self.set_context(3)) \
             .grid(column=3, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="tax_button", text="Tax Brackets", width=10, command=lambda: self.set_context(4)) \
+        ttk.Button(nav_menu, name="tax_button", text="Tax Brackets", width=10, command=lambda: self.set_context(4)) \
             .grid(column=4, row=0, sticky=W + E)
 
 
@@ -124,6 +125,10 @@ class LeftPanel:
     def set_context(self, context: int):
         self._nav_label['text'] = self._context_text[context]
         self._context = context
+        for c in self.frame.winfo_children():
+            if c.grid_info().get('row') == context:
+                c['background'] = "red"
+
 
     def get_context(self) -> int:
         return self._context
@@ -192,8 +197,8 @@ class MidPanel:
             if i % 2 == 0:
                 #add padding frames between the two buttons
                 tk.Frame(bMenu).grid(column=i, row=0)
-        tk.Button(bMenu, text="Close", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
-        tk.Button(bMenu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+        ttk.Button(bMenu, text="Close", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        ttk.Button(bMenu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
 
     def cancel(self):
         self.clear()
