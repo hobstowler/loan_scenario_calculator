@@ -17,6 +17,7 @@ class DetailForm:
 
         self.parse(thing)
 
+    #TODO forms by type
     def create_forms(self) -> None:
         # Scenarios Form
         self._forms.append([

@@ -97,7 +97,7 @@ class LeftPanel:
         self._nav_label['text'] = self._context_text[context]
         self._context = context
         for c in self.frame.winfo_children():
-            if c.grid_info().get('row') == context:
+            if c.grid_info().all('row') == context:
                 c['background'] = "red"
 
     def get_context(self) -> int:

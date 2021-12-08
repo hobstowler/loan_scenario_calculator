@@ -3,75 +3,126 @@
 # Description:
 
 
-class Income:
-    def __init__(self) -> None:
-        self._amount = 50000
-        self._pay_periods = 26
+class FinanceObj:
+    """
+    A generic financial object. Can include expenses, loans, and jobs.
+    """
+    def __init__(self, name: str, desc: str) -> None:
+        """
+        Initializes the financial object with a name and description.
+        :param name: The name of the object. Used in display functions
+        :param desc: The longer form description of the object.
+        """
+        self._name = name
+        self._desc = desc
+
+    def set_name(self, new_name: str) -> bool:
+        """
+        Sets a new name for the object. Returns true if the operation is successful.
+        :param new_name: The new name.
+        :return: True if successful.
+        """
+        if isinstance(new_name, str):
+            self._name = new_name
+            return True
+        else:
+            return False
+
+    def name(self) -> str:
+        """
+        Gets the name of the object.
+        :return: The name.
+        """
+        return self._name
+
+    def set_desc(self, new_desc: str) -> bool:
+        """
+        Sets a new description for the object. Returns true if the operation is successful.
+        :param new_desc: The new description.
+        :return: True if successful.
+        """
+        if isinstance(new_desc, str):
+            self._desc = new_desc
+            print("success")
+            return True
+        else:
+            return False
+
+    def desc(self) -> str:
+        """
+        Gets the description of the object.
+        :return: The description.
+        """
+        return self._desc
 
 
-class Expenses:
+#TODO assert instead of if statements
+#TODO add support for yearly expenses
+class Expenses(FinanceObj):
     """
     An object that can keep track of monthly expenses and provide a total amount.
     """
-    def __init__(self):
+    def __init__(self, name: str, desc: str = "") -> None:
         """
-        Initializes the Expenses object with a dictionary of expenses.
+        Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
+        super(Expenses, self).__init__(name, desc)
         self._expenses = {}
+        self._yearly_expenses = {}
 
-    def add(self, label, amount):
+    def add(self, label: str, amount: (int, float)) -> bool:
         """
         Adds an expense with a label and monthly amount.
         :param label: The label for the expense.
         :param amount: The monthly amount
         :return: Nothing.
         """
-        if not label.isalpha() or not isinstance(amount, (int, float)):
-            #print("bad input")
-            return
-        self._expenses.update({label.capitalize(): round(amount, 2)})
+        if isinstance(label, str) and isinstance(amount, (int, float)):
+            self._expenses.update({label.capitalize(): round(amount, 2)})
+            return True
+        return False
 
-    def rem(self, label):
+    def rem(self, label: str) -> bool:
         """
         Removes an expense.
         :param label: The label of the expense to be removed
-        :return: True if removal was successful.
+        :return: True if removal was successful. False if key does not exist in dictionary.
         """
-        if self._expenses.get(label):
+        if label in self._expenses:
             del self._expenses[label]
             return True
         return False
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Clears all of the expenses.
         :return: Nothing.
         """
         self._expenses.clear()
 
-    def get(self):
+    def all(self) -> dict:
         """
         Returns the dictionary of expenses.
         :return: The expenses.
         """
         return self._expenses
 
-    def total(self):
+    def total(self) -> float:
         """
         Returns the total of all expenses.
-        :return: the total monthly expenditure
+        :return: The total monthly expenditure.
         """
         total = 0
         for e in self._expenses:
             total += self._expenses.get(e)
         return round(total, 2)
 
-    def change_label(self, old_label, new_label):
+    def change_label(self, old_label: str, new_label: str) -> bool:
         """
         Changes the label for an expense.
         :param old_label: the old label.
         :param new_label: the new label.
-        :return: True if succesful
+        :return: True if successful.
         """
         if old_label in self._expenses:
             self.add(new_label, self._expenses.get(old_label))
@@ -80,12 +131,12 @@ class Expenses:
         return False
 
 
-class Job(Income):
-    def __init__(self):
-        super().__init__()
+class Job(FinanceObj):
+    def __init__(self, name, desc="") -> None:
+        super(Job, self).__init__(name, desc)
         self._title = "Blank"
         self._company = "Some Company"
-        self._income = Income()
+        self._income = 0
         self._pre_tax = Expenses()
         self._post_tax = Expenses()
         self._401k_rate = 0
@@ -118,16 +169,17 @@ class Job(Income):
         self._roth_rate = rate
 
 
-class TaxBracket:
+class TaxBracket(FinanceObj):
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
     """
-    def __init__(self, label, type="Federal", state="N/A", status="Single") -> None:
+    def __init__(self, name: str, desc: str="") -> None:
+        super(TaxBracket, self).__init__(name, desc)
         self._brackets = []
-        self._label = label
+        self._label = ""
         self._type = type
-        self._state = state
-        self._status = status
+        self._state = ""
+        self._status = ""
 
         self._valid_types = ["STATE", "FEDERAL", "LOCAL"]
         self._valid_status = ["SINGLE", "MARRIED, JOINT", "MARRIED, SEPARATE", "HEAD OF HOUSEHOLD"]
@@ -238,8 +290,11 @@ class TaxBracket:
         :param upper_range: The range to be removed.
         :return: True if there was a bracket to be removed.
         """
-        index = self._get_range(upper_range)
-        if index != None:
+        index = None
+        for r in self._brackets:
+            if r[0] == upper_range:
+                index = self._brackets.index(r)
+        if index is not None:
             del self._brackets[index]
             return True
         return False
@@ -282,8 +337,13 @@ class TaxBracket:
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
 
+#TODO add support for assets like 401k, IRA, houses, bank accounts
+class Assets(FinanceObj):
+    def __init__(self):
+        pass
 
-expense = Expenses()
+
+expense = Expenses("testExpense")
 expense.add("car", 1500)
 expense.add("food", 150)
 expense.add("fOod", 250.111)
@@ -303,3 +363,8 @@ print(bracket._brackets)
 print(bracket.calculate(10000))
 print(bracket.calculate(15678))
 print(bracket._get_range(2000))
+print("name",bracket.name())
+print("desc",bracket.desc())
+bracket.set_desc(55)
+
+print("desc",bracket.desc())
