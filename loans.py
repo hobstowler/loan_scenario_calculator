@@ -209,20 +209,14 @@ class Mortgage(Loan):
         return self._property_tax
 
 
+#TODO Implement
 class VariableRateMortgage(Mortgage):
     def __init__(self, total=0, rate=1, length=60) -> None:
         super().__init__(total=total, rate=rate, length=length)
 
 
+#TODO Implement
 class Auto(Loan):
     def __init__(self, total=0, rate=1, length=60):
         super().__init__(total=total, rate=rate, length=length)
 
-
-
-
-mort = Mortgage("test mortgage", 280000, 3.25, 360)
-print(mort.PMI())
-print(mort.mortgage_monthly())
-print(mort.mortgage_total())
-print(mort.amortization_schedule())

@@ -1,9 +1,10 @@
 # Author: Hobs Towler
 # Date: 12/1/2021
 # Description:
-import tkinter
+
 from tkinter import *
 import tkinter as tk
+import tkinter.ttk as ttk
 from main import *
 from income import *
 from dataload import *
@@ -51,7 +52,8 @@ class LeftPanel:
             "Pick a Scenario.",
             "Pick a Job.",
             "Pick a Loan.",
-            "Pick an Expense."
+            "Pick an Expense.",
+            "Pick a Tax Bracket"
         ]
 
         # drawer variables
@@ -65,23 +67,25 @@ class LeftPanel:
         self._bottom_menu = self.create_bottom_menu()
 
     def create_nav_menu(self):
-        nav_menu = tk.Frame(self.frame, name="nav_menu", width=300, height=30)
+        nav_menu = tk.Frame(self.frame, name="nav_menu", width=400, height=30)
         nav_menu.grid(column=0, row=0, sticky=N + W + S + E, pady=(0, 0), padx=0)
-        for i in range(4):
+        for i in range(5):
             nav_menu.columnconfigure(i, weight=1)
 
-        tk.Button(nav_menu, name="scenario_button", text="Scenarios", width=8, command=lambda: self.set_context(0)) \
+        tk.Button(nav_menu, name="scenario_button", text="Scenarios", width=10, command=lambda: self.set_context(0)) \
             .grid(column=0, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="job_button", text="Jobs", width=8, command=lambda: self.set_context(1)) \
+        tk.Button(nav_menu, name="job_button", text="Jobs", width=10, command=lambda: self.set_context(1)) \
             .grid(column=1, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="loan_button", text="Loans", width=8, command=lambda: self.set_context(2)) \
+        tk.Button(nav_menu, name="loan_button", text="Loans", width=10, command=lambda: self.set_context(2)) \
             .grid(column=2, row=0, sticky=W + E)
-        tk.Button(nav_menu, name="expense_button", text="Expenses", width=8, command=lambda: self.set_context(3)) \
+        tk.Button(nav_menu, name="expense_button", text="Expenses", width=10, command=lambda: self.set_context(3)) \
             .grid(column=3, row=0, sticky=W + E)
+        tk.Button(nav_menu, name="tax_button", text="Tax Brackets", width=10, command=lambda: self.set_context(4)) \
+            .grid(column=4, row=0, sticky=W + E)
 
 
         self._nav_label = tk.Label(nav_menu, name="nav_label", text=self._context_text[self._context])
-        self._nav_label.grid(column=0, row=1, columnspan=4)
+        self._nav_label.grid(column=0, row=1, columnspan=5)
 
         return nav_menu
 
@@ -100,10 +104,10 @@ class LeftPanel:
             frame.columnconfigure(i, weight=1)
 
         # Buttons for the bottom menu. Edit, New, and Delete.
-        tk.Button(frame, name="edit_item", text="Edit...", command=edit_item) \
-            .grid(column=0, row=0, sticky=W+E)
         tk.Button(frame, name="new_item", text="New...",
                   command=lambda: mid_panel.populate(self.get_context())) \
+            .grid(column=0, row=0, sticky=W+E)
+        tk.Button(frame, name="edit_item", text="Edit...", command=edit_item) \
             .grid(column=1, row=0, sticky=W+E)
         self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item)
         self._del_button.grid(column=2, row=0, sticky=W+E)
@@ -142,7 +146,7 @@ class MidPanel:
         self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
         self.detail_panel.grid_propagate(False)
 
-    def populate(self, context: int):
+    def populate(self, context: int, obj=None):
         for c in self.detail_panel.winfo_children():
             c.destroy()
         panel = self.detail_panel
@@ -150,18 +154,29 @@ class MidPanel:
         self._label.set(form[0])
         for i in range(1, len(form)):
             for j in range(0, len(form[i])):
-                type = form[i][j][0]
+                tk_type = form[i][j][0]
                 text = form[i][j][1]
                 name = form[i][j][2]
                 col_span = form[i][j][3]
-                if type == "Label":
-                    tk.Label(panel, text=text).grid(row=i, column=j, columnspan=col_span)
-                if type == "Entry":
-                    tk.Entry(panel, text=text).grid(row=i, column=j, columnspan=col_span, sticky=W+E)
-                if type == "CheckButton":
-                    tk.Checkbutton(panel, text=text).grid(row=i, column=j, columnspan=col_span)
-                if type == "":
+                if tk_type == "Label":
+                    tk.Label(panel, text=text, name=name)\
+                        .grid(row=i, column=j, columnspan=col_span)
+                elif tk_type == "Entry":
+                    ttk.Entry(panel, text=text, name=name)\
+                        .grid(row=i, column=j, columnspan=col_span, sticky=W+E)
+                elif tk_type == "CheckButton":
+                    self.var = IntVar()
+                    self.var.set(0)
+                    check = ttk.Checkbutton(panel, text=text, name=name, variable=self.var, onvalue=1, offvalue=0)
+                    check.grid(row=i, column=j, columnspan=col_span)
+                elif tk_type == "Space":
                     tk.Frame(panel, height=10).grid(row=i, column=j, columnspan=col_span)
+                elif tk_type == "Combo":
+                    combo = ttk.Combobox(panel, text=text)
+                    combo.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
+                    combo['values'] = form[i][j][4]
+        for c in panel.winfo_children():
+            c.grid(pady=(1, 1))
 
         self.show_bottom_menu()
 
@@ -177,8 +192,14 @@ class MidPanel:
             if i % 2 == 0:
                 #add padding frames between the two buttons
                 tk.Frame(bMenu).grid(column=i, row=0)
-        tk.Button(bMenu, text="Close", command=lambda: self.clear()).grid(column=1, row=0, sticky=W + E)
-        tk.Button(bMenu, text="Save").grid(column=3, row=0, sticky=W + E)
+        tk.Button(bMenu, text="Close", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        tk.Button(bMenu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+
+    def cancel(self):
+        self.clear()
+
+    def save(self):
+        pass
 
     def hide_bottom_menu(self):
         """
