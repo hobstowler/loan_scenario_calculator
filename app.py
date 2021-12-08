@@ -11,35 +11,6 @@ from dataload import *
 from Forms import *
 
 
-def open_scenario():
-    pass
-
-def open_loan():
-    pass
-
-def open_job():
-    pass
-
-def open_expense():
-    pass
-
-
-def edit_item():
-    pass
-
-def delete_item():
-    pass
-
-class Context:
-    pass
-
-class Stats(Context):
-    pass
-
-class LoanDetail(Context):
-    pass
-
-
 class LeftPanel:
     def __init__(self, parent: tk.Tk):
         self.frame = tk.Frame(parent)
@@ -108,9 +79,9 @@ class LeftPanel:
         tk.Button(frame, name="new_item", text="New...",
                   command=lambda: mid_panel.populate(self.get_context())) \
             .grid(column=0, row=0, sticky=W+E)
-        tk.Button(frame, name="edit_item", text="Edit...", command=edit_item) \
+        tk.Button(frame, name="edit_item", text="Edit...", command=lambda: self.edit()) \
             .grid(column=1, row=0, sticky=W+E)
-        self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=delete_item)
+        self._del_button = tk.Button(frame, name="delete_item", text="Delete...", state="disabled", command=lambda: self.delete())
         self._del_button.grid(column=2, row=0, sticky=W+E)
         tk.Checkbutton(frame, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
@@ -129,9 +100,14 @@ class LeftPanel:
             if c.grid_info().get('row') == context:
                 c['background'] = "red"
 
-
     def get_context(self) -> int:
         return self._context
+
+    def edit(self):
+        pass
+
+    def delete(self):
+        pass
 
 
 class MidPanel:
