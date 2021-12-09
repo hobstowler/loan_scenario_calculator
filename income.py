@@ -56,6 +56,9 @@ class FinanceObj:
         """
         return self._desc
 
+    def get_data(self) -> dict:
+        return self._data
+
 
 #TODO assert instead of if statements
 #TODO add support for yearly expenses
