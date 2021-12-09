@@ -15,6 +15,7 @@ class FinanceObj:
         """
         self._name = name
         self._desc = desc
+        self._data = {}
 
     def set_name(self, new_name: str) -> bool:
         """
@@ -364,7 +365,7 @@ print(bracket.calculate(10000))
 print(bracket.calculate(15678))
 print(bracket._get_range(2000))
 print("name",bracket.name())
+bracket.set_desc("a tax bracket for testing")
 print("desc",bracket.desc())
 bracket.set_desc(55)
-
 print("desc",bracket.desc())

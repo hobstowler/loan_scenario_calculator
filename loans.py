@@ -3,15 +3,18 @@
 # Description:
 
 import datetime
+from income import FinanceObj
 
 
-class Loan:
-    def __init__(self, label, total=10000, rate=1, length=60):
-        self._total = total
-        self.label = label
-        self._rate = float(rate/100)
-        self._length = length
-        self._principal = total * .8
+class Loan(FinanceObj):
+    def __init__(self, name: str, desc: str = ""):
+        super(Loan, self).__init__(name, desc)
+
+        self._data.update({"total": 0})
+        self._data.update({"rate": 0})
+        self._data.update({"length": 0})
+        self._data.update({"down payment": 0})
+        self._data.update({"principal": 0})
 
         #self._loan_start = datetime.datetime(2021)
 
@@ -21,7 +24,7 @@ class Loan:
         :param new_total: The new total value.
         :return: Nothing.
         """
-        self._total = new_total
+        self._data.update({"total": new_total})
 
     def set_rate(self, new_rate):
         """
@@ -29,7 +32,7 @@ class Loan:
         :param new_rate: The new rate
         :return: Nothing.
         """
-        self._rate = new_rate
+        self._data.update({"rate": new_rate})
 
     def set_length(self, new_length):
         """
@@ -37,28 +40,28 @@ class Loan:
         :param new_length: New length in months
         :return: Nothing
         """
-        self._length = new_length
+        self._data.update({"length": new_length})
 
     def get_amount(self):
         """
         Returns the total amount without down payment.
         @return: The total amount for the loan.
         """
-        return self._total
+        return self._data.get("total")
 
     def get_rate(self):
         """
         Returns the rate for the loan.
         @return: The rate.
         """
-        return self._rate
+        return self._data.get("rate")
 
     def get_length(self):
         """
         Returns the length of the loan in months.
         @return: The length in months
         """
-        return self._length
+        return self._data.get("length")
 
     # TO DO: factor in a prorated amount and use the start of the loan
     def amortization_schedule(self, extra_amount=0) -> dict:
@@ -67,9 +70,9 @@ class Loan:
         @param extra_amount: The amount of extra payment per month
         @return: The amortization schedule.
         """
-        principal = self._principal
+        principal = self._data.get("principal")
         schedule = {0: principal}
-        for i in range(1, self._length + 1):
+        for i in range(1, self._data.get("length") + 1):
             interest = self._m_interest(principal)
             principal = round(principal + interest - self._m_payment - extra_amount, 2)
             schedule.update({i: [principal, interest, extra_amount]})

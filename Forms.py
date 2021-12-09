@@ -25,7 +25,7 @@ class DetailForm:
             [["Label", "Name", "", 1], ["Entry", "", "", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "", 2]],
             [["Space", "", "", 3]]
-            ])
+        ])
         # Jobs Form
         self._forms.append([
             "Job Editor",
@@ -33,25 +33,32 @@ class DetailForm:
             [["Label", "Company", "", 1], ["Entry", "", "", 2]],
             [["Space", "", "", 3]],
             [["Label", "Salary", "", 1], ["Entry", "", "", 2]]
-            ])
+        ])
         # Loans Form
         self._forms.append([
             "Loan Editor",
-            [["Label", "Name", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Loan Type", "", 1], ["Combo", "", "", 2, ["Mortgage", "Auto", "Personal"]]],
+            [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
+            [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
+            [["Label", "Loan Type", "", 1], ["Combo", "", "loan type", 2, ["Mortgage", "Auto", "Personal"]]],
             [["Space", "", "", 3]],
-            [["Label", "Loan Amount", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Down Payment", "", 1], ["Entry", "", "", 1], ["CheckButton", "Percentage", "", 1]],
-            [["Label", "Rate", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Total Amount", "", 1], ["Entry", "", "total", 2]],
+            [["Label", "Down Payment", "", 1], ["Entry", "", "down payment", 1], ["CheckButton", "Percentage", "", 1]],
+            [["Label", "Principal", "", 1], ["Entry", "", "principal", 2]],
+            [["Label", "Rate", "", 1], ["Entry", "", "rate", 2]],
+            [["Label", "Term", "", 1], ["Entry", "", "length", 1], ["CheckButton", "Years", "l_years", 1]],
             [["Space", "", "", 3]]
-            ])
+        ])
+        # Mortgage Form
+        self._forms.append([
+
+        ])
         # Expenses Form
         self._forms.append([
             "Expense Editor",
             [["Label", "Name", "", 1], ["Entry", "", "", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "", 2]],
             [["Space", "", "", 3]]
-            ])
+        ])
         # Tax Brackets Form
         self._forms.append([
             "Tax Bracket Editor",
@@ -65,19 +72,20 @@ class DetailForm:
     def save(self):
         pass
 
-    def parse(self, thing=None):
-        if thing == None:
+    def parse(self, data=None):
+        if data is None:
             return
-        if isinstance(thing, Mortgage):
+
+        if isinstance(data, Mortgage):
             return
-        if isinstance(thing, Auto):
+        if isinstance(data, Auto):
             return
-        if isinstance(thing, Loan):
+        if isinstance(data, Loan):
             return
-        if isinstance(thing, Job):
+        if isinstance(data, Job):
             return
-        if isinstance(thing, Expenses):
+        if isinstance(data, Expenses):
             return
-        if isinstance(thing, TaxBracket):
+        if isinstance(data, TaxBracket):
             return
 

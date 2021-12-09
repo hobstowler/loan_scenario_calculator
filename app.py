@@ -13,7 +13,7 @@ from Forms import *
 
 class LeftPanel:
     def __init__(self, parent: tk.Tk):
-        self.frame = tk.Frame(parent)
+        self.frame = tk.Frame(parent, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
         # nav menu variables
@@ -55,7 +55,6 @@ class LeftPanel:
         ttk.Button(nav_menu, name="tax_button", text="Tax Brackets", width=10, command=lambda: self.set_context(4)) \
             .grid(column=4, row=0, sticky=W + E)
 
-
         self._nav_label = tk.Label(nav_menu, name="nav_label", text=self._context_text[self._context])
         self._nav_label.grid(column=0, row=1, columnspan=5)
 
@@ -76,8 +75,7 @@ class LeftPanel:
             frame.columnconfigure(i, weight=1)
 
         # Buttons for the bottom menu. Edit, New, and Delete.
-        tk.Button(frame, name="new_item", text="New...",
-                  command=lambda: mid_panel.populate(self.get_context())) \
+        tk.Button(frame, name="new_item", text="New...", command=lambda: self.new()) \
             .grid(column=0, row=0, sticky=W+E)
         tk.Button(frame, name="edit_item", text="Edit...", command=lambda: self.edit()) \
             .grid(column=1, row=0, sticky=W+E)
@@ -96,13 +94,31 @@ class LeftPanel:
     def set_context(self, context: int):
         self._nav_label['text'] = self._context_text[context]
         self._context = context
-        for c in self.frame.winfo_children():
-            if c.grid_info().all('row') == context:
-                c['background'] = "red"
+        #for c in self.frame.winfo_children():
+        #    if c.grid_info().get('column') == context:
+        #        print(context)
+        #        c['background'] = "red"
 
     def get_context(self) -> int:
         return self._context
 
+    #TODO figure out how to disable the left panel
+    def new(self):
+        mid_panel.populate(self.get_context())
+        components = [self.frame]
+        print(self.frame.winfo_name())
+        while components:
+            temp = components.pop(0)
+            tlist = temp.winfo_children()
+            if tlist:
+                return
+                #components.append(tlist.winfo_children())
+            else:
+                temp['state'] = "disabled"
+
+
+
+    #TODO disable left panel
     def edit(self):
         pass
 
@@ -173,11 +189,12 @@ class MidPanel:
             if i % 2 == 0:
                 #add padding frames between the two buttons
                 tk.Frame(bMenu).grid(column=i, row=0)
-        ttk.Button(bMenu, text="Close", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        ttk.Button(bMenu, text="Cancel", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
         ttk.Button(bMenu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
 
     def cancel(self):
         self.clear()
+        self._label.set("")
 
     def save(self):
         pass
