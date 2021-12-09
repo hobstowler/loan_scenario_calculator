@@ -17,7 +17,7 @@ class LeftPanel:
         self.frame.grid(column=0, row=0)
 
         # drawer variables
-        self.loans = []
+        self.loans = [Loan("test Loan", "test loan description"),]
         self.jobs = []
         self.expenses = []
         self.taxes = []
@@ -25,63 +25,79 @@ class LeftPanel:
 
         # nav menu variables
         self._nav_label = None
-        self._context = "loan"
+        self._context = "loans"
         self._context_vars = {
-            "scenario": ["Select a Scenario.", self.scenarios],
-            "job": ["Select a Job.", self.jobs],
-            "loan": ["Select a Loan.", self.loans],
-            "expense": ["Select an Expense.", self.expenses],
-            "tax": ["Select a Tax Bracket", self.taxes]
+            "scenarios": ["Select a Scenario.", self.scenarios],
+            "jobs": ["Select a Job.", self.jobs],
+            "loans": ["Select a Loan.", self.loans],
+            "expenses": ["Select an Expense.", self.expenses],
+            "taxes": ["Select a Tax Bracket", self.taxes]
         }
 
         # bottom menu variables
         self._del_button = None
 
         # instantiate major components
-        self._nav_menu = self.create_nav_menu()
-        self._drawer = self.create_drawer()
-        self._bottom_menu = self.create_bottom_menu()
+        self._nav_menu = None
+        self._drawer = None
+        self._bottom_menu = None
+        self.create_nav_menu()
+        self.create_drawer()
+        self.create_bottom_menu()
+        for c in self._context_vars.keys():
+            self.create_nav_menu_button(c)
 
-        #self.set_context(2)
-
-    def create_nav_menu(self):
+    def create_nav_menu(self) -> None:
         """
         Creates the menu for the left panel. Allows switching between different finance objects.
         :return: The Frame object representing the navigation menu.
         """
         nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
         nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(20, 0))
-        for i in range(5):
-            nav_menu.rowconfigure(i, weight=1)
+        self._nav_menu = nav_menu
 
-        # Create the buttons to switch between different contexts in Left Panel
-        b1 = ttk.Button(nav_menu, name="scenario", text="Scenarios", width=10)
-        b1.pack(fill="y")
-        b1.bind("<Button-1>", lambda t=0: self.set_context(t))
-        b2 = ttk.Button(nav_menu, name="job", text="Jobs", width=10)
-        b2.pack(fill="y")
-        b2.bind("<Button-1>", lambda t=1: self.set_context(t))
-        b3 = ttk.Button(nav_menu, name="loan", text="Loans", width=10)
-        b3.pack(fill="y")
-        b3.bind("<Button-1>", lambda t=2: self.set_context(t))
-        b4 = ttk.Button(nav_menu, name="expense", text="Expenses", width=10)
-        b4.pack(fill="y")
-        b4.bind("<Button-1>", lambda t=3: self.set_context(t))
-        b5 = ttk.Button(nav_menu, name="tax", text="Tax Brackets", width=10)
-        b5.pack(fill="y")
-        b5.bind("<Button-1>", lambda t=4: self.set_context(t))
-
-        return nav_menu
+    def create_nav_menu_button(self, name: str) -> None:
+        """
+        Creates a nav menu button with a given name. Name is used to link back to form attributes and set context.
+        :param name: The name of the button.
+        :return: None.
+        """
+        button = ttk.Button(self._nav_menu, name=name, text=name.capitalize(), width=10)
+        button.pack(fill="y")
+        button.bind("<Button-1>", lambda t=0: self.set_context(t))
 
     def create_drawer(self):
-        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars[self._context])
+        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._context)[0])
         self._nav_label.grid(column=1, row=0, columnspan=5)
 
         left_drawer = tk.Frame(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
         left_drawer.grid(column=1, row=1, sticky=N + W + S + E)
         left_drawer.grid_propagate(False)
+        left_drawer.pack_propagate(False)
 
-        return left_drawer
+        self._drawer = left_drawer
+        fin_list = self._context_vars.get(self.get_context())
+        self.draw_drawer(fin_list[1])
+
+    def refresh_drawer(self):
+        for c in self._drawer.winfo_children():
+            c.destroy()
+        fin_list = self._context_vars.get(self.get_context())[1]
+        self.draw_drawer(fin_list)
+
+    def draw_drawer(self, fin_list: list):
+        #print(type(fin_list))
+        if fin_list is None:
+            return
+        for list_item in fin_list:
+            self.create_drawer_button(list_item)
+
+    def create_drawer_button(self, item: FinanceObj):
+        frame = tk.Frame(self._drawer, name=item.name(), height=40, width=299)
+        frame.pack(fill="x")
+        button = ttk.Button(frame, text=item.name())
+        button.pack(fill="x")
+        #tk.Label(frame, text=item.name()).grid(column=0, row=0)
 
     def create_bottom_menu(self):
         frame = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)
@@ -99,7 +115,7 @@ class LeftPanel:
         self._del_button.grid(column=2, row=0, sticky=W+E)
         tk.Checkbutton(frame, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
-        return frame
+        self._bottom_menu = frame
 
     def toggle_delete(self):
         if self._del_button['state'] == "disabled":
@@ -110,17 +126,10 @@ class LeftPanel:
     def set_context(self, context):
         self._context = context.widget.winfo_name()
         self._nav_label['text'] = self._context_vars.get(self._context)[0]
+        self.refresh_drawer()
 
     def get_context(self) -> int:
         return self._context
-
-    def refresh_drawer(self):
-        for c in self._drawer:
-            c.destroy()
-        self.draw_drawer(self._context_vars.get(self.get_context()[1]), self._drawer)
-
-    def draw_drawer(self, fin_list: list, root: tk.Frame):
-        pass
 
     #TODO figure out how to disable the left panel
     def new(self):

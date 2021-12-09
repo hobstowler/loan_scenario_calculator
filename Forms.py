@@ -21,14 +21,14 @@ class DetailForm:
     #TODO forms by type
     def create_forms(self) -> None:
         # Scenarios Form
-        self._forms.update({"scenario": [
+        self._forms.update({"scenarios": [
             "Scenario Editor",
             [["Label", "Name", "", 1], ["Entry", "", "", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "", 2]],
             [["Space", "", "", 3]]
         ]})
         # Jobs Form
-        self._forms.update({"job": [
+        self._forms.update({"jobs": [
             "Job Editor",
             [["Label", "Title", "", 1], ["Entry", "", "", 2]],
             [["Label", "Company", "", 1], ["Entry", "", "", 2]],
@@ -36,7 +36,7 @@ class DetailForm:
             [["Label", "Salary", "", 1], ["Entry", "", "", 2]]
         ]})
         # Loans Form
-        self._forms.update({"loan": [
+        self._forms.update({"loans": [
             "Loan Editor",
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
@@ -50,22 +50,22 @@ class DetailForm:
             [["Space", "", "", 3]]
         ]})
         # Mortgage Form
-        self._forms.update({"mortgage": [
+        self._forms.update({"mortgages": [
 
         ]})
         # Auto Loan Form
-        self._forms.update({"auto": [
+        self._forms.update({"auto loans": [
 
         ]})
         # Expenses Form
-        self._forms.update({"expense": [
+        self._forms.update({"expenses": [
             "Expense Editor",
             [["Label", "Name", "", 1], ["Entry", "", "", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "", 2]],
             [["Space", "", "", 3]]
         ]})
         # Tax Brackets Form
-        self._forms.update({"tax": [
+        self._forms.update({"taxes": [
             "Tax Bracket Editor",
             [["Label", "Name", "", 1], ["Entry", "", "", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "", 2]],
