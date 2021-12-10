@@ -23,15 +23,15 @@ class DetailForm:
         # Scenarios Form
         self._forms.update({"scenarios": [
             "Scenario Editor",
-            [["Label", "Name", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Description", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
+            [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]]
         ]})
         # Jobs Form
         self._forms.update({"jobs": [
             "Job Editor",
-            [["Label", "Title", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Company", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
+            [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]],
             [["Label", "Salary", "", 1], ["Entry", "", "", 2]]
         ]})
@@ -60,22 +60,34 @@ class DetailForm:
         # Expenses Form
         self._forms.update({"expenses": [
             "Expense Editor",
-            [["Label", "Name", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Description", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
+            [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]]
         ]})
         # Tax Brackets Form
         self._forms.update({"taxes": [
             "Tax Bracket Editor",
-            [["Label", "Name", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Description", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
+            [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
         ]})
 
     def get_form(self, context) -> list:
         return self._forms[context]
 
-    def save(self):
-        pass
+    def get_fin_obj(self) -> FinanceObj:
+        return self._fin_obj
+
+    def save_data(self, data: dict):
+        print("saving:", data)
+        for k in data.keys():
+            print(k)
+            if k == "name":
+                print(data.get(k))
+                self._fin_obj.set_name(data.get(k))
+            elif k == "desc":
+                self._fin_obj.set_desc(data.get(k))
+            else:
+                self._fin_obj.get_data().update({k: data.get(k)})
 
     def parse_data(self, data: dict = None):
         if data is None:

@@ -9,6 +9,7 @@ from income import FinanceObj
 class Loan(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
         super(Loan, self).__init__(name, desc)
+        self._type = "Loan"
 
         self._data.update({"total": 0})
         self._data.update({"rate": 0})
@@ -80,8 +81,9 @@ class Loan(FinanceObj):
 
 
 class Mortgage(Loan):
-    def __init__(self, label, total=100000, rate=1, length=60) -> None:
-        super().__init__(label=label, total=total, rate=rate, length=length)
+    def __init__(self, name: str, desc: str = "") -> None:
+        super(Loan, self).__init__(name, desc)
+        self._type = "Mortgage"
 
         self._pmi_required = True
         self._PMI_rate = .005
@@ -95,8 +97,8 @@ class Mortgage(Loan):
         self._insurance = 75
         self._insurance_co = "None"
 
-        self._m_payment = self.mortgage_monthly()
-        self._t_payment = self.mortgage_total()
+        self._m_payment = ""
+        self._t_payment = ""
 
     def mortgage_monthly(self) -> float:
         """
@@ -215,11 +217,13 @@ class Mortgage(Loan):
 #TODO Implement
 class VariableRateMortgage(Mortgage):
     def __init__(self, total=0, rate=1, length=60) -> None:
-        super().__init__(total=total, rate=rate, length=length)
+        super(Mortgage, self).__init__(total=total, rate=rate, length=length)
+        self._type = "ARM"
 
 
 #TODO Implement
 class Auto(Loan):
-    def __init__(self, total=0, rate=1, length=60):
-        super().__init__(total=total, rate=rate, length=length)
+    def __init__(self, name:str, desc: str = ""):
+        super().__init__(name,desc)
+        self._type = "Auto Loan"
 

@@ -5,8 +5,9 @@
 from loans import *
 from income import *
 
-class Scenario:
-    def __init__(self) -> None:
+class Scenario(FinanceObj):
+    def __init__(self, name, desc="") -> None:
+        super(Scenario, self).__init__(name, desc)
         self._jobs = set({})
         self._incomes = set({})
         self._expenses = set({})

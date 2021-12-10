@@ -15,6 +15,7 @@ class FinanceObj:
         """
         self._name = name
         self._desc = desc
+        self._type = "FibObj"
         self._data = {}
 
     def set_name(self, new_name: str) -> bool:
@@ -59,6 +60,9 @@ class FinanceObj:
     def get_data(self) -> dict:
         return self._data
 
+    def type(self) -> str:
+        return self._type
+
 
 #TODO assert instead of if statements
 #TODO add support for yearly expenses
@@ -71,6 +75,7 @@ class Expenses(FinanceObj):
         Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
         super(Expenses, self).__init__(name, desc)
+        self._type = "Expense"
         self._expenses = {}
         self._yearly_expenses = {}
 
@@ -138,11 +143,12 @@ class Expenses(FinanceObj):
 class Job(FinanceObj):
     def __init__(self, name, desc="") -> None:
         super(Job, self).__init__(name, desc)
+        self._type = "Job"
         self._title = "Blank"
         self._company = "Some Company"
         self._income = 0
-        self._pre_tax = Expenses()
-        self._post_tax = Expenses()
+        #self._pre_tax = Expenses()
+        #self._post_tax = Expenses()
         self._401k_rate = 0
         self._roth_rate = 0
 
@@ -179,6 +185,7 @@ class TaxBracket(FinanceObj):
     """
     def __init__(self, name: str, desc: str="") -> None:
         super(TaxBracket, self).__init__(name, desc)
+        self._type = "Tax Bracket"
         self._brackets = []
         self._label = ""
         self._type = type
@@ -352,9 +359,9 @@ expense.add("car", 1500)
 expense.add("food", 150)
 expense.add("fOod", 250.111)
 expense.add("something", "thing")
-print(expense.total())
+#print(expense.total())
 expense.reset()
-print(expense.total())
+#print(expense.total())
 
 bracket = TaxBracket("test bracket")
 bracket.add_range(50000,6)
@@ -363,12 +370,12 @@ bracket.add_range(1000,4)
 bracket.add_range(1000,4.2)
 bracket.add_range(20000,5.1)
 bracket.add_range(None,12)
-print(bracket._brackets)
-print(bracket.calculate(10000))
-print(bracket.calculate(15678))
-print(bracket._get_range(2000))
-print("name",bracket.name())
+#print(bracket._brackets)
+#print(bracket.calculate(10000))
+#print(bracket.calculate(15678))
+#print(bracket._get_range(2000))
+#print("name",bracket.name())
 bracket.set_desc("a tax bracket for testing")
-print("desc",bracket.desc())
+#print("desc",bracket.desc())
 bracket.set_desc(55)
-print("desc",bracket.desc())
+#print("desc",bracket.desc())
