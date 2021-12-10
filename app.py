@@ -193,7 +193,7 @@ class MidPanel:
 
         self._form_vars = {}
 
-    def get_form(self) -> DetailForm:
+    def create_new_form(self) -> DetailForm:
         context = left_panel.get_context()
         if context == "scenarios":
             return DetailForm(Scenario("new scenario", "new scenario"))
@@ -206,18 +206,25 @@ class MidPanel:
         if context == "taxes":
             return DetailForm(TaxBracket("new tax bracket", "new tax bracket"))
 
-    def populate(self, context: str, obj=None):
+    def reset_panel(self):
         for c in self.detail_panel.winfo_children():
             c.destroy()
             self._form = None
-            #TODO make this save?
             self._form_vars.clear()
+
+    def populate(self, context: str, obj=None):
+        self.reset_panel()
 
         panel = self.detail_panel
         if obj is None:
-            self._form = self.get_form()
+            self._form = self.create_new_form()
+            obj = self._form.get_fin_obj()
+        else:
+            self._form = DetailForm(obj)
 
+        #TODO make type-based
         form = self._form.get_form(context)
+
         self._label.set(form[0])
         for i in range(1, len(form)):
             for j in range(0, len(form[i])):
@@ -230,7 +237,12 @@ class MidPanel:
                         .grid(row=i, column=j, columnspan=col_span)
                 elif tk_type == "Entry":
                     s = StringVar()
-                    print(name)
+                    if name == "name":
+                        s.set(obj.name())
+                    elif name == "desc":
+                        s.set(obj.desc())
+                    else:
+                        s.set(obj.get_data().get(name))
                     self._form_vars.update({name: s})
                     e = ttk.Entry(panel, textvariable=s, name=name)
                     e.bind("<FocusOut>", lambda e, t=name: self.send_change(t))
@@ -282,6 +294,7 @@ class MidPanel:
         for k in self._form_vars.keys():
             self.send_change(k)
         left_panel.add_fin_obj(self._form.get_fin_obj())
+        self.reset_panel()
 
     def hide_bottom_menu(self):
         """
