@@ -17,7 +17,7 @@ class Loan(FinanceObj):
         self._data.update({"down payment": 0})
         self._data.update({"principal": 0})
 
-        #self._loan_start = datetime.datetime(2021)
+        # self._loan_start = datetime.datetime(2021)
 
     def set_total(self, new_total):
         """
@@ -227,3 +227,14 @@ class Auto(Loan):
         super().__init__(name,desc)
         self._type = "Auto Loan"
 
+
+def loan_to_mortgage(self, loan: Loan) -> Mortgage:
+    new_mortgage = Mortgage(self.name(), self.desc())
+    new_mortgage.set_data(self._data)
+    return new_mortgage
+
+
+def to_auto(self, loan: Loan) -> Auto:
+    new_auto = Auto(self.name(), self.desc())
+    new_auto.set_data(self._data)
+    return new_auto

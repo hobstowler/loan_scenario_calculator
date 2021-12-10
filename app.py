@@ -8,7 +8,7 @@ import tkinter.ttk as ttk
 from main import *
 from income import *
 from dataload import *
-from Forms import *
+from forms import *
 
 
 class LeftPanel:
@@ -21,6 +21,18 @@ class LeftPanel:
             Loan("Test Loan", "Test Loan Description"), Mortgage("A Second Loan", "This Loan is a Mortgage"),
             Mortgage("A Ssdfgecond Loan", "This Loan is a Mortgage"),
             Mortgage("A Ssdfgecond Loan", "This Loan is a Mortgage"),
+            Mortgage("A Secsdfgond Lodsehssdgfn", "This Loan is a Mortgage"),
+            Mortgage("A Ssdfgecaerond Loan", "This Loan is a Mortgage"),
+            Mortgage("A Sssdfdfgecond Loan", "This Loan is a Mortgage"),
+            Mortgage("A Secsdfsdfgsdgond Lodsehssdgfn", "This Loan is a Mortgage"),
+            Mortgage("A Ssdfggsdecond Loan", "This Loan is a Mortgage"),
+            Mortgage("A sdfgsdf Loan", "This Loan is a Mortgage"),
+            Mortgage("A Secsdfgsdffdfgsdfggond Lodsehssdgfn", "This Loan is a Mortgage"),
+            Mortgage("A sdfgan", "This Loan is a Mortgage"),
+            Mortgage("A Ssdfsfgsgecond Loan", "This Loan is a Mortgage"),
+            Mortgage("A Secsdfgond Lodsehssdgfn", "This Loan is a Mortgage"),
+            Mortgage("A Ssdfgsdfgsfgecond Loan", "This Loan is a Mortgage"),
+            Mortgage("A Ssdfdsfdgfgsdgecond Loan", "This Loan is a Mortgage"),
             Mortgage("A Secsdfgond Lodsehssdgfn", "This Loan is a Mortgage")
         ]
         self.jobs = [Job("First Job", "it sucks")]
@@ -51,12 +63,13 @@ class LeftPanel:
         self._nav_menu = self.create_nav_menu()
         self._drawer = None
         self._bottom_menu = None
-
+        self._mid_panel = None
         self.create_drawer()
         self.create_bottom_menu()
 
+        self._drawer.configure(scrollregion=self._drawer.bbox("all"))
 
-    def create_nav_menu(self) -> None:
+    def create_nav_menu(self) -> Frame:
         """
         Creates the menu for the left panel. Allows switching between different finance objects.
         :return: The Frame object representing the navigation menu.
@@ -72,26 +85,30 @@ class LeftPanel:
         return nav_menu
 
     #TODO clean up flow.
-    def create_drawer(self):
+    def create_drawer(self) -> None:
         self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._context)[0])
         self._nav_label.grid(column=1, row=0, columnspan=5)
 
-        left_drawer = tk.Frame(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
+        left_drawer = tk.Canvas(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
         left_drawer.grid(column=1, row=1, sticky=N + W + S + E)
         left_drawer.grid_propagate(False)
         left_drawer.pack_propagate(False)
+
+        scroll = tk.Scrollbar(self.frame, command=left_drawer.yview())
+        scroll.grid(column=2, row=1, sticky=N+S)
+        left_drawer.configure(yscrollcommand=scroll.set)
 
         self._drawer = left_drawer
         fin_list = self._context_vars.get(self.get_context())
         self.draw_drawer(fin_list[1])
 
-    def refresh_drawer(self):
+    def refresh_drawer(self) -> None:
         for c in self._drawer.winfo_children():
             c.destroy()
         fin_list = self._context_vars.get(self.get_context())[1]
         self.draw_drawer(fin_list)
 
-    def draw_drawer(self, fin_list: list):
+    def draw_drawer(self, fin_list: list) -> None:
         if fin_list is None:
             return
         for list_item in fin_list:
@@ -101,20 +118,24 @@ class LeftPanel:
     def create_drawer_button(self, item: FinanceObj):
         frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40, width=300)
         frame.pack(fill="x", ipady=2, ipadx=2)
-        frame.bind("<Button-1>", lambda e, y="hey": self.callout(y))
+        frame.bind("<Button-1>", lambda e, i=item, f=frame: self.b_click(i,f))
 
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground='red')
         name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground='aqua')
+        f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground='navy')
         f_type.grid(column=1, row=0, sticky=E)
         desc = tk.Label(frame, text=item.desc(), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
         for c in frame.winfo_children():
-            c.bind("<Button-1>", lambda e, y="hey": self.callout(y))
+            c.bind("<Button-1>", lambda e, i=item, f=frame: self.b_click(i,f))
+
+    def b_click(self, fin_obj, button:Frame):
+        self._selection = button
+        self._mid_panel.populate(False, fin_obj)
 
     def callout(self, text):
         print("hello:", text)
@@ -147,31 +168,40 @@ class LeftPanel:
         self._nav_label['text'] = self._context_vars.get(self._context)[0]
         self.refresh_drawer()
 
-    def get_context(self) -> int:
+    def get_context(self) -> str:
         return self._context
 
     #TODO figure out how to disable the left panel
     def new(self):
-        mid_panel.populate(self.get_context())
+        self._mid_panel.populate(True)
 
     #TODO disable left panel
     def edit(self):
-        pass
+        self._mid_panel.activate()
 
     def delete(self):
         pass
 
+    # Can this be done iteratively?
     def add_fin_obj(self, fin_obj: FinanceObj):
         if isinstance(fin_obj, Loan):
             fin_list = self._context_vars.get("loans")[1]
         elif isinstance(fin_obj, Job):
             fin_list = self._context_vars.get("jobs")[1]
-            print(fin_list)
+        elif isinstance(fin_obj, Expenses):
+            fin_list = self._context_vars.get("expenses")[1]
+        elif isinstance(fin_obj, TaxBracket):
+            fin_list = self._context_vars.get("taxes")[1]
+        elif isinstance(fin_obj, Scenario):
+            fin_list = self._context_vars.get("scenarios")[1]
 
         if fin_obj not in fin_list:
             fin_list.append(fin_obj)
 
         self.refresh_drawer()
+
+    def set_mid_panel(self, mid: Frame) -> None:
+        self._mid_panel = mid
 
 
 class MidPanel:
@@ -190,11 +220,13 @@ class MidPanel:
         self.detail_panel = tk.Frame(panel, name="detail_panel", borderwidth=2, relief='sunken', width=300, height=500)
         self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
         self.detail_panel.grid_propagate(False)
+        self._bottom_menu = None
+        self._left_panel = None
 
         self._form_vars = {}
 
     def create_new_form(self) -> DetailForm:
-        context = left_panel.get_context()
+        context = self._left_panel.get_context()
         if context == "scenarios":
             return DetailForm(Scenario("new scenario", "new scenario"))
         if context == "loans":
@@ -212,8 +244,9 @@ class MidPanel:
             self._form = None
             self._form_vars.clear()
 
-    def populate(self, context: str, obj=None):
+    def populate(self, active=False, obj=None):
         self.reset_panel()
+        context = self._left_panel.get_context()
 
         panel = self.detail_panel
         if obj is None:
@@ -261,23 +294,41 @@ class MidPanel:
                     combo['values'] = form[i][j][4]
         for c in panel.winfo_children():
             c.grid(pady=(1, 1))
+            if not active and c.winfo_class() != "Frame":
+                c['state'] = "disabled"
 
-        self.show_bottom_menu()
+        self.show_bottom_menu(active)
 
-    def show_bottom_menu(self):
+    def show_bottom_menu(self, active: bool = False):
         """
         "Shows" the bottom menu in the middle panel by creating it.
         :return: None
         """
-        bMenu = tk.Frame(self.frame, name="bottom_menu")
-        bMenu.grid(column=0, row=2, sticky=N + W + S + E)
+        b_menu = tk.Frame(self.frame, name="bottom_menu")
+        b_menu.grid(column=0, row=2, sticky=N + W + S + E)
         for i in range(5):
-            bMenu.columnconfigure(i, weight=1)
+            b_menu.columnconfigure(i, weight=1)
             if i % 2 == 0:
-                #add padding frames between the two buttons
-                tk.Frame(bMenu).grid(column=i, row=0)
-        ttk.Button(bMenu, text="Cancel", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
-        ttk.Button(bMenu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+                # add padding frames between the two buttons
+                tk.Frame(b_menu).grid(column=i, row=0)
+        ttk.Button(b_menu, text="Cancel", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        ttk.Button(b_menu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+        for c in b_menu.winfo_children():
+            if not active and c.winfo_class() != "Frame":
+                c['state'] = "disabled"
+
+        self._bottom_menu = b_menu
+
+    def activate(self, active=True):
+        if self._bottom_menu is None:
+            return
+        if active:
+            for c in self._bottom_menu.winfo_children():
+                if c.winfo_class() != "Frame":
+                    c['state'] = "active"
+            for c in self.detail_panel.winfo_children():
+                if c.winfo_class() != "Frame":
+                    c['state'] = "active"
 
     def send_change(self, key: str):
         s_var = self._form_vars.get(key).get()
@@ -293,7 +344,7 @@ class MidPanel:
             return
         for k in self._form_vars.keys():
             self.send_change(k)
-        left_panel.add_fin_obj(self._form.get_fin_obj())
+        self._left_panel.add_fin_obj(self._form.get_fin_obj())
         self.reset_panel()
 
     def hide_bottom_menu(self):
@@ -301,9 +352,8 @@ class MidPanel:
         Usually called by clear(). "Hides" the bottom menu for the middle panel by destroying the frame.
         :return: None
         """
-        for c in self.frame.winfo_children():
-            if c.winfo_name() == "bottom_menu":
-                c.destroy()
+        self._bottom_menu.destroy()
+        self._bottom_menu = None
 
     def clear(self):
         """
@@ -314,8 +364,11 @@ class MidPanel:
             c.destroy()
         self.hide_bottom_menu()
 
+    def set_left_panel(self, left: Frame) -> None:
+        self._left_panel = left
 
-#TODO implement!
+
+# TODO implement!
 class RightPanel:
     def __init__(self, parent: tk.Tk):
         panel = tk.Frame(parent)
@@ -325,28 +378,27 @@ class RightPanel:
         stat_panel.grid(column=0, row=0, rowspan=2, sticky=N+S)
 
 
-# declare global variables
+def main():
+    # create the root
+    root = Tk()
+    root.title("Loan Calculator")
 
-# create the root
-root = Tk()
-root.title("Loan Calculator")
+    # create the three main panels.
+    left_panel = LeftPanel(root)
+    mid_panel = MidPanel(root)
+    right_panel = RightPanel(root)
+    left_panel.set_mid_panel(mid_panel)
+    mid_panel.set_left_panel(left_panel)
 
-# create the three main panels.
-left_panel = LeftPanel(root)
-mid_panel = MidPanel(root)
-right_panel = RightPanel(root)
+    # load the data
+    load_loans()
+    load_jobs()
+    load_expenses()
+    load_incomes()
+    load_scenarios()
 
-# load the data
-load_loans()
-load_jobs()
-load_expenses()
-load_incomes()
-load_scenarios()
+    root.mainloop()
 
-#def print_hierarchy(w, depth=0):
-    #print('  '*depth + w.winfo_class() + ' w=' + str(w.winfo_width()) + ' h=' + str(w.winfo_height()) + ' x=' + str(w.winfo_x()) + ' y=' + str(w.winfo_y()))
-    #for i in w.winfo_children():
-        #print_hierarchy(i, depth+1)
-#print_hierarchy(root)
+main()
 
-root.mainloop()
+

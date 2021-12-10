@@ -60,6 +60,9 @@ class FinanceObj:
     def get_data(self) -> dict:
         return self._data
 
+    def set_data(self, data: dict) -> None:
+        self._data = data
+
     def type(self) -> str:
         return self._type
 
