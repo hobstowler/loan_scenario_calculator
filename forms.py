@@ -69,6 +69,7 @@ class DetailForm:
             "Tax Bracket Editor",
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
+            [["Space", "", "", 3]]
         ]})
 
     def get_form(self, context) -> list:
@@ -78,26 +79,13 @@ class DetailForm:
         return self._fin_obj
 
     def save_data(self, data: dict):
-        print("saving:", data)
-        for k in data.keys():
-            print(k)
-            if k == "name":
-                print(data.get(k))
-                self._fin_obj.set_name(data.get(k))
-            elif k == "desc":
-                self._fin_obj.set_desc(data.get(k))
+        for key in data.keys():
+            val = data.get(key)
+            if key == "name" and self._fin_obj.name() != val:
+                print(data.get(key))
+                self._fin_obj.set_name(val)
+            elif key == "desc" and self._fin_obj.desc() != val:
+                self._fin_obj.set_desc(val)
             else:
-                self._fin_obj.get_data().update({k: data.get(k)})
-
-    def parse_data(self, data: dict = None):
-        if data is None:
-            return
-        fin_data = self._fin_obj.get_data()
-        for key in data:
-            if key == "name":
-                self._fin_obj.set_name(data.get(key))
-            elif key == "desc":
-                self._fin_obj.set_desc(data.get(key))
-            else:
-                fin_data.update({key: data.get(key)})
+                self._fin_obj.get_data().update({key: val})
 

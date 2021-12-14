@@ -52,8 +52,10 @@ class LeftPanel:
             "taxes": ["Select a Tax Bracket", self.taxes]
         }
         self._colors = {
-            "text_type_color": "aqua",
-            "text_name_color": "red"
+            "t_type": "navy",
+            "t_name": "red",
+            "b_sel": "green",
+            "b_reset": "SystemButtonFace"
         }
 
         # bottom menu variables
@@ -79,15 +81,18 @@ class LeftPanel:
         nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(20, 0))
 
         for name in self._context_vars.keys():
-            button = ttk.Button(nav_menu, name=name, text=name.capitalize(), width=10)
+            button = tk.Button(nav_menu, name=name, text=name.capitalize(), width=10)
             button.pack(fill="y")
-            button.bind("<Button-1>", lambda e, t=name: self.set_context(t))
+            button.bind("<Button-1>", lambda e: self.set_context(e))
+            if name == self._context:
+                self._context = button
+                button.configure(bg=self._colors.get("b_sel"))
 
         return nav_menu
 
     #TODO clean up flow.
     def create_drawer(self) -> None:
-        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._context)[0])
+        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self.get_context())[0])
         self._nav_label.grid(column=1, row=0, columnspan=5)
 
         left_drawer = tk.Canvas(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
@@ -124,9 +129,9 @@ class LeftPanel:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground='red')
+        name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground=self._colors.get("t_name"))
         name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground='navy')
+        f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground=self._colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
         desc = tk.Label(frame, text=item.desc(), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
@@ -134,12 +139,19 @@ class LeftPanel:
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, i=item, f=frame: self.b_click(i,f))
 
-    def b_click(self, fin_obj, button:Frame):
+    def b_click(self, fin_obj, button: Frame):
+        if self._selection is not None:
+            self.recolor_button(self._selection, self._colors.get("b_reset"))
+        if button is None:
+            return
+        self.recolor_button(button, self._colors.get("b_sel"))
         self._selection = button
         self._mid_panel.populate(False, fin_obj)
 
-    def callout(self, text):
-        print("hello:", text)
+    def recolor_button(self, component, color: str):
+        component.configure(bg=color)
+        for c in component.winfo_children():
+            c.configure(bg=color)
 
     def create_bottom_menu(self):
         frame = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)
@@ -164,13 +176,20 @@ class LeftPanel:
         else:
             self._del_button['state'] = "disabled"
 
-    def set_context(self, context):
-        self._context = context
-        self._nav_label['text'] = self._context_vars.get(self._context)[0]
+    def set_context(self, event):
+        widget = event.widget
+        context = widget.winfo_name()
+        if context == self.get_context():
+            return
+        self.recolor_button(self._context, self._colors.get("b_reset"))
+        self.recolor_button(widget, self._colors.get("b_sel"))
+        self._selection = None
+        self._context = widget
+        self._nav_label['text'] = self._context_vars.get(self.get_context())[0]
         self.refresh_drawer()
 
     def get_context(self) -> str:
-        return self._context
+        return self._context.winfo_name()
 
     #TODO figure out how to disable the left panel
     def new(self):
