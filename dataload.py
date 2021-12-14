@@ -2,8 +2,7 @@
 # Date: 12/5/2021
 # Description:
 
-from csv import reader
-from csv import writer
+import pickle
 
 data_file_path = "\data"
 
@@ -49,3 +48,10 @@ def save_incomes():
 
 def save_loans():
     pass
+
+def save_all(data: dict):
+    for k in data:
+        if k == "loans":
+            save_loans()
+        if k == "incomes":
+            save_incomes()

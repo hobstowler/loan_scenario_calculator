@@ -67,6 +67,7 @@ class LeftPanel:
         self.create_drawer()
         self.create_bottom_menu()
 
+        #TODO implement scroll bar. may need to be part of the refresh
         self._drawer.configure(scrollregion=self._drawer.bbox("all"))
 
     def create_nav_menu(self) -> Frame:
