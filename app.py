@@ -86,7 +86,7 @@ class LeftPanel:
             button.bind("<Button-1>", lambda e: self.set_context(e))
             if name == self._context:
                 self._context = button
-                button.configure(bg=self._colors.get("b_sel"))
+                button['bg'] = self._colors.get("b_sel")
 
         return nav_menu
 
@@ -149,9 +149,9 @@ class LeftPanel:
         self._mid_panel.populate(False, fin_obj)
 
     def recolor_button(self, component, color: str):
-        component.configure(bg=color)
+        component['bg'] = color
         for c in component.winfo_children():
-            c.configure(bg=color)
+            c['bg'] = color
 
     def create_bottom_menu(self):
         frame = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)

@@ -5,6 +5,7 @@
 from income import *
 from loans import *
 from tkinter import *
+from dataload import *
 
 class DetailForm:
     """
@@ -88,4 +89,5 @@ class DetailForm:
                 self._fin_obj.set_desc(val)
             else:
                 self._fin_obj.get_data().update({key: val})
+        save_all(self._fin_obj.get_data())
 
