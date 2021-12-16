@@ -111,20 +111,20 @@ def save_loans(data: dict):
     pickle.dump(data, open(data_file_path + loan_file_name, 'wb'))
 
 
+#TODO improve by just getting each key?
 def save_all(data: dict):
     """
     Saves all data by calling sub methods based on key.
     :param data: The data to be saved.
     :return: None.
     """
-    for k in data.keys():
-        if k == "loans":
-            save_loans(data.get(k))
-        if k == "incomes":
-            save_incomes(data.get(k))
-        if k == "jobs":
-            save_jobs(data.get(k))
-        if k == "expenses":
-            save_expenses(data.get(k))
-        if k == "scenarios":
-            save_scenarios(data.get(k))
+    if "loans" in data:
+        save_loans(data.get("loans"))
+    if "incomes" in data:
+        save_incomes(data.get("incomes"))
+    if "jobs" in data:
+        save_jobs(data.get("jobs"))
+    if "expenses" in data:
+        save_expenses(data.get("expenses"))
+    if "scenarios" in data:
+        save_scenarios(data.get("scenarios"))
