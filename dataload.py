@@ -28,110 +28,111 @@ def load_all() -> dict:
     return data
 
 
-def load_scenarios() -> dict:
+def load_scenarios() -> list:
     """
     Loads scenarios from saved data. Can be called independently.
-    :return: Saved scenarios.
+    :return: List of saved scenarios.
     """
     file = data_file_path + scenarios_file_name
     if exists(file):
         return pickle.load(open(file, "rb"))
-    return {}
+    return []
 
 
-def load_expenses() -> dict:
+def load_expenses() -> list:
     """
     Loads expenses from saved data. Can be called independently.
-    :return: Saved expenses
+    :return: List of saved expenses
     """
     file = data_file_path + expenses_file_name
     if exists(file):
         pickle.load(open(file, "rb"))
-    return {}
+    return []
 
 
-def load_jobs() -> dict:
+def load_jobs() -> list:
     """
     Loads jobs from saved data. Can be called independently.
-    :return: Saved jobs.
+    :return: List of saved jobs.
     """
     file = data_file_path + jobs_file_name
     if exists(file):
         pickle.load(open(file, "rb"))
-    return {}
+    return []
 
 
-def load_incomes() -> dict:
+def load_incomes() -> list:
     """
     Loads incomes from saved data. Can be called independently.
-    :return: Saved incomes.
+    :return: List of saved incomes.
     """
     file = data_file_path + incomes_file_name
     if exists(file):
         pickle.load(open(file, "rb"))
-    return {}
+    return []
 
 
-def load_loans() -> dict:
+def load_loans() -> list:
     """
     Loads loans from saved data. Can be called independently.
-    :return: Saved loans.
+    :return: List of saved loans.
     """
     file = data_file_path + loan_file_name
     if exists(file):
         pickle.load(open(file, "rb"))
-    return {}
+    return []
 
 
-def save_scenarios(data: dict):
+def save_scenarios(data: list):
     """
     Saves scenarios to scenarios.p file in data folder.
-    :param data: The scenarios to be saved.
+    :param data: List of scenarios to be saved.
     :return: None.
     """
     pickle.dump(data, open(data_file_path + scenarios_file_name, 'wb'))
 
 
-def save_expenses(data: dict):
+def save_expenses(data: list):
     """
     Saves expenses to the expenses.p file in data folder.
-    :param data: The expenses to be saved.
+    :param data: List of expenses to be saved.
     :return: None.
     """
     pickle.dump(data, open(data_file_path + expenses_file_name, 'wb'))
 
 
-def save_jobs(data: dict):
+def save_jobs(data: list):
     """
     Saves jobs to the jobs.p file in data folder.
-    :param data: The jobs to be saved.
+    :param data: List of jobs to be saved.
     :return: None.
     """
-    print("jib jab")
     pickle.dump(data, open(data_file_path + jobs_file_name, 'wb'))
 
 
-def save_incomes(data: dict):
+def save_incomes(data: list):
     """
     Saves incomes to the incomes.p file in data folder.
-    :param data: The incomes to be saved.
+    :param data: List of incomes to be saved.
     :return: None.
     """
     pickle.dump(data, open(data_file_path + incomes_file_name, 'wb'))
 
 
-def save_loans(data: dict):
+def save_loans(data: list):
     """
     Saves loans to the loans.p file in data folder.
-    :param data: The loans to be saved.
+    :param data: List of loans to be saved.
     :return: None
     """
     pickle.dump(data, open(data_file_path + loan_file_name, 'wb'))
 
 
-def save_all(context: str, data: dict):
+def save_all(data: dict):
     """
-    Saves all data by calling sub methods based on key.
+    Saves all data by calling sub methods based on key. Data is expected to be a dictionary containing lists of each
+    type. For example:
+    {"loans": [], "incomes": [], "jobs": [], "expenses": [], "scenarios": []}
     :param data: The data to be saved.
     :return: None.
     """
@@ -139,8 +140,7 @@ def save_all(context: str, data: dict):
         save_loans(data.get("loans"))
     if "incomes" in data:
         save_incomes(data.get("incomes"))
-    if "jobs" in context:
-        print("jerbs")
+    if "jobs" in data:
         save_jobs(data.get("jobs"))
     if "expenses" in data:
         save_expenses(data.get("expenses"))
