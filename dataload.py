@@ -3,6 +3,7 @@
 # Description:
 
 import pickle
+from os.path import exists
 
 # Constants
 data_file_path = "data/"
@@ -24,6 +25,7 @@ def load_all() -> dict:
     data.update({"jobs": load_jobs()})
     data.update({"incomes": load_incomes()})
     data.update({"loans": load_loans()})
+    return data
 
 
 def load_scenarios() -> dict:
@@ -31,7 +33,10 @@ def load_scenarios() -> dict:
     Loads scenarios from saved data. Can be called independently.
     :return: Saved scenarios.
     """
-    pickle.load(open(data_file_path + scenarios_file_name, "rb"))
+    file = data_file_path + scenarios_file_name
+    if exists(file):
+        return pickle.load(open(file, "rb"))
+    return {}
 
 
 def load_expenses() -> dict:
@@ -39,7 +44,10 @@ def load_expenses() -> dict:
     Loads expenses from saved data. Can be called independently.
     :return: Saved expenses
     """
-    pickle.load(open(data_file_path + expenses_file_name, "rb"))
+    file = data_file_path + expenses_file_name
+    if exists(file):
+        pickle.load(open(file, "rb"))
+    return {}
 
 
 def load_jobs() -> dict:
@@ -47,7 +55,10 @@ def load_jobs() -> dict:
     Loads jobs from saved data. Can be called independently.
     :return: Saved jobs.
     """
-    pickle.load(open(data_file_path + jobs_file_name, "rb"))
+    file = data_file_path + jobs_file_name
+    if exists(file):
+        pickle.load(open(file, "rb"))
+    return {}
 
 
 def load_incomes() -> dict:
@@ -55,7 +66,10 @@ def load_incomes() -> dict:
     Loads incomes from saved data. Can be called independently.
     :return: Saved incomes.
     """
-    pickle.load(open(data_file_path + incomes_file_name, "rb"))
+    file = data_file_path + incomes_file_name
+    if exists(file):
+        pickle.load(open(file, "rb"))
+    return {}
 
 
 def load_loans() -> dict:
@@ -63,7 +77,10 @@ def load_loans() -> dict:
     Loads loans from saved data. Can be called independently.
     :return: Saved loans.
     """
-    pickle.load(open(data_file_path + loan_file_name, "rb"))
+    file = data_file_path + loan_file_name
+    if exists(file):
+        pickle.load(open(file, "rb"))
+    return {}
 
 
 def save_scenarios(data: dict):
@@ -90,6 +107,7 @@ def save_jobs(data: dict):
     :param data: The jobs to be saved.
     :return: None.
     """
+    print("jib jab")
     pickle.dump(data, open(data_file_path + jobs_file_name, 'wb'))
 
 
@@ -111,8 +129,7 @@ def save_loans(data: dict):
     pickle.dump(data, open(data_file_path + loan_file_name, 'wb'))
 
 
-#TODO improve by just getting each key?
-def save_all(data: dict):
+def save_all(context: str, data: dict):
     """
     Saves all data by calling sub methods based on key.
     :param data: The data to be saved.
@@ -122,7 +139,8 @@ def save_all(data: dict):
         save_loans(data.get("loans"))
     if "incomes" in data:
         save_incomes(data.get("incomes"))
-    if "jobs" in data:
+    if "jobs" in context:
+        print("jerbs")
         save_jobs(data.get("jobs"))
     if "expenses" in data:
         save_expenses(data.get("expenses"))

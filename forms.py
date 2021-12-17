@@ -79,7 +79,7 @@ class DetailForm:
     def get_fin_obj(self) -> FinanceObj:
         return self._fin_obj
 
-    def save_data(self, data: dict):
+    def update_fin_obj(self, context: str, data: dict):
         for key in data.keys():
             val = data.get(key)
             if key == "name" and self._fin_obj.name() != val:
@@ -89,5 +89,4 @@ class DetailForm:
                 self._fin_obj.set_desc(val)
             else:
                 self._fin_obj.get_data().update({key: val})
-        save_all(self._fin_obj.get_data())
 
