@@ -137,12 +137,17 @@ def save_all(data: dict):
     :return: None.
     """
     if "loans" in data:
+        print("saving loans")
         save_loans(data.get("loans"))
     if "incomes" in data:
+        print("saving incomes")
         save_incomes(data.get("incomes"))
     if "jobs" in data:
+        print("saving jobs")
         save_jobs(data.get("jobs"))
     if "expenses" in data:
+        print("saving expenses")
         save_expenses(data.get("expenses"))
     if "scenarios" in data:
+        print("saving scenarios")
         save_scenarios(data.get("scenarios"))

@@ -2,7 +2,6 @@
 # Date: 12/1/2021
 # Description:
 
-from tkinter import *
 import tkinter as tk
 import tkinter.ttk as ttk
 from main import *
@@ -12,21 +11,22 @@ from forms import *
 
 
 class LeftPanel:
-    def __init__(self, parent: tk.Tk, vars: dict):
+    def __init__(self, parent: tk.Tk, fin_vars: dict):
         self.frame = tk.Frame(parent, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
         # drawer variables
-        self._selection = None
+        self._selected_fin_button = None
+        self._selected_fin_obj = None
 
         # nav menu variables
         self._context = "loans"
         self._context_vars = {
-            "scenarios": ["Select a Scenario", vars.get("scenarios")],
-            "jobs": ["Select a Job", vars.get("jobs")],
-            "loans": ["Select a Loan", vars.get("loans")],
-            "expenses": ["Select an Expense", vars.get("expenses")],
-            "taxes": ["Select a Tax Bracket", vars.get("taxes")]
+            "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
+            "jobs": ["Select a Job", fin_vars.get("jobs")],
+            "loans": ["Select a Loan", fin_vars.get("loans")],
+            "expenses": ["Select an Expense", fin_vars.get("expenses")],
+            "taxes": ["Select a Tax Bracket", fin_vars.get("taxes")]
         }
         self._colors = {
             "t_type": "navy",
@@ -45,6 +45,9 @@ class LeftPanel:
         self._drawer = self.create_drawer()
         self._bottom_menu = self.create_bottom_menu()
         self._mid_panel = None
+
+        # Populates the drawer with the initial context
+        self.populate()
 
         #TODO implement scroll bar. may need to be part of the refresh
 
@@ -67,7 +70,12 @@ class LeftPanel:
         return nav_menu
 
     #TODO clean up flow.
-    def create_drawer(self) -> None:
+    def create_drawer(self) -> Canvas:
+        """
+        Creates a scrollable drawer that will hold the different items based on selected scenario. Loans, incomes, scenarios,
+        taxes, expenses, for example.
+        :return: itself, a tk.Canvas object.
+        """
         parent = tk.Canvas(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
         parent.grid(column=1, row=1, sticky=N + W + S + E)
         parent.grid_propagate(False)
@@ -77,15 +85,15 @@ class LeftPanel:
         scroll.grid(column=2, row=1, sticky=N+S)
         parent.configure(yscrollcommand=scroll.set)
 
-        self._drawer = parent
-        self.populate()
-
         return parent
 
     def create_bottom_menu(self):
+        """
+        Creates the bottom menu for the drawer. Has buttons to manipulate items in the drawer: New, Edit, and Delete.
+        :return: itself, a tk.Frame object.
+        """
         parent = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)
         parent.grid(column=1, row=2, sticky=N + W + S + E)
-        self._bottom_menu = parent
 
         for i in range(3):
             parent.columnconfigure(i, weight=1)
@@ -101,21 +109,20 @@ class LeftPanel:
 
         return parent
 
-    def refresh_drawer(self) -> None:
+    def populate(self) -> None:
+        """
+        Populates the drawer with a list of all financial objects of the given context. Called when context changes.
+        :return: Nothing.
+        """
         for c in self._drawer.winfo_children():
             c.destroy()
-        self.populate()
-
-    def populate(self) -> None:
         fin_list = self._context_vars.get(self.get_context())[1]
-        print("fin")
         if fin_list is None:
             return
         for item in fin_list:
-            frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40,
-                             width=300)
+            frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40, width=300)
             frame.pack(fill="x", ipady=2, ipadx=2)
-            frame.bind("<Button-1>", lambda e, i=item, f=frame: self.b_click(i, f))
+            frame.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
 
             frame.columnconfigure(0, weight=1)
             frame.columnconfigure(1, weight=1)
@@ -128,26 +135,42 @@ class LeftPanel:
             desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
             for c in frame.winfo_children():
-                c.bind("<Button-1>", lambda e, i=item, f=frame: self.b_click(i, f))
+                c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
 
         self._drawer.configure(scrollregion=self._drawer.bbox("all"))
 
-    def b_click(self, fin_obj, button: Frame):
-        if self._selection is not None:
-            self.recolor_button(self._selection, self._colors.get("b_reset"))
+    def drawer_button_click(self, fin_obj, button: Frame) -> None:
+        """
+        Called when a button in the drawer is clicked. Can be expanded to do specific things based on the type of fin
+        object passed, but currently opens the form editor in a disabled mode when clicked.
+        :param fin_obj: The financial object contained in the button.
+        :param button: The Frame representing the button.
+        :return: Nothing.
+        """
+        if self._selected_fin_button is not None:
+            self.recolor_widget_bg(self._selected_fin_button, self._colors.get("b_reset"))
         if button is None:
             return
-        self.recolor_button(button, self._colors.get("b_sel"))
-        self._selection = button
+        self.recolor_widget_bg(button, self._colors.get("b_sel"))
+        self._selected_fin_button = button
         self._mid_panel.populate(False, fin_obj)
-        print(self._selection)
 
-    def recolor_button(self, component, color: str):
-        component['bg'] = color
-        for c in component.winfo_children():
+    def recolor_widget_bg(self, widget, color: str) -> None:
+        """
+        Changes the background color of the widget.
+        :param widget: The widget whose background color will change.
+        :param color: The new background color.
+        :return: Nothing.
+        """
+        widget['bg'] = color
+        for c in widget.winfo_children():
             c['bg'] = color
 
-    def toggle_delete(self):
+    def toggle_delete(self) -> None:
+        """
+        Toggles the delete button active state.
+        :return: Nothing.
+        """
         if self._del_button['state'] == "disabled":
             self._del_button['state'] = "active"
         else:
@@ -156,31 +179,53 @@ class LeftPanel:
     def set_context(self, event):
         widget = event.widget
         context = widget.winfo_name()
-        if context == self.get_context():
+        if context == self.get_context() or widget['state'] == "disabled":
             return
-        self.recolor_button(self._context, self._colors.get("b_reset"))
-        self.recolor_button(widget, self._colors.get("b_sel"))
-        self._selection = None
+        self.recolor_widget_bg(self._context, self._colors.get("b_reset"))
+        self.recolor_widget_bg(widget, self._colors.get("b_sel"))
+        self._selected_fin_button = None
         self._context = widget
         self._nav_label['text'] = self._context_vars.get(self.get_context())[0]
-        self.refresh_drawer()
+        self.populate()
 
     def get_context(self) -> str:
         return self._context.winfo_name()
 
-    #TODO figure out how to disable the left panel
     def new(self):
+        self.drawer_button_click(None, None)
         self._mid_panel.populate(True)
+        self.activate_nav_menu()
+        self.activate_drawer()
+
+    # TODO button color does not come back on active state
+    def activate_nav_menu(self, state="disabled"):
+        for c in self._nav_menu.winfo_children():
+            if isinstance(c, tk.Button):
+                c['state'] = state
+
+    def activate_drawer(self, state="disabled"):
+        for c in self._drawer.winfo_children():
+            if isinstance(c, tk.Frame):
+                c['state'] = state
 
     #TODO disable left panel
     def edit(self):
+        if self._selected_fin_button is None:
+            print("nothing is selected")
+            return
         self._mid_panel.activate()
+        self.activate_nav_menu()
 
     def delete(self):
-        self._selection
+        self._selected_fin_button
 
     # Can this be done iteratively?
-    def add_fin_obj(self, fin_obj: FinanceObj):
+    def add_fin_obj(self, fin_obj: FinanceObj) -> None:
+        """
+        Adds a financial object to the appropriate list. Called when saving a new object.
+        :param fin_obj: The new financial object to be added to the list.
+        :return: Nothing.
+        """
         if isinstance(fin_obj, Loan):
             fin_list = self._context_vars.get("loans")[1]
         elif isinstance(fin_obj, Job):
@@ -195,7 +240,7 @@ class LeftPanel:
         if fin_obj not in fin_list:
             fin_list.append(fin_obj)
 
-        self.refresh_drawer()
+        self.populate()
 
     def set_mid_panel(self, mid: Frame) -> None:
         self._mid_panel = mid
@@ -204,17 +249,16 @@ class LeftPanel:
 class MidPanel:
     def __init__(self, parent: tk.Tk):
         self._form = None
-        panel = tk.Frame(parent)
-        self.frame = panel
-        panel.grid(column=1, row=0, sticky=N+S)
+        self.frame = tk.Frame(parent)
+        self.frame.grid(column=1, row=0, sticky=N+S)
 
         self._label = StringVar()
-        detail_label = tk.Label(panel, name="detail_label", textvariable=self._label, width=20)
+        detail_label = tk.Label(self.frame, name="detail_label", textvariable=self._label, width=20)
         detail_label.grid(column=0, row=0, sticky=N+S+W+E, pady=(1, 0))
         detail_label.grid_propagate(False)
         self._label.set("DETAIL")
 
-        self.detail_panel = tk.Frame(panel, name="detail_panel", borderwidth=2, relief='sunken', width=300, height=500)
+        self.detail_panel = tk.Frame(self.frame, name="detail_panel", borderwidth=2, relief='sunken', width=300, height=500)
         self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
         self.detail_panel.grid_propagate(False)
         self._bottom_menu = None
@@ -294,9 +338,9 @@ class MidPanel:
             if not active and c.winfo_class() != "Frame":
                 c['state'] = "disabled"
 
-        self.show_bottom_menu(active)
+        self.create_bottom_menu(active)
 
-    def show_bottom_menu(self, active: bool = False):
+    def create_bottom_menu(self, active: bool = False):
         """
         "Shows" the bottom menu in the middle panel by creating it.
         :return: None
@@ -308,8 +352,8 @@ class MidPanel:
             if i % 2 == 0:
                 # add padding frames between the two buttons
                 tk.Frame(b_menu).grid(column=i, row=0)
-        ttk.Button(b_menu, text="Cancel", command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
-        ttk.Button(b_menu, text="Save", command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+        tk.Button(b_menu, text="Cancel", width=7, command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        tk.Button(b_menu, text="Save", width=7, command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
         for c in b_menu.winfo_children():
             if not active and c.winfo_class() != "Frame":
                 c['state'] = "disabled"
@@ -329,12 +373,12 @@ class MidPanel:
 
     def send_change(self, key: str):
         s_var = self._form_vars.get(key).get()
-        #print(key)
         self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
 
     def cancel(self):
         self.clear()
         self._label.set("")
+        self._left_panel.activate_nav_menu("active")
 
     def save(self):
         if self._form is None:
@@ -343,6 +387,7 @@ class MidPanel:
             self.send_change(k)
         self._left_panel.add_fin_obj(self._form.get_fin_obj())
         self.reset_panel()
+        self._left_panel.activate_nav_menu("active")
 
     def hide_bottom_menu(self):
         """
