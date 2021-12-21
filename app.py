@@ -53,7 +53,7 @@ class LeftPanel:
 
     def create_nav_menu(self) -> Frame:
         """
-        Creates the menu for the left panel. Allows switching between different finance objects.
+        Creates the menu for the left panel. Allows switching between different finance objects. Called once at start.
         :return: The Frame object representing the navigation menu.
         """
         nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
@@ -73,7 +73,7 @@ class LeftPanel:
     def create_drawer(self) -> Canvas:
         """
         Creates a scrollable drawer that will hold the different items based on selected scenario. Loans, incomes, scenarios,
-        taxes, expenses, for example.
+        taxes, expenses, for example. Called once at start.
         :return: itself, a tk.Canvas object.
         """
         parent = tk.Canvas(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
@@ -90,6 +90,7 @@ class LeftPanel:
     def create_bottom_menu(self):
         """
         Creates the bottom menu for the drawer. Has buttons to manipulate items in the drawer: New, Edit, and Delete.
+        Called once at start.
         :return: itself, a tk.Frame object.
         """
         parent = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)
@@ -111,9 +112,11 @@ class LeftPanel:
 
     def populate(self) -> None:
         """
-        Populates the drawer with a list of all financial objects of the given context. Called when context changes.
+        Populates the drawer with a list of all financial objects of the given context. Called when context changes or
+        when returning from mid panel.
         :return: Nothing.
         """
+        self._drawer_button_sel = None
         for c in self._drawer.winfo_children():
             c.destroy()
         fin_list = self._context_vars.get(self.get_context())[1]
@@ -228,19 +231,24 @@ class LeftPanel:
         :param fin_obj: The new financial object to be added to the list.
         :return: Nothing.
         """
+        context = ""
         if isinstance(fin_obj, Loan):
-            fin_list = self._context_vars.get("loans")[1]
+            context = "loans"
         elif isinstance(fin_obj, Job):
-            fin_list = self._context_vars.get("jobs")[1]
+            context = "jobs"
         elif isinstance(fin_obj, Expenses):
-            fin_list = self._context_vars.get("expenses")[1]
+            context = "expenses"
         elif isinstance(fin_obj, TaxBracket):
-            fin_list = self._context_vars.get("taxes")[1]
+            context = "taxes"
         elif isinstance(fin_obj, Scenario):
-            fin_list = self._context_vars.get("scenarios")[1]
+            context = "scenarios"
 
+        fin_list = self._context_vars.get(context)[1]
         if fin_obj not in fin_list:
             fin_list.append(fin_obj)
+
+        save_all({context: fin_list})
+
 
         self.populate()
 
@@ -310,6 +318,7 @@ class MidPanel:
         self._bottom_menu = b_menu
 
     def populate(self, active=False, obj=None):
+        print("populating")
         self.reset_panel()
         context = self._left_panel.get_context()
 
@@ -366,6 +375,7 @@ class MidPanel:
         self.create_bottom_menu(active)
 
     def reset_panel(self):
+        print("reset_panel")
         for c in self.detail_panel.winfo_children():
             c.destroy()
             self._form = None
@@ -377,6 +387,7 @@ class MidPanel:
         :param state: active by default.
         :return: Nothing.
         """
+        print("activate")
         if self._bottom_menu is None:
             return
         for c in self._bottom_menu.winfo_children():
@@ -387,25 +398,31 @@ class MidPanel:
                 c['state'] = state
 
     def send_change(self, key: str):
+        print("send change")
         s_var = self._form_vars.get(key).get()
         self._form_buffer.update({key: s_var})
         #self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
 
     def cancel(self):
+        print("cancel")
         self.clear()
         self._label.set("")
         self._left_panel.activate_nav_menu("active")
-        self._left_panel.drawer_button_click(None, None)
+        self._left_panel.populate()
 
 
     #TODO change this to call into fin objects update method and send the buffered changes.
     def save(self):
+        print("save")
         if self._form is None:
             return
         for k in self._form_vars.keys():
             self.send_change(k)
-        self._left_panel.add_fin_obj(self._form.get_fin_obj())
+        fin_obj = self._form.get_fin_obj()
+        fin_obj.update(self._form_buffer)
+        self._left_panel.add_fin_obj(fin_obj)
         self.reset_panel()
+        self._left_panel.populate()
         self._left_panel.activate_nav_menu("active")
 
     def hide_bottom_menu(self):
@@ -413,6 +430,7 @@ class MidPanel:
         Usually called by clear(). "Hides" the bottom menu for the middle panel by destroying the frame.
         :return: None
         """
+        print("hide bottom menu")
         self._bottom_menu.destroy()
         self._bottom_menu = None
 
@@ -421,6 +439,7 @@ class MidPanel:
         Clears the context from the middle panel.
         :return: None
         """
+        print("clear")
         for c in self.detail_panel.winfo_children():
             c.destroy()
         self.hide_bottom_menu()

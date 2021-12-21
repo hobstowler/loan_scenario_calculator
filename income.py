@@ -15,7 +15,7 @@ class FinanceObj:
         """
         self._name = name
         self._desc = desc
-        self._type = "FibObj"
+        self._type = "FinObj"
         self._data = {}
 
     def set_name(self, new_name: str) -> bool:
