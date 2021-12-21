@@ -16,11 +16,11 @@ class LeftPanel:
         self.frame.grid(column=0, row=0)
 
         # drawer variables
-        self._selected_fin_button = None
-        self._selected_fin_obj = None
+        self._drawer_button_sel = None
+        # self._selected_fin_obj = None
 
         # nav menu variables
-        self._context = "loans"
+        self._nav_button_sel = "loans"
         self._context_vars = {
             "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
             "jobs": ["Select a Job", fin_vars.get("jobs")],
@@ -34,7 +34,7 @@ class LeftPanel:
             "b_sel": "green",
             "b_reset": "SystemButtonFace"
         }
-        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._context)[0])
+        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._nav_button_sel)[0])
         self._nav_label.grid(column=1, row=0, columnspan=5)
 
         # bottom menu variables
@@ -62,9 +62,9 @@ class LeftPanel:
         for name in self._context_vars.keys():
             button = tk.Button(nav_menu, name=name, text=name.capitalize(), width=10)
             button.pack(fill="y")
-            button.bind("<Button-1>", lambda e: self.set_context(e))
-            if name == self._context:
-                self._context = button
+            button.bind("<Button-1>", lambda e, w=button: self.set_context(w))
+            if name == self._nav_button_sel:
+                self._nav_button_sel = button
                 button['bg'] = self._colors.get("b_sel")
 
         return nav_menu
@@ -147,12 +147,12 @@ class LeftPanel:
         :param button: The Frame representing the button.
         :return: Nothing.
         """
-        if self._selected_fin_button is not None:
-            self.recolor_widget_bg(self._selected_fin_button, self._colors.get("b_reset"))
+        if self._drawer_button_sel is not None:
+            self.recolor_widget_bg(self._drawer_button_sel, self._colors.get("b_reset"))
         if button is None:
             return
         self.recolor_widget_bg(button, self._colors.get("b_sel"))
-        self._selected_fin_button = button
+        self._drawer_button_sel = button
         self._mid_panel.populate(False, fin_obj)
 
     def recolor_widget_bg(self, widget, color: str) -> None:
@@ -176,20 +176,22 @@ class LeftPanel:
         else:
             self._del_button['state'] = "disabled"
 
-    def set_context(self, event):
-        widget = event.widget
-        context = widget.winfo_name()
-        if context == self.get_context() or widget['state'] == "disabled":
+    def set_context(self, widget: tk.Button):
+        if widget.winfo_name() == self.get_context() or widget['state'] == "disabled":
             return
-        self.recolor_widget_bg(self._context, self._colors.get("b_reset"))
+
+        # resets the current selection and sets the selected color for the new selection
+        self.recolor_widget_bg(self._nav_button_sel, self._colors.get("b_reset"))
         self.recolor_widget_bg(widget, self._colors.get("b_sel"))
-        self._selected_fin_button = None
-        self._context = widget
-        self._nav_label['text'] = self._context_vars.get(self.get_context())[0]
+
+        self._drawer_button_sel = None
+        self._nav_button_sel = widget
+        self._nav_label['text'] = self._context_vars.get(widget.winfo_name())[0]
+        self._mid_panel.reset_panel()
         self.populate()
 
     def get_context(self) -> str:
-        return self._context.winfo_name()
+        return self._nav_button_sel.winfo_name()
 
     def new(self):
         self.drawer_button_click(None, None)
@@ -205,19 +207,19 @@ class LeftPanel:
 
     def activate_drawer(self, state="disabled"):
         for c in self._drawer.winfo_children():
-            if isinstance(c, tk.Frame):
+            if not isinstance(c, tk.Frame):
                 c['state'] = state
 
     #TODO disable left panel
     def edit(self):
-        if self._selected_fin_button is None:
+        if self._drawer_button_sel is None:
             print("nothing is selected")
             return
         self._mid_panel.activate()
         self.activate_nav_menu()
 
     def delete(self):
-        self._selected_fin_button
+        self._drawer_button_sel
 
     # Can this be done iteratively?
     def add_fin_obj(self, fin_obj: FinanceObj) -> None:
@@ -243,6 +245,11 @@ class LeftPanel:
         self.populate()
 
     def set_mid_panel(self, mid: Frame) -> None:
+        """
+        Used during initialization of app to set a reference to the mid panel.
+        :param mid: The mid panel for the application.
+        :return: Nothing.
+        """
         self._mid_panel = mid
 
 
@@ -264,6 +271,9 @@ class MidPanel:
         self._bottom_menu = None
         self._left_panel = None
 
+        # buffer for changes on form.
+        self._form_buffer = {}
+
         self._form_vars = {}
 
     def create_new_form(self) -> DetailForm:
@@ -279,11 +289,25 @@ class MidPanel:
         if context == "taxes":
             return DetailForm(TaxBracket("new tax bracket", "new tax bracket"))
 
-    def reset_panel(self):
-        for c in self.detail_panel.winfo_children():
-            c.destroy()
-            self._form = None
-            self._form_vars.clear()
+    def create_bottom_menu(self, active: bool = False):
+        """
+        "Shows" the bottom menu in the middle panel by creating it.
+        :return: None
+        """
+        b_menu = tk.Frame(self.frame, name="bottom_menu")
+        b_menu.grid(column=0, row=2, sticky=N + W + S + E)
+        for i in range(5):
+            b_menu.columnconfigure(i, weight=1)
+            if i % 2 == 0:
+                # add padding frames between the two buttons
+                tk.Frame(b_menu).grid(column=i, row=0)
+        tk.Button(b_menu, text="Cancel", width=7, command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
+        tk.Button(b_menu, text="Save", width=7, command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
+        for c in b_menu.winfo_children():
+            if not active and c.winfo_class() != "Frame":
+                c['state'] = "disabled"
+
+        self._bottom_menu = b_menu
 
     def populate(self, active=False, obj=None):
         self.reset_panel()
@@ -330,6 +354,7 @@ class MidPanel:
                 elif tk_type == "Space":
                     tk.Frame(panel, height=10).grid(row=i, column=j, columnspan=col_span)
                 elif tk_type == "Combo":
+                    self._form_vars.update({name: s})
                     combo = ttk.Combobox(panel, text=text)
                     combo.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
                     combo['values'] = form[i][j][4]
@@ -340,46 +365,40 @@ class MidPanel:
 
         self.create_bottom_menu(active)
 
-    def create_bottom_menu(self, active: bool = False):
-        """
-        "Shows" the bottom menu in the middle panel by creating it.
-        :return: None
-        """
-        b_menu = tk.Frame(self.frame, name="bottom_menu")
-        b_menu.grid(column=0, row=2, sticky=N + W + S + E)
-        for i in range(5):
-            b_menu.columnconfigure(i, weight=1)
-            if i % 2 == 0:
-                # add padding frames between the two buttons
-                tk.Frame(b_menu).grid(column=i, row=0)
-        tk.Button(b_menu, text="Cancel", width=7, command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
-        tk.Button(b_menu, text="Save", width=7, command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
-        for c in b_menu.winfo_children():
-            if not active and c.winfo_class() != "Frame":
-                c['state'] = "disabled"
+    def reset_panel(self):
+        for c in self.detail_panel.winfo_children():
+            c.destroy()
+            self._form = None
+            self._form_vars.clear()
 
-        self._bottom_menu = b_menu
-
-    def activate(self, active=True):
+    def activate(self, state="active") -> None:
+        """
+        Used to activate the mid panel to allow editing of the loaded form.
+        :param state: active by default.
+        :return: Nothing.
+        """
         if self._bottom_menu is None:
             return
-        if active:
-            for c in self._bottom_menu.winfo_children():
-                if c.winfo_class() != "Frame":
-                    c['state'] = "active"
-            for c in self.detail_panel.winfo_children():
-                if c.winfo_class() != "Frame":
-                    c['state'] = "active"
+        for c in self._bottom_menu.winfo_children():
+            if c.winfo_class() != "Frame":
+                c['state'] = state
+        for c in self.detail_panel.winfo_children():
+            if c.winfo_class() != "Frame":
+                c['state'] = state
 
     def send_change(self, key: str):
         s_var = self._form_vars.get(key).get()
-        self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
+        self._form_buffer.update({key: s_var})
+        #self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
 
     def cancel(self):
         self.clear()
         self._label.set("")
         self._left_panel.activate_nav_menu("active")
+        self._left_panel.drawer_button_click(None, None)
 
+
+    #TODO change this to call into fin objects update method and send the buffered changes.
     def save(self):
         if self._form is None:
             return
@@ -407,6 +426,11 @@ class MidPanel:
         self.hide_bottom_menu()
 
     def set_left_panel(self, left: Frame) -> None:
+        """
+        Used during initialization of the app to set a reference to the left panel.
+        :param left: The left panel for the app.
+        :return: Nothing.
+        """
         self._left_panel = left
 
 

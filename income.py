@@ -66,6 +66,15 @@ class FinanceObj:
     def type(self) -> str:
         return self._type
 
+    def update(self, data: dict):
+        for k in data.keys():
+            if k == "name":
+                self._name = data.get(k)
+            elif k == "desc":
+                self._desc = data.get(k)
+            else:
+                self._data.update({k: data.get(k)})
+
 
 #TODO assert instead of if statements
 #TODO add support for yearly expenses
