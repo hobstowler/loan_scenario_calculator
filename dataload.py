@@ -16,7 +16,7 @@ loan_file_name = "loans.p"
 
 def load_all() -> dict:
     """
-    Returns all the saved data as a dictionary. Calls into each separate load method.
+    Returns all the saved data as a dictionary. Calls into each separate load method. Called once at app start.
     :return: Saved data.
     """
     print("loading all")
@@ -69,6 +69,7 @@ def load_incomes() -> list:
     """
     file = data_file_path + incomes_file_name
     if exists(file):
+
         return pickle.load(open(file, "rb"))
     return []
 

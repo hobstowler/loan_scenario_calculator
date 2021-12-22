@@ -12,6 +12,11 @@ from forms import *
 
 class LeftPanel:
     def __init__(self, parent: tk.Tk, fin_vars: dict):
+        """
+        Initializes the Left Panel for the app. Creates a navigation menu, drawer, and bottom menu for the drawer.
+        :param parent: The root for the application.
+        :param fin_vars: The financial objects from the loaded data.
+        """
         self.frame = tk.Frame(parent, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
