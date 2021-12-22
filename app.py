@@ -81,9 +81,8 @@ class LeftPanel:
         taxes, expenses, for example. Called once at start.
         :return: itself, a tk.Canvas object.
         """
-        parent = tk.Canvas(self.frame, borderwidth=2, relief='sunken', width=300, height=500)
+        parent = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
         parent.grid(column=1, row=1, sticky=N + W + S + E)
-        parent.grid_propagate(False)
         parent.pack_propagate(False)
 
         scroll = tk.Scrollbar(self.frame, command=parent.yview())
@@ -128,7 +127,7 @@ class LeftPanel:
         if fin_list is None:
             return
         for item in fin_list:
-            frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40, width=300)
+            frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40)
             frame.pack(fill="x", ipady=2, ipadx=2)
             frame.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
 
@@ -145,7 +144,7 @@ class LeftPanel:
             for c in frame.winfo_children():
                 c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
 
-        self._drawer.configure(scrollregion=self._drawer.bbox("all"))
+        self._drawer.configure(scrollregion=(0,0,300,len(fin_list*44)))
 
     def drawer_button_click(self, fin_obj, button: Frame) -> None:
         """
@@ -276,7 +275,7 @@ class MidPanel:
         detail_label = tk.Label(self.frame, name="detail_label", textvariable=self._label, width=20)
         detail_label.grid(column=0, row=0, sticky=N+S+W+E, pady=(1, 0))
         detail_label.grid_propagate(False)
-        self._label.set("DETAIL")
+        self._label.set("")
 
         self.detail_panel = tk.Frame(self.frame, name="detail_panel", borderwidth=2, relief='sunken', width=300, height=500)
         self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
@@ -289,6 +288,7 @@ class MidPanel:
 
         self._form_vars = {}
 
+    # TODO there is a better way to do this.
     def create_new_form(self) -> DetailForm:
         context = self._left_panel.get_context()
         if context == "scenarios":
@@ -322,9 +322,15 @@ class MidPanel:
 
         self._bottom_menu = b_menu
 
-    def populate(self, active=False, obj=None):
+    def populate(self, active=False, obj=None) -> None:
+        """
+        Populates the middle panel with a form corresponding to the selected financial object on the left panel.
+        :param active: If true, the panel loads in an editable state.
+        :param obj: Used to differentiate between a new object and existing. None if new object.
+        :return: Nothing.
+        """
         print("populating")
-        self.reset_panel()
+        self.reset_panel(False)
         context = self._left_panel.get_context()
 
         panel = self.detail_panel
@@ -357,7 +363,7 @@ class MidPanel:
                         s.set(obj.get_data().get(name))
                     self._form_vars.update({name: s})
                     e = ttk.Entry(panel, textvariable=s, name=name)
-                    e.bind("<FocusOut>", lambda e, t=name: self.send_change(t))
+                    e.bind("<FocusOut>", lambda e, t=name: self.buffer_change(t))
                     e.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
                 elif tk_type == "CheckButton":
                     var = IntVar()
@@ -379,12 +385,23 @@ class MidPanel:
 
         self.create_bottom_menu(active)
 
-    def reset_panel(self):
+    def reset_panel(self, clear=True) -> None:
+        """
+        Resets the middle panel. If the panel should be empty at the end, clear should be True.
+        :param clear: Determines whether to fully clear the panel or not.
+        :return: Nothing
+        """
         print("reset_panel")
         for c in self.detail_panel.winfo_children():
             c.destroy()
-            self._form = None
-            self._form_vars.clear()
+        self._form = None
+        self._form_vars.clear()
+        self._form_buffer = {}
+        if clear:
+            self._left_panel.activate_nav_menu("active")
+            self._left_panel.populate()
+            self.destroy_bottom_menu()
+            self._label.set("")
 
     def activate(self, state="active") -> None:
         """
@@ -402,52 +419,56 @@ class MidPanel:
             if c.winfo_class() != "Frame":
                 c['state'] = state
 
-    def send_change(self, key: str):
+    def buffer_change(self, key: str) -> None:
+        """
+        Sends a form change to a buffer dict. When save is clicked, buffer writes out to the financial object and saves
+        to file.
+        :param key: The name of the field used as the key.
+        :return: Nothing.
+        """
         print("send change")
         s_var = self._form_vars.get(key).get()
+        if s_var.isnumeric():
+            if len(s_var) > 0 and s_var == "0":
+                pass
         self._form_buffer.update({key: s_var})
         #self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
 
-    def cancel(self):
+    def cancel(self) -> None:
+        """
+        Cancel button for the mid panel. Resets the form and leaves it blank.
+        :return: Nothing.
+        """
         print("cancel")
-        self.clear()
-        self._label.set("")
-        self._left_panel.activate_nav_menu("active")
-        self._left_panel.populate()
+        self.reset_panel()
 
 
     #TODO change this to call into fin objects update method and send the buffered changes.
-    def save(self):
+    def save(self) -> None:
+        """
+        Save button for the mid panel. Writes all buffer data to the financial object and clears the panel.
+        :return: Nothing.
+        """
         print("save")
         if self._form is None:
             return
         for k in self._form_vars.keys():
-            self.send_change(k)
+            self.buffer_change(k)
         fin_obj = self._form.get_fin_obj()
         fin_obj.update(self._form_buffer)
         self._left_panel.add_fin_obj(fin_obj)
         self.reset_panel()
-        self._left_panel.populate()
-        self._left_panel.activate_nav_menu("active")
 
-    def hide_bottom_menu(self):
+    def destroy_bottom_menu(self):
         """
         Usually called by clear(). "Hides" the bottom menu for the middle panel by destroying the frame.
         :return: None
         """
         print("hide bottom menu")
+        if self._bottom_menu is None:
+            return
         self._bottom_menu.destroy()
         self._bottom_menu = None
-
-    def clear(self):
-        """
-        Clears the context from the middle panel.
-        :return: None
-        """
-        print("clear")
-        for c in self.detail_panel.winfo_children():
-            c.destroy()
-        self.hide_bottom_menu()
 
     def set_left_panel(self, left: Frame) -> None:
         """
