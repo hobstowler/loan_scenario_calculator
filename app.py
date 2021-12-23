@@ -494,6 +494,7 @@ def main():
     root = Tk()
     root.title("Loan Calculator")
 
+    # load the data
     vars = load_all()
 
     # create the three main panels.
@@ -502,13 +503,6 @@ def main():
     right_panel = RightPanel(root)
     left_panel.set_mid_panel(mid_panel)
     mid_panel.set_left_panel(left_panel)
-
-    # load the data
-    load_loans()
-    load_jobs()
-    load_expenses()
-    load_incomes()
-    load_scenarios()
 
     root.mainloop()
 

@@ -152,7 +152,12 @@ class Expenses(FinanceObj):
         return False
 
 
-class Job(FinanceObj):
+class Income(FinanceObj):
+    def __init__(self, name, desc=""):
+        super(Income, self).__init__(name, desc)
+
+
+class Job(Income):
     def __init__(self, name, desc="") -> None:
         super(Job, self).__init__(name, desc)
         self._type = "Job"
