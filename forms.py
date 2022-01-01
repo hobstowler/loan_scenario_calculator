@@ -7,6 +7,7 @@ from loans import *
 from tkinter import *
 from dataload import *
 
+
 class DetailForm:
     """
     Provides a template for editing Finance Objects in the app window. Also handles data transfer from app to Object
@@ -26,7 +27,19 @@ class DetailForm:
             "Scenario Editor",
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
-            [["Space", "", "", 3]]
+            [["Space", "", "", 3]],
+            [["Button", "Jobs", "jobs", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Incomes", "incomes", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Expenses", "expenses", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Mortgages", "mortgages", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Loans", "loans", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Tax Brackets", "tax_brackets", 1]]
+
         ]})
         # Jobs Form
         self._forms.update({"jobs": [
@@ -34,9 +47,18 @@ class DetailForm:
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]],
-            [["Label", "Salary", "", 1], ["Entry", "", "", 2]],
-            [["Label", "Pay Frequency", "", 1], ["Combo", "", "pay_freq", 2,
-                                                 ["Annual", "Monthly", "Bi-Weekly", "Weekly", "Hourly"], 0]]
+            [["Label", "Salary", "", 1], ["Entry", "", "salary", 2]],
+            [["Label", "Pay Frequency", "", 1], ["Combo", "", "salary_freq", 2,
+                                                 ["Annual", "Monthly", "Bi-Weekly", "Weekly", "Hourly"], 0]],
+            [["Space", "", "", 3]],
+            [["Label", "401k Contribution", "", 1], ["Entry", "", "401k", 2]],
+            [["Label", "Roth 401k Contribution", "", 1], ["Entry", "", "roth_401k", 2]],
+            [["Space", "", "", 3]],
+            [["Label", "Deductions", "", 1]],
+            [["Button", "Pre-Tax Deductions", "pre_tax_expenses", 1],
+             ["Button", "Post-Tax Deductions", "post_tax_expenses", 1]],
+            [["Space", "", "", 3]],
+            [["Button", "Tax Brackets", "tax_brackets", 1]]
         ]})
         # Loans Form
         self._forms.update({"loans": [

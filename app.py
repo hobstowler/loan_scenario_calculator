@@ -40,7 +40,8 @@ class LeftPanel:
             "b_reset": "SystemButtonFace"
         }
         self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._nav_button_sel)[0])
-        self._nav_label.grid(column=1, row=0, columnspan=5)
+        self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1,0))
+        self._nav_label.grid_propagate(False)
 
         # bottom menu variables
         self._del_button = None
@@ -63,7 +64,7 @@ class LeftPanel:
         :return: The Frame object representing the navigation menu.
         """
         nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
-        nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(20, 0))
+        nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
 
         for name in self._context_vars.keys():
             button = tk.Button(nav_menu, name=name, text=name.capitalize(), width=10)
@@ -84,11 +85,11 @@ class LeftPanel:
         """
         parent = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
         parent.grid(column=1, row=1, sticky=N + W + S + E)
-        parent.pack_propagate(False)
+        parent.grid_propagate(False)
 
-        scroll = tk.Scrollbar(self.frame, command=parent.yview())
-        scroll.grid(column=2, row=1, sticky=N+S)
-        parent.configure(yscrollcommand=scroll.set)
+        #scroll = tk.Scrollbar(self.frame, command=parent.yview())
+        #scroll.grid(column=2, row=1, sticky=N+S)
+        #parent.configure(yscrollcommand=scroll.set)
 
         return parent
 
@@ -219,7 +220,11 @@ class LeftPanel:
         self._mid_panel.activate()
         self.activate("disabled")
 
-    def edit(self):
+    def edit(self) -> None:
+        """
+        Method called when the "Edit" button is clicked in the Left Panel
+        :return:  Nothing
+        """
         if not self._active:
             return
         if self._drawer_button_sel is None:
@@ -324,11 +329,12 @@ class MidPanel:
         detail_label.grid_propagate(False)
         self._label.set("")
 
-        self.detail_panel = tk.Frame(self.frame, name="detail_panel", borderwidth=2, relief='sunken', width=300, height=500)
+        self.detail_panel = tk.Frame(self.frame, name="detail_panel", borderwidth=2, relief='groove', width=300, height=500)
         self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
         self.detail_panel.grid_propagate(False)
         self._bottom_menu = None
         self._left_panel = None
+        self._right_panel = None
 
         # buffer for changes on form.
         self._form_buffer = {}
@@ -431,6 +437,12 @@ class MidPanel:
                     combo = ttk.Combobox(panel, text=text, textvariable=s)
                     combo.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
                     combo['values'] = form[i][j][4]
+                elif tk_type == "Button":
+                    button = tk.Button(panel, text=text)
+                    button.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
+        panel.columnconfigure(0, weight=0)
+        panel.columnconfigure(1, weight=2)
+        panel.columnconfigure(2, weight=1)
         for c in panel.winfo_children():
             c.grid(pady=(1, 1))
             if c.winfo_class() != "Frame":
@@ -532,6 +544,14 @@ class MidPanel:
         """
         self._left_panel = left
 
+    def set_right_panel(self, right: Frame) -> None:
+        """
+        Used during initialization of the app to set a reference to the right panel.
+        :param right: The right panel for the app.
+        :return: Nothing.
+        """
+        self._right_panel = right
+
 
 # TODO implement!
 class RightPanel:
@@ -555,8 +575,11 @@ def main():
     left_panel = LeftPanel(root, fin_vars)
     mid_panel = MidPanel(root)
     right_panel = RightPanel(root)
+
+    #set panel relationships
     left_panel.set_mid_panel(mid_panel)
     mid_panel.set_left_panel(left_panel)
+    mid_panel.set_right_panel(right_panel)
 
     root.mainloop()
 
