@@ -34,14 +34,16 @@ class DetailForm:
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]],
-            [["Label", "Salary", "", 1], ["Entry", "", "", 2]]
+            [["Label", "Salary", "", 1], ["Entry", "", "", 2]],
+            [["Label", "Pay Frequency", "", 1], ["Combo", "", "pay_freq", 2,
+                                                 ["Annual", "Monthly", "Bi-Weekly", "Weekly", "Hourly"], 0]]
         ]})
         # Loans Form
         self._forms.update({"loans": [
             "Loan Editor",
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
-            [["Label", "Loan Type", "", 1], ["Combo", "", "loan type", 2, ["Mortgage", "Auto", "Personal"]]],
+            [["Label", "Loan Type", "", 1], ["Combo", "", "loan type", 2, ["Mortgage", "Auto", "Personal"], -1]],
             [["Space", "", "", 3]],
             [["Label", "Total Amount", "", 1], ["Entry", "", "total", 2]],
             [["Label", "Down Payment", "", 1], ["Entry", "", "down payment", 1], ["CheckButton", "Percentage", "", 1]],

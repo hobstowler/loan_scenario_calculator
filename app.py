@@ -25,7 +25,7 @@ class LeftPanel:
         # self._selected_fin_obj = None
 
         # nav menu variables
-        self._nav_button_sel = "loans"
+        self._nav_button_sel = "scenarios"
         self._context_vars = {
             "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
             "jobs": ["Select a Job", fin_vars.get("jobs")],
@@ -53,6 +53,7 @@ class LeftPanel:
 
         # Populates the drawer with the initial context
         self.populate()
+        self._active = True
 
         #TODO implement scroll bar. may need to be part of the refresh
 
@@ -154,13 +155,16 @@ class LeftPanel:
         :param button: The Frame representing the button.
         :return: Nothing.
         """
+        if not self._active:
+            return
         if self._drawer_button_sel is not None:
             self.recolor_widget_bg(self._drawer_button_sel, self._colors.get("b_reset"))
         if button is None:
             return
         self.recolor_widget_bg(button, self._colors.get("b_sel"))
         self._drawer_button_sel = button
-        self._mid_panel.populate(False, fin_obj)
+        self._mid_panel.populate(fin_obj)
+        self.reset_delete_button()
 
     def recolor_widget_bg(self, widget, color: str) -> None:
         """
@@ -173,17 +177,14 @@ class LeftPanel:
         for c in widget.winfo_children():
             c['bg'] = color
 
-    def toggle_delete(self) -> None:
+    def set_context(self, widget: tk.Button) -> None:
         """
-        Toggles the delete button active state.
-        :return: Nothing.
+        Sets the context for the Left Panel view. Called when button on Nav Menu is clicked.
+        :param widget: The button that was clicked.
+        :return: Nothing
         """
-        if self._del_button['state'] == "disabled":
-            self._del_button['state'] = "active"
-        else:
-            self._del_button['state'] = "disabled"
-
-    def set_context(self, widget: tk.Button):
+        if not self._active:
+            return
         if widget.winfo_name() == self.get_context() or widget['state'] == "disabled":
             return
 
@@ -191,42 +192,88 @@ class LeftPanel:
         self.recolor_widget_bg(self._nav_button_sel, self._colors.get("b_reset"))
         self.recolor_widget_bg(widget, self._colors.get("b_sel"))
 
+        # clean up variables
         self._drawer_button_sel = None
         self._nav_button_sel = widget
         self._nav_label['text'] = self._context_vars.get(widget.winfo_name())[0]
         self._mid_panel.reset_panel()
         self.populate()
+        self.reset_delete_button()
 
     def get_context(self) -> str:
+        """
+        Returns the current view context of the Left Panel.
+        :return: The current context.
+        """
         return self._nav_button_sel.winfo_name()
 
-    def new(self):
+    def new(self) -> None:
+        """
+        Method called when the "New" button is clicked in the Left Panel
+        :return: Nothing.
+        """
+        if not self._active:
+            return
         self.drawer_button_click(None, None)
-        self._mid_panel.populate(True)
-        self.activate_nav_menu()
-        self.activate_drawer()
+        self._mid_panel.populate()
+        self._mid_panel.activate()
+        self.activate("disabled")
 
-    # TODO button color does not come back on active state
-    def activate_nav_menu(self, state="disabled"):
-        for c in self._nav_menu.winfo_children():
-            if isinstance(c, tk.Button):
-                c['state'] = state
-
-    def activate_drawer(self, state="disabled"):
-        for c in self._drawer.winfo_children():
-            if not isinstance(c, tk.Frame):
-                c['state'] = state
-
-    #TODO disable left panel
     def edit(self):
+        if not self._active:
+            return
         if self._drawer_button_sel is None:
             print("nothing is selected")
             return
         self._mid_panel.activate()
-        self.activate_nav_menu()
+        self.activate("disabled")
 
     def delete(self):
         self._drawer_button_sel
+
+    def toggle_delete(self) -> None:
+        """
+        Toggles the delete button active state.
+        :return: Nothing.
+        """
+        if not self._active:
+            self.reset_delete_button()
+            return
+        if self._del_button['state'] == "disabled":
+            self._del_button['state'] = "active"
+        else:
+            self._del_button['state'] = "disabled"
+
+    def reset_delete_button(self, state="disabled") -> None:
+        """
+        Sets the state of the delete button. Disabled by default.
+        :param state: The state to change to. Disabled by default.
+        :return: None
+        """
+        self._del_button['state'] = state
+        for c in self._bottom_menu.winfo_children():
+            if c.winfo_class() == "Checkbutton":
+                c.deselect() if state == "disabled" else c.select()
+
+    def activate(self, state="active"):
+        if state == "active":
+            self._active = True
+        else:
+            self._active = False
+
+        for c in self._nav_menu.winfo_children():
+            if isinstance(c, tk.Button):
+                c['state'] = state
+        for c in self._drawer.winfo_children():
+            if not isinstance(c, tk.Frame):
+                c['state'] = state
+            else:
+                for fc in c.winfo_children():
+                    fc['state'] = state
+        for c in self._bottom_menu.winfo_children():
+            c['state'] = state
+
+        self.reset_delete_button()
 
     # Can this be done iteratively?
     def add_fin_obj(self, fin_obj: FinanceObj) -> None:
@@ -322,7 +369,7 @@ class MidPanel:
 
         self._bottom_menu = b_menu
 
-    def populate(self, active=False, obj=None) -> None:
+    def populate(self, obj=None) -> None:
         """
         Populates the middle panel with a form corresponding to the selected financial object on the left panel.
         :param active: If true, the panel loads in an editable state.
@@ -374,16 +421,22 @@ class MidPanel:
                 elif tk_type == "Space":
                     tk.Frame(panel, height=10).grid(row=i, column=j, columnspan=col_span)
                 elif tk_type == "Combo":
+                    s = StringVar()
+                    s_var = obj.get_data().get(name)
+                    index = form[i][j][5]
+                    if s_var is None and index >= 0:
+                        s_var = form[i][j][4][index]
+                    s.set(s_var)
                     self._form_vars.update({name: s})
-                    combo = ttk.Combobox(panel, text=text)
+                    combo = ttk.Combobox(panel, text=text, textvariable=s)
                     combo.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
                     combo['values'] = form[i][j][4]
         for c in panel.winfo_children():
             c.grid(pady=(1, 1))
-            if not active and c.winfo_class() != "Frame":
+            if c.winfo_class() != "Frame":
                 c['state'] = "disabled"
 
-        self.create_bottom_menu(active)
+        self.create_bottom_menu()
 
     def reset_panel(self, clear=True) -> None:
         """
@@ -398,7 +451,7 @@ class MidPanel:
         self._form_vars.clear()
         self._form_buffer = {}
         if clear:
-            self._left_panel.activate_nav_menu("active")
+            self._left_panel.activate()
             self._left_panel.populate()
             self.destroy_bottom_menu()
             self._label.set("")
@@ -409,8 +462,9 @@ class MidPanel:
         :param state: active by default.
         :return: Nothing.
         """
-        print("activate")
+        print("activate mid panel")
         if self._bottom_menu is None:
+            print("nothing is selected")
             return
         for c in self._bottom_menu.winfo_children():
             if c.winfo_class() != "Frame":
@@ -495,10 +549,10 @@ def main():
     root.title("Loan Calculator")
 
     # load the data
-    vars = load_all()
+    fin_vars = load_all()
 
     # create the three main panels.
-    left_panel = LeftPanel(root, vars)
+    left_panel = LeftPanel(root, fin_vars)
     mid_panel = MidPanel(root)
     right_panel = RightPanel(root)
     left_panel.set_mid_panel(mid_panel)
@@ -506,6 +560,5 @@ def main():
 
     root.mainloop()
 
+
 main()
-
-

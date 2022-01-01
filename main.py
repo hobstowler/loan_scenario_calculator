@@ -14,6 +14,14 @@ class Scenario(FinanceObj):
         self._loans = set({})
         self._tax_bracket = set({})
 
+    def calculate(self):
+        monthly_income = 0
+        monthly_expense = 0
+        incomes = [i.get_income() for i in self._incomes]
+        for income in incomes:
+            monthly_income += income.get_income()
+
+
     def add_job(self, job: Job) -> bool:
         if job not in self._jobs:
             self._jobs.add(job)
