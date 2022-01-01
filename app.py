@@ -4,7 +4,7 @@
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from main import *
+from scenario import *
 from income import *
 from dataload import *
 from forms import *
@@ -85,7 +85,7 @@ class LeftPanel:
         """
         parent = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
         parent.grid(column=1, row=1, sticky=N + W + S + E)
-        parent.grid_propagate(False)
+        parent.pack_propagate(False)
 
         #scroll = tk.Scrollbar(self.frame, command=parent.yview())
         #scroll.grid(column=2, row=1, sticky=N+S)

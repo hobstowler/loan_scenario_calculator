@@ -22,6 +22,10 @@ class DetailForm:
 
     #TODO forms by type
     def create_forms(self) -> None:
+        """
+        TYPE | LABEL | ID | COLUMN SPAN | MISC
+        :return:
+        """
         # Scenarios Form
         self._forms.update({"scenarios": [
             "Scenario Editor",
