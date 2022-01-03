@@ -223,7 +223,7 @@ class LeftPanel:
     def edit(self) -> None:
         """
         Method called when the "Edit" button is clicked in the Left Panel
-        :return:  Nothing
+        :return: Nothing
         """
         if not self._active:
             return
@@ -260,7 +260,12 @@ class LeftPanel:
             if c.winfo_class() == "Checkbutton":
                 c.deselect() if state == "disabled" else c.select()
 
-    def activate(self, state="active"):
+    def activate(self, state="active") -> None:
+        """
+        Activates/Deactivates the Left Panel. Typically called when focus is returned from editing or new fin obj flow.
+        :param state: The new state of the window.
+        :return: Nothing.
+        """
         if state == "active":
             self._active = True
         else:
@@ -280,7 +285,7 @@ class LeftPanel:
 
         self.reset_delete_button()
 
-    # Can this be done iteratively?
+    # TODO Can this be done iteratively?
     def add_fin_obj(self, fin_obj: FinanceObj) -> None:
         """
         Adds a financial object to the appropriate list. Called when saving a new object.
@@ -318,7 +323,15 @@ class LeftPanel:
 
 
 class MidPanel:
+    """
+    Represents the Middle Panel of the applications. Used to display detailed information about a selected financial
+    object and is also used to edit those objects.
+    """
     def __init__(self, parent: tk.Tk):
+        """
+        Initializes the Middle Panel.
+        :param parent: The root of the window.
+        """
         self._form = None
         self.frame = tk.Frame(parent)
         self.frame.grid(column=1, row=0, sticky=N+S)
