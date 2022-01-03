@@ -25,7 +25,7 @@ class LeftPanel:
         # self._selected_fin_obj = None
 
         # nav menu variables
-        self._nav_button_sel = "scenarios"
+        self._nav_button_sel = "jobs"
         self._context_vars = {
             "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
             "jobs": ["Select a Job", fin_vars.get("jobs")],
