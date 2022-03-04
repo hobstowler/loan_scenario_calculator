@@ -2,10 +2,17 @@
 # Date: 12/1/2021
 # Description:
 
-import datetime
 import math
+from datetime import date
 from income import FinanceObj
 from matplotlib import pyplot
+
+
+class ExtraPayment:
+    def __init__(self, start_month, length, amount):
+        self.start = start_month
+        self.end = start_month + length
+        self.amount = amount
 
 
 class Loan(FinanceObj):
@@ -13,6 +20,7 @@ class Loan(FinanceObj):
         super(Loan, self).__init__(name, desc)
         self._type = "Loan"
         self._monthly_payment = 0
+        self._extra_payments = []
 
         self._data.update({"total": 0})
         self._data.update({"rate": 0})
@@ -20,7 +28,32 @@ class Loan(FinanceObj):
         self._data.update({"down payment": 0})
         self._data.update({"principal": 0})
 
-        # self._loan_start = datetime.datetime(2021)
+        self._data.update({"origination": date(2020, 1, 1)})
+        self._data.update({'first payment': date(2020, 2, 1)})
+
+    def set_origination(self, new_year, new_month, new_day=1) -> None:
+        """
+        Sets a new loan origination date. Also updates the first payment to the first day of the next month.
+        :param new_year: The new year of the origination date.
+        :param new_month: The new month of the origination date.
+        :param new_day: The new day of the origination date.
+        :return: Nothing.
+        """
+        origination = self._data.get("origination")
+        first_payment = self._data.get("first payment")
+
+        origination.replace(year=new_year, month=new_month, day=new_day)
+        if new_month == 12:
+            new_month = 1
+            new_year += 1
+        first_payment.replace(year=new_year, month=new_month, day=1)
+
+    def get_first_payment_date(self) -> date:
+        """
+        Returns the first payment date of the loan.
+        :return: The date object with the date of first payment.
+        """
+        return self._data.get("first payment")
 
     def set_total(self, new_total, down_payment=None) -> None:
         """
@@ -42,6 +75,10 @@ class Loan(FinanceObj):
         return self._data.get("total")
 
     def get_principal(self) -> float:
+        """
+        Returns the principal amount of the loan
+        :return:
+        """
         return self._data.get("principal")
 
     def set_rate(self, new_rate):
@@ -98,37 +135,63 @@ class Loan(FinanceObj):
     def get_monthly(self):
         return round(self._monthly_payment, 2)
 
+    def add_extra_payment(self, new_ex_payment: ExtraPayment):
+        if new_ex_payment not in self._extra_payments:
+            self._extra_payments.append(new_ex_payment)
+
     # TO DO: factor in a prorated amount and use the start of the loan
-    def amortization_schedule(self, extra_amount=0) -> dict:
+    def amortization_schedule(self, extra_payments=False) -> list:
         """
-        Calculates the amortization schedule with extra payments for the loan and returns the schedule as a dictionary.
-        @param extra_amount: The amount of extra payment per month
+        Calculates the amortization schedule with extra payments for the loan and returns the schedule as a list.
+        @param extra_payments: The amount of extra payment per month
         @return: The amortization schedule.
         """
         principal = self._data.get("principal")
         monthly_payment = self._monthly_payment
         term = self._data.get("term")
 
+        origination = self._data.get("origination")
+        first_payment = self._data.get("first payment")
+
         schedule = []
-        test = []
-        for i in range(0, term+1):
-            test.append(30000)
         schedule.append(principal)
         print(schedule[0])
         for i in range(1, term + 1):
             interest = self.calc_m_interest(principal)
-            principal = round(principal + interest - monthly_payment - extra_amount, 2)
+            principal = principal + interest - monthly_payment
+            if extra_payments:
+                print("so extra")
+                for e in self._extra_payments:
+                    print(e.start)
+                    if e.start <= i < e.end:
+                        principal -= e.amount
+            if principal < 0:
+                principal = 0
             schedule.append(principal)
             print(schedule[i])
 
-        pyplot.bar(range(0, term + 1), schedule, color='r')
-        pyplot.bar(range(0, term + 1), test, bottom=schedule, color='b')
-        pyplot.xlabel("months")
-        pyplot.ylabel("principal")
+        #pyplot.bar(range(0, term + 1), schedule, color='r')
+        #pyplot.bar(range(0, term + 1), test, bottom=schedule, color='b')
+        #pyplot.xlabel("months")
+        #pyplot.ylabel("principal")
         #pyplot.legend(loc='upper left')
-        pyplot.show()
+        #pyplot.show()
 
         return schedule
+
+    def compare_schedules(self, display_graph=False) -> tuple:
+        schedule_no_extra = self.amortization_schedule()
+        schedule_extra = self.amortization_schedule(True)
+
+        if display_graph:
+            term = self._data.get("term")
+            pyplot.plot(range(term+1), schedule_no_extra, color='r', label="no extra payment")
+            pyplot.plot(range(term+1), schedule_extra, color='b', label="with extra payments")
+            pyplot.xlabel("months")
+            pyplot.ylabel("principal")
+            pyplot.show()
+
+        return schedule_no_extra, schedule_extra
 
 
 class Mortgage(Loan):
@@ -285,4 +348,6 @@ loan.set_term(360)
 loan.set_rate(2.875)
 print(loan.calc_monthly())
 print(loan.calc_m_interest(240000))
-loan.amortization_schedule()
+loan.add_extra_payment(ExtraPayment(5, 24, 1000))
+loan.add_extra_payment(ExtraPayment(60, 24, 1000))
+loan.compare_schedules(True)
