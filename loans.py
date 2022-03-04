@@ -3,29 +3,46 @@
 # Description:
 
 import datetime
+import math
 from income import FinanceObj
+from matplotlib import pyplot
 
 
 class Loan(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
         super(Loan, self).__init__(name, desc)
         self._type = "Loan"
+        self._monthly_payment = 0
 
         self._data.update({"total": 0})
         self._data.update({"rate": 0})
-        self._data.update({"length": 0})
+        self._data.update({"term": 0})
         self._data.update({"down payment": 0})
         self._data.update({"principal": 0})
 
         # self._loan_start = datetime.datetime(2021)
 
-    def set_total(self, new_total):
+    def set_total(self, new_total, down_payment=None) -> None:
         """
-        Sets the total value of the item for which the loan was taken out.
+        Sets the total value of the item for which the loan was taken out. If a down payment is specified, calculates
+        the principal amount for the loan.
+        :param down_payment: Optional. The down payment for the loan.
         :param new_total: The new total value.
         :return: Nothing.
         """
         self._data.update({"total": new_total})
+        if down_payment is not None:
+            self._data.update({"principal": new_total - down_payment})
+
+    def get_total(self) -> float:
+        """
+        Returns the total amount without down payment.
+        @return: The total amount for the loan.
+        """
+        return self._data.get("total")
+
+    def get_principal(self) -> float:
+        return self._data.get("principal")
 
     def set_rate(self, new_rate):
         """
@@ -35,21 +52,6 @@ class Loan(FinanceObj):
         """
         self._data.update({"rate": new_rate})
 
-    def set_length(self, new_length):
-        """
-        Sets the length of the loan in months.
-        :param new_length: New length in months
-        :return: Nothing
-        """
-        self._data.update({"length": new_length})
-
-    def get_amount(self):
-        """
-        Returns the total amount without down payment.
-        @return: The total amount for the loan.
-        """
-        return self._data.get("total")
-
     def get_rate(self):
         """
         Returns the rate for the loan.
@@ -57,12 +59,44 @@ class Loan(FinanceObj):
         """
         return self._data.get("rate")
 
-    def get_length(self):
+    def set_term(self, new_length):
+        """
+        Sets the length of the loan in months.
+        :param new_length: New length in months
+        :return: Nothing
+        """
+        self._data.update({"term": new_length})
+
+    def get_term(self):
         """
         Returns the length of the loan in months.
         @return: The length in months
         """
-        return self._data.get("length")
+        return self._data.get("term")
+
+    def calc_m_interest(self, amount) -> float:
+        """
+        Calculates the monthly interest for a given amount and month.
+        To be called when calculating amortization schedule.
+        :param amount: The principal remaining at the start of the period.
+        :param month: The month for which interest is to be calculated.
+        :return: The amount of interest accrued that month
+        """
+        m_rate = float(self._data.get("rate")) / 100 / 12 # TODO make this work by month
+        return round(amount * m_rate, 2)
+
+    def calc_monthly(self):
+        principal = self._data.get("principal")
+        m_rate = float(self._data.get("rate")) / 100 / 12
+        compound = math.pow(1 + m_rate, self._data.get("term"))
+
+        numer = principal * m_rate * compound
+        denom = compound - 1
+
+        self._monthly_payment = numer / denom
+
+    def get_monthly(self):
+        return round(self._monthly_payment, 2)
 
     # TO DO: factor in a prorated amount and use the start of the loan
     def amortization_schedule(self, extra_amount=0) -> dict:
@@ -72,11 +106,28 @@ class Loan(FinanceObj):
         @return: The amortization schedule.
         """
         principal = self._data.get("principal")
-        schedule = {0: principal}
-        for i in range(1, self._data.get("length") + 1):
-            interest = self._m_interest(principal)
-            principal = round(principal + interest - self._m_payment - extra_amount, 2)
-            schedule.update({i: [principal, interest, extra_amount]})
+        monthly_payment = self._monthly_payment
+        term = self._data.get("term")
+
+        schedule = []
+        test = []
+        for i in range(0, term+1):
+            test.append(30000)
+        schedule.append(principal)
+        print(schedule[0])
+        for i in range(1, term + 1):
+            interest = self.calc_m_interest(principal)
+            principal = round(principal + interest - monthly_payment - extra_amount, 2)
+            schedule.append(principal)
+            print(schedule[i])
+
+        pyplot.bar(range(0, term + 1), schedule, color='r')
+        pyplot.bar(range(0, term + 1), test, bottom=schedule, color='b')
+        pyplot.xlabel("months")
+        pyplot.ylabel("principal")
+        #pyplot.legend(loc='upper left')
+        pyplot.show()
+
         return schedule
 
 
@@ -124,7 +175,7 @@ class Mortgage(Loan):
     #TO DO: may need to reconsider this calculation.
     def PMI(self, principal=None) -> float:
         """
-        Returns the PMI amount if PMI is required and the remaining principal is greater than 80% of the total.
+        Returns the PMI amount if PMI is required and the remaining principal if greater than 80% of the total.
         :return: The PMI amount if required.
         """
         if principal == None:
@@ -166,16 +217,6 @@ class Mortgage(Loan):
         """
         return self._pmi_required
 
-    def _m_interest(self, amount) -> float:
-        """
-        Calculates the monthly interest for a given amount and month.
-        To be called when calculating amortization schedule.
-        :param amount: The principal remaining at the start of the period.
-        :param month: The month for which interest is to be calculated.
-        :return: The amount of interest accrued that month
-        """
-        return round(amount * (self._rate / 12), 2)
-
     def set_property_tax(self, tax_amount) -> float:
         """
         Sets a user-defined property tax and sets the override flag.
@@ -185,7 +226,6 @@ class Mortgage(Loan):
         self._property_tax_override = True
         self._property_tax = tax_amount
         return self.calculate_property_tax()
-
 
     def set_property_tax_rate(self, new_rate) -> float:
         """
@@ -238,3 +278,11 @@ def to_auto(self, loan: Loan) -> Auto:
     new_auto = Auto(self.name(), self.desc())
     new_auto.set_data(self._data)
     return new_auto
+
+loan = Loan("test", "test desc")
+loan.set_total(400000, 160000)
+loan.set_term(360)
+loan.set_rate(2.875)
+print(loan.calc_monthly())
+print(loan.calc_m_interest(240000))
+loan.amortization_schedule()
