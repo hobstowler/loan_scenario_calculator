@@ -32,18 +32,13 @@ class DetailForm:
             [["Label", "Name", "", 1], ["Entry", "", "name", 2]],
             [["Label", "Description", "", 1], ["Entry", "", "desc", 2]],
             [["Space", "", "", 3]],
-            [["Button", "Jobs", "jobs", 1]],
+            [["Button", "Jobs", "jobs", 3]],
             [["Space", "", "", 3]],
-            [["Button", "Incomes", "incomes", 1]],
+            [["Button", "Incomes", "incomes", 3]],
             [["Space", "", "", 3]],
-            [["Button", "Expenses", "expenses", 1]],
+            [["Button", "Expenses", "expenses", 3]],
             [["Space", "", "", 3]],
-            [["Button", "Mortgages", "mortgages", 1]],
-            [["Space", "", "", 3]],
-            [["Button", "Loans", "loans", 1]],
-            [["Space", "", "", 3]],
-            [["Button", "Tax Brackets", "tax_brackets", 1]]
-
+            [["Button", "Loans", "loans", 3]]
         ]})
         # Jobs Form
         self._forms.update({"jobs": [

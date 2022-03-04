@@ -157,45 +157,6 @@ class Income(FinanceObj):
         super(Income, self).__init__(name, desc)
 
 
-class Job(Income):
-    def __init__(self, name, desc="") -> None:
-        super(Job, self).__init__(name, desc)
-        self._type = "Job"
-        self._title = "Blank"
-        self._company = "Some Company"
-        self._income = 0
-        #self._pre_tax = Expenses()
-        #self._post_tax = Expenses()
-        self._401k_rate = 0
-        self._roth_rate = 0
-
-    def get_income(self):
-        return self._income
-
-    def get_pretax(self):
-        return self._pre_tax
-
-    def get_posttax(self):
-        return self._post_tax
-
-    def set_company(self, new_company):
-        if new_company.isalnum():
-            self._company = new_company
-    
-    def company(self):
-        return self._company
-
-    def set_title(self, new_title):
-        if new_title.isalnum():
-            self._title = new_title
-
-    def set_401k(self, rate):
-        self._401k_rate = rate
-
-    def set_roth(self, rate):
-        self._roth_rate = rate
-
-
 class TaxBracket(FinanceObj):
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
@@ -365,34 +326,53 @@ class TaxBracket(FinanceObj):
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
 
+class Job(Income):
+    def __init__(self, name, desc="") -> None:
+        super(Job, self).__init__(name, desc)
+        self._type = "Job"
+        self._title = "Blank"
+        self._company = "Some Company"
+        self._income = 0
+        #self._pre_tax = Expenses()
+        #self._post_tax = Expenses()
+        self._401k_rate = 0
+        self._roth_rate = 0
+
+    def get_income(self):
+        return self._income
+
+    def get_pretax(self):
+        return self._pre_tax
+
+    def get_posttax(self):
+        return self._post_tax
+
+    def set_company(self, new_company):
+        if new_company.isalnum():
+            self._company = new_company
+
+    def company(self):
+        return self._company
+
+    def set_title(self, new_title):
+        if new_title.isalnum():
+            self._title = new_title
+
+    def set_401k(self, rate):
+        self._401k_rate = rate
+
+    def set_roth(self, rate):
+        self._roth_rate = rate
+
+    def add_tax_bracket(self, tax: TaxBracket):
+        if tax not in self._tax_bracket:
+            self._tax_bracket.add(tax)
+            return True
+        return False
+
+
 #TODO add support for assets like 401k, IRA, houses, bank accounts
 class Assets(FinanceObj):
     def __init__(self):
         pass
 
-
-expense = Expenses("testExpense")
-expense.add("car", 1500)
-expense.add("food", 150)
-expense.add("fOod", 250.111)
-expense.add("something", "thing")
-#print(expense.total())
-expense.reset()
-#print(expense.total())
-
-bracket = TaxBracket("test bracket")
-bracket.add_range(50000,6)
-bracket.add_range(20000,5)
-bracket.add_range(1000,4)
-bracket.add_range(1000,4.2)
-bracket.add_range(20000,5.1)
-bracket.add_range(None,12)
-#print(bracket._brackets)
-#print(bracket.calculate(10000))
-#print(bracket.calculate(15678))
-#print(bracket._get_range(2000))
-#print("name",bracket.name())
-bracket.set_desc("a tax bracket for testing")
-#print("desc",bracket.desc())
-bracket.set_desc(55)
-#print("desc",bracket.desc())

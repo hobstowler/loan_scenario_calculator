@@ -19,7 +19,6 @@ def load_all() -> dict:
     Returns all the saved data as a dictionary. Calls into each separate load method. Called once at app start.
     :return: Saved data.
     """
-    print("loading all")
     data = {}
     data.update({"scenarios": load_scenarios()})
     data.update({"expenses": load_expenses()})
@@ -69,7 +68,6 @@ def load_incomes() -> list:
     """
     file = data_file_path + incomes_file_name
     if exists(file):
-
         return pickle.load(open(file, "rb"))
     return []
 
@@ -81,7 +79,6 @@ def load_loans() -> list:
     """
     file = data_file_path + loan_file_name
     if exists(file):
-        print("found loan file")
         return pickle.load(open(file, "rb"))
     return []
 
@@ -140,17 +137,12 @@ def save_all(data: dict):
     :return: None.
     """
     if "loans" in data:
-        print("saving loans")
         save_loans(data.get("loans"))
     if "incomes" in data:
-        print("saving incomes")
         save_incomes(data.get("incomes"))
     if "jobs" in data:
-        print("saving jobs")
         save_jobs(data.get("jobs"))
     if "expenses" in data:
-        print("saving expenses")
         save_expenses(data.get("expenses"))
     if "scenarios" in data:
-        print("saving scenarios")
         save_scenarios(data.get("scenarios"))
