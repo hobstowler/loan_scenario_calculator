@@ -6,6 +6,8 @@ import math
 from datetime import date
 from income import FinanceObj
 from matplotlib import pyplot
+import tkinter as tk
+import tkinter.ttk as ttk
 
 
 class ExtraPayment:
@@ -193,6 +195,11 @@ class Loan(FinanceObj):
 
         return schedule_no_extra, schedule_extra
 
+    def get_form(self, root):
+        form = tk.Frame(root)
+        form.grid(column=0, row=0)
+
+
 
 class Mortgage(Loan):
     def __init__(self, name: str, desc: str = "") -> None:
@@ -342,12 +349,17 @@ def to_auto(self, loan: Loan) -> Auto:
     new_auto.set_data(self._data)
     return new_auto
 
-loan = Loan("test", "test desc")
-loan.set_total(400000, 160000)
-loan.set_term(360)
-loan.set_rate(2.875)
-print(loan.calc_monthly())
-print(loan.calc_m_interest(240000))
-loan.add_extra_payment(ExtraPayment(5, 24, 1000))
-loan.add_extra_payment(ExtraPayment(60, 24, 1000))
-loan.compare_schedules(True)
+
+def main():
+    loan = Loan("test", "test desc")
+    loan.set_total(400000, 160000)
+    loan.set_term(360)
+    loan.set_rate(2.875)
+    print(loan.calc_monthly())
+    print(loan.calc_m_interest(240000))
+    loan.add_extra_payment(ExtraPayment(5, 24, 1000))
+    loan.add_extra_payment(ExtraPayment(60, 24, 1000))
+    loan.compare_schedules(True)
+
+if __name__ == "__main__":
+    main()

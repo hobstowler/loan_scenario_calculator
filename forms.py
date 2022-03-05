@@ -7,6 +7,10 @@ from loans import *
 from tkinter import *
 from dataload import *
 
+class LoanForm:
+    def get_form(self):
+        pass
+
 
 class DetailForm:
     """
@@ -69,8 +73,8 @@ class DetailForm:
             [["Label", "Total Amount", "", 1], ["Entry", "", "total", 2]],
             [["Label", "Down Payment", "", 1], ["Entry", "", "down payment", 1], ["CheckButton", "Percentage", "", 1]],
             [["Label", "Principal", "", 1], ["Entry", "", "principal", 2]],
-            [["Label", "Rate", "", 1], ["Entry", "", "rate", 2]],
             [["Label", "Term", "", 1], ["Entry", "", "length", 1], ["CheckButton", "Years", "l_years", 1]],
+            [["Label", "Rate", "", 1], ["Entry", "", "rate", 2]],
             [["Space", "", "", 3]]
         ]})
         # Mortgage Form

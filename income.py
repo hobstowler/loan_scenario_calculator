@@ -76,6 +76,19 @@ class FinanceObj:
                 self._data.update({k: data.get(k)})
 
 
+class InvalidExpenseType(Exception):
+    pass
+
+
+class Expense:
+    def __init__(self, amount: (int, float), type: str):
+        self.amount = amount
+        if type.lower() not in ["annual", "monthly", "daily"]:
+            self.type = type
+        else:
+            raise InvalidExpenseType("Type must be 'annual', 'monthly', or 'daily'.")
+
+
 #TODO assert instead of if statements
 #TODO add support for yearly expenses
 class Expenses(FinanceObj):
@@ -157,7 +170,7 @@ class Income(FinanceObj):
         super(Income, self).__init__(name, desc)
 
 
-class TaxBracket(FinanceObj):
+class TaxBracket():
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
     """

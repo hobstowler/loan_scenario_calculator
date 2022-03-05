@@ -505,8 +505,8 @@ class MidPanel:
         :param key: The name of the field used as the key.
         :return: Nothing.
         """
-        print("send change")
-        s_var = self._form_vars.get(key).get()
+        print("send change:", key)
+        s_var = str(self._form_vars.get(key).get())
         if s_var.isnumeric():
             if len(s_var) > 0 and s_var == "0":
                 pass
