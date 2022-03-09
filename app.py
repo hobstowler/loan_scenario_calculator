@@ -10,6 +10,28 @@ from dataload import *
 from forms import *
 
 
+class navLabel(tk.Label):
+    def __init__(self, label: str, detail: str):
+        super.__init__(self)
+        self.label = label
+        self.detail = detail
+
+    def get_gui(self):
+        pass
+
+
+class navButton(navLabel):
+    def __init__(self, label: str, detail: str, fin_objects: list):
+        super.__init__(self, label, detail)
+        self._active = False
+
+    def activate(self, active=True):
+        self._active = True
+
+    def get_gui(self):
+        pass
+
+
 class LeftPanel:
     def __init__(self, parent: tk.Tk, fin_vars: dict):
         """
@@ -28,8 +50,14 @@ class LeftPanel:
         self._nav_button_sel = "jobs"
         self._context_vars = {
             "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
+            "income": [],
             "jobs": ["Select a Job", fin_vars.get("jobs")],
-            "loans": ["Select a Loan", fin_vars.get("loans")],
+            "assets": ["Select an Asset", fin_vars.get("assets")],
+            "loans": [],
+            "mortgages": ["Select a Loan", fin_vars.get("loans")],
+            "student": ["Select a Loan", fin_vars.get("loans")],
+            "auto": ["Select a Loan", fin_vars.get("loans")],
+            "personal": ["Select a Loan", fin_vars.get("loans")],
             "expenses": ["Select an Expense", fin_vars.get("expenses")],
             "taxes": ["Select a Tax Bracket", fin_vars.get("taxes")]
         }
@@ -53,7 +81,7 @@ class LeftPanel:
         self._mid_panel = None
 
         # Populates the drawer with the initial context
-        self.populate()
+        self.populate_list()
         self._active = True
 
         #TODO implement scroll bar. may need to be part of the refresh
@@ -116,7 +144,7 @@ class LeftPanel:
 
         return parent
 
-    def populate(self) -> None:
+    def populate_list(self, fin_objects: list = None) -> None:
         """
         Populates the drawer with a list of all financial objects of the given context. Called when context changes or
         when returning from mid panel.
@@ -148,6 +176,10 @@ class LeftPanel:
 
         self._drawer.configure(scrollregion=(0,0,300,len(fin_list*44)))
 
+    # TODO break populate_list in two to simplify flow. remove Mid Panel altogether and move two a two panel flow
+    def populate_editable(self, fin_object: FinanceObj):
+        pass
+
     def drawer_button_click(self, fin_obj, button: Frame) -> None:
         """
         Called when a button in the drawer is clicked. Can be expanded to do specific things based on the type of fin
@@ -164,7 +196,7 @@ class LeftPanel:
             return
         self.recolor_widget_bg(button, self._colors.get("b_sel"))
         self._drawer_button_sel = button
-        self._mid_panel.populate(fin_obj)
+        self._mid_panel.populate_list(fin_obj)
         self.reset_delete_button()
 
     def recolor_widget_bg(self, widget, color: str) -> None:
@@ -198,7 +230,7 @@ class LeftPanel:
         self._nav_button_sel = widget
         self._nav_label['text'] = self._context_vars.get(widget.winfo_name())[0]
         self._mid_panel.reset_panel()
-        self.populate()
+        self.populate_list()
         self.reset_delete_button()
 
     def get_context(self) -> str:
@@ -216,7 +248,7 @@ class LeftPanel:
         if not self._active:
             return
         self.drawer_button_click(None, None)
-        self._mid_panel.populate()
+        self._mid_panel.populate_list()
         self._mid_panel.activate()
         self.activate("disabled")
 
@@ -311,7 +343,7 @@ class LeftPanel:
         save_all({context: fin_list})
 
 
-        self.populate()
+        self.populate_list()
 
     def set_mid_panel(self, mid: Frame) -> None:
         """
@@ -388,7 +420,7 @@ class MidPanel:
 
         self._bottom_menu = b_menu
 
-    def populate(self, obj=None) -> None:
+    def populate_list(self, obj=None) -> None:
         """
         Populates the middle panel with a form corresponding to the selected financial object on the left panel.
         :param active: If true, the panel loads in an editable state.
@@ -477,7 +509,7 @@ class MidPanel:
         self._form_buffer = {}
         if clear:
             self._left_panel.activate()
-            self._left_panel.populate()
+            self._left_panel.populate_list()
             self.destroy_bottom_menu()
             self._label.set("")
 

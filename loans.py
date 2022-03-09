@@ -124,7 +124,11 @@ class Loan(FinanceObj):
         m_rate = float(self._data.get("rate")) / 100 / 12 # TODO make this work by month
         return round(amount * m_rate, 2)
 
-    def calc_monthly(self):
+    def calc_monthly(self) -> None:
+        """
+        Calculates the monthly payment.
+        :return: Nothing.
+        """
         principal = self._data.get("principal")
         m_rate = float(self._data.get("rate")) / 100 / 12
         compound = math.pow(1 + m_rate, self._data.get("term"))
@@ -135,11 +139,31 @@ class Loan(FinanceObj):
         self._monthly_payment = numer / denom
 
     def get_monthly(self):
+        """
+        Returns the monthly payment amount for this loan.
+        :return: The monthly amount in dollars.
+        """
         return round(self._monthly_payment, 2)
 
-    def add_extra_payment(self, new_ex_payment: ExtraPayment):
+    def add_extra_payment(self, new_ex_payment: ExtraPayment) -> None:
+        """
+        Adds an ExtraPayment object to the loan. Extra payments have a defined amount, duration, and start month.
+        :param new_ex_payment: The ExtraPayment object to be added.
+        :return: Nothing.
+        """
         if new_ex_payment not in self._extra_payments:
             self._extra_payments.append(new_ex_payment)
+
+    def remove_extra_payment(self, extra_payment: ExtraPayment) -> bool:
+        """
+        Removes an ExtraPayment from the list if it is present.
+        :param extra_payment: The ExtraPayment to be removed.
+        :return: True if successfully removed.
+        """
+        if extra_payment in self._extra_payments:
+            self._extra_payments.remove(extra_payment)
+            return True
+        return False
 
     # TO DO: factor in a prorated amount and use the start of the loan
     def amortization_schedule(self, extra_payments=False) -> list:
@@ -152,6 +176,7 @@ class Loan(FinanceObj):
         monthly_payment = self._monthly_payment
         term = self._data.get("term")
 
+        #TODO support for real dates
         origination = self._data.get("origination")
         first_payment = self._data.get("first payment")
 
@@ -172,16 +197,14 @@ class Loan(FinanceObj):
             schedule.append(principal)
             print(schedule[i])
 
-        #pyplot.bar(range(0, term + 1), schedule, color='r')
-        #pyplot.bar(range(0, term + 1), test, bottom=schedule, color='b')
-        #pyplot.xlabel("months")
-        #pyplot.ylabel("principal")
-        #pyplot.legend(loc='upper left')
-        #pyplot.show()
-
         return schedule
 
     def compare_schedules(self, display_graph=False) -> tuple:
+        """
+        Returns the amortization schedules of the loan with and without extra payments applied.
+        :param display_graph: Optional. Displays a graph of the two schedules principal amounts over time.
+        :return: Tuple of the schedules, Schedule with no extra payments and Schedule with extra payments.
+        """
         schedule_no_extra = self.amortization_schedule()
         schedule_extra = self.amortization_schedule(True)
 
