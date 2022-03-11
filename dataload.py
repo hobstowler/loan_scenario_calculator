@@ -1,7 +1,7 @@
 # Author: Hobs Towler
 # Date: 12/5/2021
 # Description:
-
+import json
 import pickle
 from os.path import exists
 
@@ -136,6 +136,7 @@ def save_all(data: dict):
     :param data: The data to be saved.
     :return: None.
     """
+    #pickle.dump(data, open(data_file_path + 'data.p', 'wb'))
     if "loans" in data:
         save_loans(data.get("loans"))
     if "incomes" in data:

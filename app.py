@@ -35,18 +35,19 @@ class NavButton(NavLabel):
         self._parent = parent
         self._active = False
 
-    def deactivate(self):
-        self._active = False
+    def activate(self, active=True):
+        self._active = active
 
     def click(self):
+        print("click")
         self._active = True
         self._parent.new_context(self, self._fin_list)
 
     def get_fin_list(self) -> list:
         return self._fin_list
 
-    def get_gui(self, frame: tk.Frame):
-        button = tk.Button(frame, text=self.label.capitalize(), width=10)
+    def get_gui(self, root: tk.Frame):
+        button = tk.Button(root, text=self.label.capitalize(), width=10)
         button.pack(fill="y")
         button.bind("<Button-1>", lambda e: self.click())
         if self._active:
@@ -55,6 +56,58 @@ class NavButton(NavLabel):
             button['bg'] = colors.get('b_reset')
 
         return button
+
+
+class BottomMenu():
+    def __init__(self, parent):
+        self._parent = parent
+        self._del_button = None
+
+    def new(self) -> None:
+        #if not self._active:
+        #    return
+        #self.drawer_button_click(None, None)
+        #self._mid_panel.populate_list()
+        #self._mid_panel.activate()
+        #self.activate("disabled")
+
+    def edit(self) -> None:
+        #if not self._active:
+        #    return
+        #if self._drawer_button_sel is None:
+        #    print("nothing is selected")
+        #    return
+        #self._mid_panel.activate()
+        #self.activate("disabled")
+
+    def delete(self):
+        #self._drawer_button_sel
+
+    def toggle_delete(self):
+        if self._del_button['state'] == "disabled":
+            self._del_button['state'] = "active"
+        else:
+            self._del_button['state'] = "disabled"
+
+    def reset(self):
+        self._del_button['state'] = "disabled"
+
+    def create(self, root):
+        bottom_menu = tk.Frame(root, name="left_bottom_menu", width=300, height=50)
+        bottom_menu.grid(column=1, row=2, sticky=N + W + S + E)
+
+        for i in range(3):
+            bottom_menu.columnconfigure(i, weight=1)
+
+        # Buttons for the bottom menu. Edit, New, and Delete.
+        tk.Button(bottom_menu, name="new_item", text="New...", command=lambda: self.new()) \
+            .grid(column=0, row=0, sticky=W + E)
+        tk.Button(bottom_menu, name="edit_item", text="Edit...", command=lambda: self.edit()) \
+            .grid(column=1, row=0, sticky=W + E)
+        self._del_button = tk.Button(bottom_menu, name="delete_item", text="Delete...", state="disabled",
+                                     command=lambda: self.delete())
+        self._del_button.grid(column=2, row=0, sticky=W + E)
+        tk.Checkbutton(bottom_menu, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
 
 class LeftPanel:
@@ -81,16 +134,16 @@ class LeftPanel:
             NavButton("jobs", "Select a Job", self, fin_vars.get("jobs")),
             NavButton("assets", "Select an Asset", self, fin_vars.get("assets")),
             NavLabel("loans", None),
-            NavButton("mortgages", "Select a Mortgage", self, fin_vars.get("loans")),
-            NavButton("student", "Select a Student Loan", self, fin_vars.get("loans")),
-            NavButton("auto", "Select an Auto Loan", self, fin_vars.get("loans")),
-            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("loans")),
+            NavButton("mortgages", "Select a Mortgage", self, fin_vars.get("mortgages")),
+            NavButton("student", "Select a Student Loan", self, fin_vars.get("student loans")),
+            NavButton("auto", "Select an Auto Loan", self, fin_vars.get("auto loans")),
+            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("personal loans")),
             NavLabel("expenses", None),
             NavButton("expenses", "Select an Expense", self, fin_vars.get("expenses")),
             NavButton("taxes", "Select a Tax Bracket", self, fin_vars.get("taxes"))
         ]
         self._nav_selection = self._nav_menu_elements[3]
-        self._nav_selection._active = True
+        #self._nav_selection._active = True
 
         self._nav_text = StringVar()
         self._nav_text.set(self._nav_selection.detail)
@@ -108,19 +161,22 @@ class LeftPanel:
         self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
         self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
         self._drawer.pack_propagate(False)
-        #self._bottom_menu = self.create_bottom_menu()
+        self._bottom_menu = BottomMenu(self)
+        self._bottom_menu.create(self.frame)
         #self._mid_panel = None
 
         # Populates the drawer with the initial context
         #self.populate_list()
         #self._active = True
         self.populate_nav_menu()
+        self._nav_selection.click()
 
         #TODO implement scroll bar. may need to be part of the refresh
 
     def new_context(self, clicked: NavButton, fin_list: list):
-        self._nav_selection.deactivate()
+        self._nav_selection.activate(False)
         self._nav_selection = clicked
+        self._nav_selection.activate()
         self._nav_text.set(clicked.detail)
         self.populate_nav_menu()
         self.populate_list(clicked.get_fin_list())
@@ -155,22 +211,7 @@ class LeftPanel:
         Called once at start.
         :return: itself, a tk.Frame object.
         """
-        parent = tk.Frame(self.frame, name="left_bottom_menu", width=300, height=50)
-        parent.grid(column=1, row=2, sticky=N + W + S + E)
 
-        for i in range(3):
-            parent.columnconfigure(i, weight=1)
-
-        # Buttons for the bottom menu. Edit, New, and Delete.
-        tk.Button(parent, name="new_item", text="New...", command=lambda: self.new()) \
-            .grid(column=0, row=0, sticky=W+E)
-        tk.Button(parent, name="edit_item", text="Edit...", command=lambda: self.edit()) \
-            .grid(column=1, row=0, sticky=W+E)
-        self._del_button = tk.Button(parent, name="delete_item", text="Delete...", state="disabled", command=lambda: self.delete())
-        self._del_button.grid(column=2, row=0, sticky=W+E)
-        tk.Checkbutton(parent, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
-
-        return parent
 
     def populate_list(self, fin_objects: list = None) -> None:
         """
@@ -268,57 +309,7 @@ class LeftPanel:
         """
         return self._nav_button_sel.winfo_name()
 
-    def new(self) -> None:
-        """
-        Method called when the "New" button is clicked in the Left Panel
-        :return: Nothing.
-        """
-        if not self._active:
-            return
-        self.drawer_button_click(None, None)
-        self._mid_panel.populate_list()
-        self._mid_panel.activate()
-        self.activate("disabled")
 
-    def edit(self) -> None:
-        """
-        Method called when the "Edit" button is clicked in the Left Panel
-        :return: Nothing
-        """
-        if not self._active:
-            return
-        if self._drawer_button_sel is None:
-            print("nothing is selected")
-            return
-        self._mid_panel.activate()
-        self.activate("disabled")
-
-    def delete(self):
-        self._drawer_button_sel
-
-    def toggle_delete(self) -> None:
-        """
-        Toggles the delete button active state.
-        :return: Nothing.
-        """
-        if not self._active:
-            self.reset_delete_button()
-            return
-        if self._del_button['state'] == "disabled":
-            self._del_button['state'] = "active"
-        else:
-            self._del_button['state'] = "disabled"
-
-    def reset_delete_button(self, state="disabled") -> None:
-        """
-        Sets the state of the delete button. Disabled by default.
-        :param state: The state to change to. Disabled by default.
-        :return: None
-        """
-        self._del_button['state'] = state
-        for c in self._bottom_menu.winfo_children():
-            if c.winfo_class() == "Checkbutton":
-                c.deselect() if state == "disabled" else c.select()
 
     def activate(self, state="active") -> None:
         """
@@ -643,6 +634,7 @@ def main():
 
     # load the data
     fin_vars = load_all()
+    #save_all(fin_vars)
 
     # create the three main panels.
     left_panel = LeftPanel(root, fin_vars)
