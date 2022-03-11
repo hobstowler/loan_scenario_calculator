@@ -2,6 +2,17 @@
 # Date: 12/1/2021
 # Description:
 
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import *
+
+colors = {
+            "t_type": "navy",
+            "t_name": "red",
+            "b_sel": "green",
+            "b_reset": "SystemButtonFace"
+        }
+
 
 class FinanceObj:
     """
@@ -15,6 +26,7 @@ class FinanceObj:
         """
         self._name = name
         self._desc = desc
+        self._active = True
         self._type = "FinObj"
         self._data = {}
 
@@ -74,6 +86,30 @@ class FinanceObj:
                 self._desc = data.get(k)
             else:
                 self._data.update({k: data.get(k)})
+
+    def button_click(self):
+        pass
+
+    def get_button(self, root):
+        frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
+        frame.pack(fill="x", ipady=2, ipadx=2)
+        frame.bind("<Button-1>", lambda e: self.button_click())
+        #TODO Move to JSON for data load to allow changes to main attributes
+        #if self._active:
+        #    frame['bg'] = colors.get("b_sel")
+
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        name = tk.Label(frame, text=self._name, justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name.grid(column=0, row=0, sticky=W)
+        f_type = tk.Label(frame, text=self._type, justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
+        f_type.grid(column=1, row=0, sticky=E)
+        desc = tk.Label(frame, text=self._desc, justify=LEFT, anchor="w")
+        desc.grid(column=0, row=1, sticky=W, columnspan=2)
+
+        #for c in frame.winfo_children():
+        #    c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
 
 
 class InvalidExpenseType(Exception):
@@ -170,7 +206,7 @@ class Income(FinanceObj):
         super(Income, self).__init__(name, desc)
 
 
-class TaxBracket():
+class TaxBracket(FinanceObj):
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
     """
@@ -339,7 +375,7 @@ class TaxBracket():
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
 
-class Job(Income):
+class Job(FinanceObj):
     def __init__(self, name, desc="") -> None:
         super(Job, self).__init__(name, desc)
         self._type = "Job"

@@ -17,14 +17,14 @@ colors = {
         }
 
 
-class NavLabel():
+class NavLabel:
     def __init__(self, label: str, detail: str):
         #super.__init__()
         self.label = label
         self.detail = detail
 
     def get_gui(self, frame: tk.Frame):
-        label = tk.Label(frame, text=self.label.capitalize(), justify=LEFT)
+        label = tk.Label(frame, width=13, text=self.label.capitalize(), anchor='w')
         label.pack()
 
 
@@ -39,7 +39,6 @@ class NavButton(NavLabel):
         self._active = active
 
     def click(self):
-        print("click")
         self._active = True
         self._parent.new_context(self, self._fin_list)
 
@@ -48,7 +47,7 @@ class NavButton(NavLabel):
 
     def get_gui(self, root: tk.Frame):
         button = tk.Button(root, text=self.label.capitalize(), width=10)
-        button.pack(fill="y")
+        button.pack()
         button.bind("<Button-1>", lambda e: self.click())
         if self._active:
             button['bg'] = colors.get('b_sel')
@@ -64,6 +63,7 @@ class BottomMenu():
         self._del_button = None
 
     def new(self) -> None:
+        pass
         #if not self._active:
         #    return
         #self.drawer_button_click(None, None)
@@ -72,6 +72,7 @@ class BottomMenu():
         #self.activate("disabled")
 
     def edit(self) -> None:
+        pass
         #if not self._active:
         #    return
         #if self._drawer_button_sel is None:
@@ -81,6 +82,7 @@ class BottomMenu():
         #self.activate("disabled")
 
     def delete(self):
+        pass
         #self._drawer_button_sel
 
     def toggle_delete(self):
@@ -137,7 +139,7 @@ class LeftPanel:
             NavButton("mortgages", "Select a Mortgage", self, fin_vars.get("mortgages")),
             NavButton("student", "Select a Student Loan", self, fin_vars.get("student loans")),
             NavButton("auto", "Select an Auto Loan", self, fin_vars.get("auto loans")),
-            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("personal loans")),
+            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("loans")),
             NavLabel("expenses", None),
             NavButton("expenses", "Select an Expense", self, fin_vars.get("expenses")),
             NavButton("taxes", "Select a Tax Bracket", self, fin_vars.get("taxes"))
@@ -205,27 +207,24 @@ class LeftPanel:
 
         return parent
 
-    def create_bottom_menu(self):
-        """
-        Creates the bottom menu for the drawer. Has buttons to manipulate items in the drawer: New, Edit, and Delete.
-        Called once at start.
-        :return: itself, a tk.Frame object.
-        """
 
-
-    def populate_list(self, fin_objects: list = None) -> None:
+    def populate_list(self, fin_list: list = None, refresh=False) -> None:
         """
         Populates the drawer with a list of all financial objects of the given context. Called when context changes or
         when returning from mid panel.
         :return: Nothing.
         """
-        self._drawer_button_sel = None
         for c in self._drawer.winfo_children():
             c.destroy()
-        fin_list = fin_objects
-        if fin_list is None:
+
+        if fin_list is None and not refresh:
             return
-        for item in fin_list:
+        if refresh:
+            fin_list = self._nav_selection.get_fin_list()
+
+        for fin_obj in fin_list:
+            fin_obj.get_button(self._drawer)
+        """for item in fin_list:
             frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40)
             frame.pack(fill="x", ipady=2, ipadx=2)
             frame.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
@@ -241,13 +240,14 @@ class LeftPanel:
             desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
             for c in frame.winfo_children():
-                c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
+                c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))"""
 
         self._drawer.configure(scrollregion=(0,0,300,len(fin_list*44)))
 
     # TODO break populate_list in two to simplify flow. remove Mid Panel altogether and move two a two panel flow
-    def populate_editable(self, fin_object: FinanceObj):
-        pass
+    def populate_editable(self, fin_object: FinanceObj, active=False):
+        for c in self._drawer.winfo_children():
+            c.destroy()
 
     def drawer_button_click(self, fin_obj, button: Frame) -> None:
         """
@@ -267,17 +267,6 @@ class LeftPanel:
         self._drawer_button_sel = button
         self._mid_panel.populate_list(fin_obj)
         self.reset_delete_button()
-
-    def recolor_widget_bg(self, widget, color: str) -> None:
-        """
-        Changes the background color of the widget.
-        :param widget: The widget whose background color will change.
-        :param color: The new background color.
-        :return: Nothing.
-        """
-        widget['bg'] = color
-        for c in widget.winfo_children():
-            c['bg'] = color
 
     def set_context(self, widget: tk.Button) -> None:
         """
@@ -308,8 +297,6 @@ class LeftPanel:
         :return: The current context.
         """
         return self._nav_button_sel.winfo_name()
-
-
 
     def activate(self, state="active") -> None:
         """
