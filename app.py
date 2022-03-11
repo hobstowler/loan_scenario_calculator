@@ -9,27 +9,52 @@ from income import *
 from dataload import *
 from forms import *
 
+colors = {
+            "t_type": "navy",
+            "t_name": "red",
+            "b_sel": "green",
+            "b_reset": "SystemButtonFace"
+        }
 
-class navLabel(tk.Label):
+
+class NavLabel():
     def __init__(self, label: str, detail: str):
-        super.__init__(self)
+        #super.__init__()
         self.label = label
         self.detail = detail
 
-    def get_gui(self):
-        pass
+    def get_gui(self, frame: tk.Frame):
+        label = tk.Label(frame, text=self.label.capitalize(), justify=LEFT)
+        label.pack()
 
 
-class navButton(navLabel):
-    def __init__(self, label: str, detail: str, fin_objects: list):
-        super.__init__(self, label, detail)
+class NavButton(NavLabel):
+    def __init__(self, label: str, detail: str, parent, fin_objects: list):
+        super(NavButton, self).__init__(label, detail)
+        self._fin_list = fin_objects
+        self._parent = parent
         self._active = False
 
-    def activate(self, active=True):
-        self._active = True
+    def deactivate(self):
+        self._active = False
 
-    def get_gui(self):
-        pass
+    def click(self):
+        self._active = True
+        self._parent.new_context(self, self._fin_list)
+
+    def get_fin_list(self) -> list:
+        return self._fin_list
+
+    def get_gui(self, frame: tk.Frame):
+        button = tk.Button(frame, text=self.label.capitalize(), width=10)
+        button.pack(fill="y")
+        button.bind("<Button-1>", lambda e: self.click())
+        if self._active:
+            button['bg'] = colors.get('b_sel')
+        else:
+            button['bg'] = colors.get('b_reset')
+
+        return button
 
 
 class LeftPanel:
@@ -47,27 +72,29 @@ class LeftPanel:
         # self._selected_fin_obj = None
 
         # nav menu variables
-        self._nav_button_sel = "jobs"
-        self._context_vars = {
-            "scenarios": ["Select a Scenario", fin_vars.get("scenarios")],
-            "income": [],
-            "jobs": ["Select a Job", fin_vars.get("jobs")],
-            "assets": ["Select an Asset", fin_vars.get("assets")],
-            "loans": [],
-            "mortgages": ["Select a Loan", fin_vars.get("loans")],
-            "student": ["Select a Loan", fin_vars.get("loans")],
-            "auto": ["Select a Loan", fin_vars.get("loans")],
-            "personal": ["Select a Loan", fin_vars.get("loans")],
-            "expenses": ["Select an Expense", fin_vars.get("expenses")],
-            "taxes": ["Select a Tax Bracket", fin_vars.get("taxes")]
-        }
-        self._colors = {
-            "t_type": "navy",
-            "t_name": "red",
-            "b_sel": "green",
-            "b_reset": "SystemButtonFace"
-        }
-        self._nav_label = tk.Label(self.frame, name="nav_label", text=self._context_vars.get(self._nav_button_sel)[0])
+        self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
+        self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
+        self._nav_menu_elements = [
+            NavLabel("scenarios", None),
+            NavButton("scenarios", "Select a Scenario", self, fin_vars.get("scenarios")),
+            NavLabel("income", None),
+            NavButton("jobs", "Select a Job", self, fin_vars.get("jobs")),
+            NavButton("assets", "Select an Asset", self, fin_vars.get("assets")),
+            NavLabel("loans", None),
+            NavButton("mortgages", "Select a Mortgage", self, fin_vars.get("loans")),
+            NavButton("student", "Select a Student Loan", self, fin_vars.get("loans")),
+            NavButton("auto", "Select an Auto Loan", self, fin_vars.get("loans")),
+            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("loans")),
+            NavLabel("expenses", None),
+            NavButton("expenses", "Select an Expense", self, fin_vars.get("expenses")),
+            NavButton("taxes", "Select a Tax Bracket", self, fin_vars.get("taxes"))
+        ]
+        self._nav_selection = self._nav_menu_elements[3]
+        self._nav_selection._active = True
+
+        self._nav_text = StringVar()
+        self._nav_text.set(self._nav_selection.detail)
+        self._nav_label = tk.Label(self.frame, name="nav_label", textvariable=self._nav_text)
         self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1,0))
         self._nav_label.grid_propagate(False)
 
@@ -75,34 +102,35 @@ class LeftPanel:
         self._del_button = None
 
         # instantiate major components
-        self._nav_menu = self.create_nav_menu()
-        self._drawer = self.create_drawer()
-        self._bottom_menu = self.create_bottom_menu()
-        self._mid_panel = None
+        self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
+        self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
+
+        self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
+        self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
+        self._drawer.pack_propagate(False)
+        #self._bottom_menu = self.create_bottom_menu()
+        #self._mid_panel = None
 
         # Populates the drawer with the initial context
-        self.populate_list()
-        self._active = True
+        #self.populate_list()
+        #self._active = True
+        self.populate_nav_menu()
 
         #TODO implement scroll bar. may need to be part of the refresh
 
-    def create_nav_menu(self) -> Frame:
-        """
-        Creates the menu for the left panel. Allows switching between different finance objects. Called once at start.
-        :return: The Frame object representing the navigation menu.
-        """
-        nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
-        nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
+    def new_context(self, clicked: NavButton, fin_list: list):
+        self._nav_selection.deactivate()
+        self._nav_selection = clicked
+        self._nav_text.set(clicked.detail)
+        self.populate_nav_menu()
+        self.populate_list(clicked.get_fin_list())
 
-        for name in self._context_vars.keys():
-            button = tk.Button(nav_menu, name=name, text=name.capitalize(), width=10)
-            button.pack(fill="y")
-            button.bind("<Button-1>", lambda e, w=button: self.set_context(w))
-            if name == self._nav_button_sel:
-                self._nav_button_sel = button
-                button['bg'] = self._colors.get("b_sel")
+    def populate_nav_menu(self) -> None:
+        for c in self._nav_menu.winfo_children():
+            c.destroy()
 
-        return nav_menu
+        for item in self._nav_menu_elements:
+            item.get_gui(self._nav_menu)
 
     #TODO clean up flow.
     def create_drawer(self) -> Canvas:
@@ -153,7 +181,7 @@ class LeftPanel:
         self._drawer_button_sel = None
         for c in self._drawer.winfo_children():
             c.destroy()
-        fin_list = self._context_vars.get(self.get_context())[1]
+        fin_list = fin_objects
         if fin_list is None:
             return
         for item in fin_list:
@@ -164,9 +192,9 @@ class LeftPanel:
             frame.columnconfigure(0, weight=1)
             frame.columnconfigure(1, weight=1)
 
-            name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground=self._colors.get("t_name"))
+            name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
             name.grid(column=0, row=0, sticky=W)
-            f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground=self._colors.get("t_type"))
+            f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
             f_type.grid(column=1, row=0, sticky=E)
             desc = tk.Label(frame, text=item.desc(), justify=LEFT, anchor="w")
             desc.grid(column=0, row=1, sticky=W, columnspan=2)
