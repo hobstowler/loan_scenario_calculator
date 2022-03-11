@@ -18,24 +18,40 @@ colors = {
 
 
 class NavLabel:
-    def __init__(self, label: str, detail: str):
+    """Text label on the top-level navigation menu."""
+    def __init__(self, label: str):
+        """
+        Initializes the label object.
+        :param label: Label string.
+        """
         #super.__init__()
         self.label = label
-        self.detail = detail
 
-    def get_gui(self, frame: tk.Frame):
-        label = tk.Label(frame, width=13, text=self.label.capitalize(), anchor='w')
+    def get_gui(self, root: tk.Frame) -> None:
+        """
+        Creates the visual using tkinter Label.
+        :param root: The parent frame.
+        :return: Nothing
+        """
+        label = tk.Label(root, width=13, text=self.label.capitalize(), anchor='w')
         label.pack()
 
 
 class NavButton(NavLabel):
+    """Button on the top-level navigation menu."""
     def __init__(self, label: str, detail: str, parent, fin_objects: list):
-        super(NavButton, self).__init__(label, detail)
+        super(NavButton, self).__init__(label)
+        self.detail = detail
         self._fin_list = fin_objects
         self._parent = parent
         self._active = False
 
-    def activate(self, active=True):
+    def activate(self, active=True) -> None:
+        """
+        Activates the button. Behaviour when button is selected.
+        :param active:
+        :return:
+        """
         self._active = active
 
     def click(self):
@@ -130,25 +146,25 @@ class LeftPanel:
         self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
         self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
         self._nav_menu_elements = [
-            NavLabel("scenarios", None),
-            NavButton("scenarios", "Select a Scenario", self, fin_vars.get("scenarios")),
-            NavLabel("income", None),
-            NavButton("jobs", "Select a Job", self, fin_vars.get("jobs")),
-            NavButton("assets", "Select an Asset", self, fin_vars.get("assets")),
-            NavLabel("loans", None),
-            NavButton("mortgages", "Select a Mortgage", self, fin_vars.get("mortgages")),
-            NavButton("student", "Select a Student Loan", self, fin_vars.get("student loans")),
-            NavButton("auto", "Select an Auto Loan", self, fin_vars.get("auto loans")),
-            NavButton("personal", "Select a Personal Loan", self, fin_vars.get("loans")),
-            NavLabel("expenses", None),
-            NavButton("expenses", "Select an Expense", self, fin_vars.get("expenses")),
-            NavButton("taxes", "Select a Tax Bracket", self, fin_vars.get("taxes"))
+            NavLabel("scenarios"),
+            NavButton("scenarios", "Select a Scenario.", self, fin_vars.get("scenarios")),
+            NavLabel("income"),
+            NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
+            NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
+            NavLabel("loans"),
+            NavButton("mortgages", "Select a Mortgage.", self, fin_vars.get("mortgages")),
+            NavButton("student", "Select a Student Loan.", self, fin_vars.get("student loans")),
+            NavButton("auto", "Select an Auto Loan.", self, fin_vars.get("auto loans")),
+            NavButton("personal", "Select a Personal Loan.", self, fin_vars.get("loans")),
+            NavLabel("expenses"),
+            NavButton("expenses", "Select an Expense.", self, fin_vars.get("expenses")),
+            NavButton("taxes", "Select a Tax Bracket.", self, fin_vars.get("taxes"))
         ]
         self._nav_selection = self._nav_menu_elements[3]
         #self._nav_selection._active = True
 
         self._nav_text = StringVar()
-        self._nav_text.set(self._nav_selection.detail)
+        self._nav_text.set(self._nav_selection.detail + " Right click to modify.")
         self._nav_label = tk.Label(self.frame, name="nav_label", textvariable=self._nav_text)
         self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1,0))
         self._nav_label.grid_propagate(False)
@@ -179,7 +195,7 @@ class LeftPanel:
         self._nav_selection.activate(False)
         self._nav_selection = clicked
         self._nav_selection.activate()
-        self._nav_text.set(clicked.detail)
+        self._nav_text.set(clicked.detail + " Right click to modify.")
         self.populate_nav_menu()
         self.populate_list(clicked.get_fin_list())
 
@@ -189,24 +205,6 @@ class LeftPanel:
 
         for item in self._nav_menu_elements:
             item.get_gui(self._nav_menu)
-
-    #TODO clean up flow.
-    def create_drawer(self) -> Canvas:
-        """
-        Creates a scrollable drawer that will hold the different items based on selected scenario. Loans, incomes, scenarios,
-        taxes, expenses, for example. Called once at start.
-        :return: itself, a tk.Canvas object.
-        """
-        parent = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
-        parent.grid(column=1, row=1, sticky=N + W + S + E)
-        parent.pack_propagate(False)
-
-        #scroll = tk.Scrollbar(self.frame, command=parent.yview())
-        #scroll.grid(column=2, row=1, sticky=N+S)
-        #parent.configure(yscrollcommand=scroll.set)
-
-        return parent
-
 
     def populate_list(self, fin_list: list = None, refresh=False) -> None:
         """
@@ -220,34 +218,18 @@ class LeftPanel:
         if fin_list is None and not refresh:
             return
         if refresh:
+            print("refreshing")
             fin_list = self._nav_selection.get_fin_list()
 
         for fin_obj in fin_list:
-            fin_obj.get_button(self._drawer)
-        """for item in fin_list:
-            frame = tk.Frame(self._drawer, borderwidth=2, relief='groove', name=item.name().lower(), height=40)
-            frame.pack(fill="x", ipady=2, ipadx=2)
-            frame.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
-
-            frame.columnconfigure(0, weight=1)
-            frame.columnconfigure(1, weight=1)
-
-            name = tk.Label(frame, text=item.name(), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
-            name.grid(column=0, row=0, sticky=W)
-            f_type = tk.Label(frame, text=item.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
-            f_type.grid(column=1, row=0, sticky=E)
-            desc = tk.Label(frame, text=item.desc(), justify=LEFT, anchor="w")
-            desc.grid(column=0, row=1, sticky=W, columnspan=2)
-
-            for c in frame.winfo_children():
-                c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))"""
-
-        self._drawer.configure(scrollregion=(0,0,300,len(fin_list*44)))
+            fin_obj.get_list_button(self._drawer, self)
 
     # TODO break populate_list in two to simplify flow. remove Mid Panel altogether and move two a two panel flow
     def populate_editable(self, fin_object: FinanceObj, active=False):
         for c in self._drawer.winfo_children():
             c.destroy()
+
+        fin_object.get_editable(self._drawer, self)
 
     def drawer_button_click(self, fin_obj, button: Frame) -> None:
         """
@@ -620,18 +602,25 @@ def main():
     root.title("Loan Calculator")
 
     # load the data
-    fin_vars = load_all()
+    #fin_vars = load_all()
     #save_all(fin_vars)
+    fin_vars = {
+        'scenarios': [Scenario('test scenario', 'scenario description')],
+        'jobs': [Job('Data Analyst II', 'Cerner Corporation')],
+        'assets': [],
+        'mortgages': [Mortgage('test mortgage', 'mortgage description')],
+        'student loans': [Student('test student loan', 'student loan description')],
+    }
 
     # create the three main panels.
     left_panel = LeftPanel(root, fin_vars)
-    mid_panel = MidPanel(root)
+    #mid_panel = MidPanel(root)
     right_panel = RightPanel(root)
 
     #set panel relationships
-    left_panel.set_mid_panel(mid_panel)
-    mid_panel.set_left_panel(left_panel)
-    mid_panel.set_right_panel(right_panel)
+    #left_panel.set_mid_panel(mid_panel)
+    #mid_panel.set_left_panel(left_panel)
+    #mid_panel.set_right_panel(right_panel)
 
     root.mainloop()
 

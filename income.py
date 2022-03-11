@@ -27,7 +27,6 @@ class FinanceObj:
         self._name = name
         self._desc = desc
         self._active = True
-        self._type = "FinObj"
         self._data = {}
 
     def set_name(self, new_name: str) -> bool:
@@ -76,7 +75,7 @@ class FinanceObj:
         self._data = data
 
     def type(self) -> str:
-        return self._type
+        return type(self).__name__
 
     def update(self, data: dict):
         for k in data.keys():
@@ -87,13 +86,21 @@ class FinanceObj:
             else:
                 self._data.update({k: data.get(k)})
 
-    def button_click(self):
-        pass
+    def left_click(self, parent):
+        #parent.populate_detail(self)
+        print('click')
 
-    def get_button(self, root):
+    def right_click(self, parent):
+        parent.populate_editable(self)
+        print('right click')
+
+    def cancel(self, parent):
+        parent.populate_list(refresh=True)
+
+    def get_list_button(self, root, parent):
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
-        frame.pack(fill="x", ipady=2, ipadx=2)
-        frame.bind("<Button-1>", lambda e: self.button_click())
+        frame.pack(fill="x", ipady=2)
+        frame.bind("<Button-1>", lambda e: self.left_click())
         #TODO Move to JSON for data load to allow changes to main attributes
         #if self._active:
         #    frame['bg'] = colors.get("b_sel")
@@ -103,13 +110,42 @@ class FinanceObj:
 
         name = tk.Label(frame, text=self._name, justify=LEFT, anchor="w", foreground=colors.get("t_name"))
         name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=self._type, justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
+        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
         desc = tk.Label(frame, text=self._desc, justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
-        #for c in frame.winfo_children():
-        #    c.bind("<Button-1>", lambda e, i=item, f=frame: self.drawer_button_click(i, f))
+        frame.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
+        frame.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+        for c in frame.winfo_children():
+            c.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
+            c.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+
+    def get_editable(self, root, parent):
+        frame = tk.Frame(root)
+        frame.pack(fill='both')
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=2)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=1)
+        frame.columnconfigure(4, weight=1)
+
+        cancel = tk.Button(frame, text='X', anchor='e')
+        cancel.grid(column=4, row=0)
+        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
+
+        name_string = StringVar()
+        name_string.set(self._name)
+        tk.Label(frame, text="Name", anchor='e').grid(column=1, row=1)
+        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=1, columnspan=2, sticky=W+E)
+
+        desc_string = StringVar()
+        desc_string.set(self._desc)
+        tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
+        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W+E)
+
+    def get_detail(self, root):
+        pass
 
 
 class InvalidExpenseType(Exception):
@@ -136,7 +172,6 @@ class Expenses(FinanceObj):
         Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
         super(Expenses, self).__init__(name, desc)
-        self._type = "Expense"
         self._expenses = {}
         self._yearly_expenses = {}
 
@@ -212,12 +247,12 @@ class TaxBracket(FinanceObj):
     """
     def __init__(self, name: str, desc: str="") -> None:
         super(TaxBracket, self).__init__(name, desc)
-        self._type = "Tax Bracket"
         self._brackets = []
         self._label = ""
-        self._type = type
         self._state = ""
         self._status = ""
+        self._tax_type = "FEDERAL"
+        self._standard_deduction = 24000
 
         self._valid_types = ["STATE", "FEDERAL", "LOCAL"]
         self._valid_status = ["SINGLE", "MARRIED, JOINT", "MARRIED, SEPARATE", "HEAD OF HOUSEHOLD"]
@@ -238,21 +273,12 @@ class TaxBracket(FinanceObj):
         """
         return self._label
 
-    def change_type(self, new_type):
-        """
-        Changes the tax type if it is one of the valid types: Federal, State, or Local.
-        :param new_type: The new tax type.
-        :return: Nothing.
-        """
-        if new_type.isalpha() and new_type.upper() in self._valid_types:
-            self._type = new_type.capitalize()
-
     def tax_type(self):
         """
         Returns the tax type: Federal, State, or Local.
         :return: The tax type
         """
-        return self._type
+        return self._tax_type
 
     def change_state(self, new_state):
         """
@@ -287,6 +313,9 @@ class TaxBracket(FinanceObj):
         """
         return self._status
 
+    def set_standard_deduction(self, standard__deduction):
+        self._standard_deduction = standard__deduction
+
     def define_brackets(self, brackets):
         """
         Allows you to define multiple ranges in the bracket at once. Input must be a two dimensional list with two
@@ -302,7 +331,7 @@ class TaxBracket(FinanceObj):
             if len(b) == 2:
                 self.add_range(b[0], b[1])
 
-    def add_range(self, upper_range, rate):
+    def add_range(self, upper_range: (int, float), rate: (int, float)):
         """
         Adds a range and associated rate to the tax bracket. Method will check to see if the range is already in the
         list and replace the rate if it does. Passing 'None' for the upper range will be equivalent to the highest tax
@@ -313,16 +342,16 @@ class TaxBracket(FinanceObj):
         """
         if upper_range == None:
             upper_range = 1000000000
-        if not isinstance(upper_range,(int,float)) or not isinstance(rate, (int,float)):
+        if not isinstance(upper_range, (int, float)) or not isinstance(rate, (int, float)):
             return
         index = self._get_range(upper_range)
-        if index == None:
+        if index is None:
             self._brackets.append([upper_range, rate/100])
             self._brackets.sort()
         else:
             self._brackets[index] = [upper_range, rate/100]
 
-    def rem_range(self, upper_range):
+    def rem_range(self, upper_range: (int, float)):
         """
         Removes a bracket range if it exists.
         :param upper_range: The range to be removed.
@@ -348,7 +377,7 @@ class TaxBracket(FinanceObj):
                 return self._brackets.index(r)
         return None
 
-    def calculate(self, income):
+    def calculate_taxed_amount(self, income):
         """
         Calculates the total taxed amount and the effective tax rate for a given income.
         :param income: The yearly income to be taxed
@@ -358,6 +387,21 @@ class TaxBracket(FinanceObj):
             return None
 
         taxed_amount = 0
+        if self._tax_type == "FEDERAL":
+            income -= self._standard_deduction
+
+            # Social Security Amount
+            if income < 147000:
+                taxed_amount += income * 0.062
+            else:
+                taxed_amount += 147000 * 0.062
+
+            # Medicare Amount
+            if income < 200000:
+                taxed_amount += income * 0.0145
+            else:
+                taxed_amount += ((200000 * 0.0145) + ((income - 200000) * 0.0235))
+
         for i in range(0, len(self._brackets)):
             if i == 0:
                 if income >= self._brackets[i][0]:
@@ -376,36 +420,73 @@ class TaxBracket(FinanceObj):
 
 
 class Job(FinanceObj):
-    def __init__(self, name, desc="") -> None:
-        super(Job, self).__init__(name, desc)
-        self._type = "Job"
-        self._title = "Blank"
-        self._company = "Some Company"
-        self._income = 0
-        #self._pre_tax = Expenses()
-        #self._post_tax = Expenses()
-        self._401k_rate = 0
-        self._roth_rate = 0
+    """Represents a job."""
+    def __init__(self,
+                 title: str,
+                 desc: str = "",
+                 income: (int, float) = 30000,
+                 rate_401k: float = 0,
+                 rate_roth: float = 0
+                 ) -> None:
+        """
+        Initializes the Job object with a title and description. Income and retirement contribution rates are optional.
+        :param title: The job title.
+        :param desc: Brief description of the job.
+        :param income: Annual salary for the job
+        :param rate_401k: 401k contribution rate.
+        :param rate_roth: roth contribution rate.
+        """
+        super(Job, self).__init__(title, desc)
 
-    def get_income(self):
+        self._income = income
+        self._401k_rate = rate_401k
+        self._roth_rate = rate_roth
+
+        self._taxes = []
+        self._pre_tax_deductions = Expenses('pre tax')
+        self._post_tax_deductions = Expenses('post tax')
+
+        self._valid_pay_frequency = ['Hourly', 'Weekly', 'Bi-Weekly', 'Monthly', 'Annually']
+
+    def get_gross_income(self) -> (int, float):
+        """
+        Returns the annual amount earned before taxes and deductions like retirement and health insurance.
+        :return: Gross income earned.
+        """
         return self._income
 
-    def get_pretax(self):
-        return self._pre_tax
+    def get_pretax_income(self) -> (int, float):
+        """
+        Returns the net amount before taxes and post tax deductions are applied.
+        :return: The pre tax annual income.
+        """
+        income = self._income
 
-    def get_posttax(self):
-        return self._post_tax
+        if len(self._pre_tax_deductions) == 0:
+            return income
 
-    def set_company(self, new_company):
-        if new_company.isalnum():
-            self._company = new_company
+        income = income * (1 - self._401k_rate)
+        income -= self._pre_tax_deductions.total()
 
-    def company(self):
-        return self._company
+        return income
 
-    def set_title(self, new_title):
-        if new_title.isalnum():
-            self._title = new_title
+    def get_posttax_income(self) -> (int, float):
+        """
+        Returns the net annual amount after taxes and deductions.
+        :return: The net annual income.
+        """
+        income = self.get_pretax_income()
+        taxed_amount = 0
+        deducted_amount = 0
+
+        for tax in self._taxes:
+            taxed_amount += tax.calculate_taxed_amount(income)
+        deducted_amount = self._post_tax_deductions.amount()
+
+        income = income * (1 - self._roth_rate)
+        income -= (taxed_amount + deducted_amount)
+
+        return income
 
     def set_401k(self, rate):
         self._401k_rate = rate
@@ -415,9 +496,63 @@ class Job(FinanceObj):
 
     def add_tax_bracket(self, tax: TaxBracket):
         if tax not in self._tax_bracket:
-            self._tax_bracket.add(tax)
+            self._taxes.append(tax)
             return True
         return False
+
+    def get_editable(self, root, parent):
+        frame = tk.Frame(root)
+        frame.pack(fill='both')
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=2)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=1)
+        frame.columnconfigure(4, weight=1)
+
+        cancel = tk.Button(frame, text='X', anchor='e')
+        cancel.grid(column=4, row=0)
+        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
+
+        tk.Label(frame).grid(column=1, row=1)
+
+        name_string = StringVar()
+        name_string.set(self._name)
+        tk.Label(frame, text="Title", anchor='e', justify=RIGHT).grid(column=1, row=2)
+        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=2, columnspan=2, sticky=W + E)
+
+        desc_string = StringVar()
+        desc_string.set(self._desc)
+        tk.Label(frame, text="Company", anchor='e').grid(column=1, row=3)
+        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=3, columnspan=2, sticky=W + E)
+
+        tk.Label(frame).grid(column=1, row=4)
+
+        income_string = StringVar()
+        income_string.set(str(self._income))
+        tk.Label(frame, text="Income", anchor='e').grid(column=1, row=5)
+        tk.Entry(frame, name='income', textvariable=income_string).grid(column=2, row=5, columnspan=2, sticky=W + E)
+
+        pay_vals = self._valid_pay_frequency
+        pay_freq_string = StringVar()
+        pay_freq_string.set(pay_vals[4])
+        pay_freq = tk.OptionMenu(frame, pay_freq_string, *pay_vals)
+        tk.Label(frame, text="Pay Frequency", anchor='e').grid(column=1, row=6)
+        pay_freq.grid(column=2, row=6, columnspan=2, sticky=W + E)
+
+        retirement_string = StringVar()
+        retirement_string.set(self._401k_rate)
+        tk.Label(frame, text="401k Contribution", anchor='e').grid(column=1, row=7)
+        tk.Entry(frame, name='401k', textvariable=retirement_string).grid(column=2, row=7, columnspan=2, sticky=W + E)
+
+        roth_string = StringVar()
+        roth_string.set(self._401k_rate)
+        tk.Label(frame, text="Roth Contribution", anchor='e').grid(column=1, row=8)
+        tk.Entry(frame, name='roth', textvariable=roth_string).grid(column=2, row=8, columnspan=2, sticky=W + E)
+
+        tk.Label(frame).grid(column=1, row=9)
+        tk.Button(frame, text="Tax Brackets").grid(column=2, row=10, sticky=W + E)
+        tk.Button(frame, text="Pre Tax Deductions").grid(column=2, row=11, sticky=W + E)
+        tk.Button(frame, text="Post Tax Deductions").grid(column=2, row=12, sticky=W + E)
 
 
 #TODO add support for assets like 401k, IRA, houses, bank accounts

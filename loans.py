@@ -351,14 +351,17 @@ class Mortgage(Loan):
 class VariableRateMortgage(Mortgage):
     def __init__(self, total=0, rate=1, length=60) -> None:
         super(Mortgage, self).__init__(total=total, rate=rate, length=length)
-        self._type = "ARM"
 
 
 #TODO Implement
 class Auto(Loan):
-    def __init__(self, name:str, desc: str = ""):
-        super().__init__(name,desc)
-        self._type = "Auto Loan"
+    def __init__(self, name: str, desc: str = ""):
+        super().__init__(name, desc)
+
+
+class Student(Loan):
+    def __init__(self, name: str, desc: str = ""):
+        super().__init__(name, desc)
 
 
 def loan_to_mortgage(self, loan: Loan) -> Mortgage:
