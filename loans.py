@@ -4,6 +4,10 @@
 
 import math
 from datetime import date
+from tkinter import W, E
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 from income import FinanceObj
 from matplotlib import pyplot
 import tkinter as tk
@@ -13,25 +17,75 @@ import tkinter.ttk as ttk
 class ExtraPayment:
     def __init__(self, start_month, length, amount):
         self.start = start_month
+        self.length = length
         self.end = start_month + length
         self.amount = amount
+
+
+class ExtraPaymentWindow:
+    def __init__(self, root, loan):
+        self._loan = loan
+
+        self._start = tk.IntVar()
+        self._duration = tk.IntVar()
+        self._amount = tk.IntVar()
+
+        window = tk.Toplevel(root)
+        window.title("Add Extra Payments")
+        #window.geometry("200x200")
+        window.grid_propagate(True)
+        self._frame = tk.Frame(window)
+        self._frame.grid(column=0,row=0)
+        #self._frame.pack_propagate(True)
+        self.populate()
+
+    def new_payment(self):
+        if self._start.get() != "" and self._duration.get() != "" and self._amount.get() != "":
+            new_extra_payment = ExtraPayment(self._start.get(), self._duration.get(), self._amount.get())
+            self._loan.add_extra_payment(new_extra_payment)
+        else:
+            #TODO pass back error message
+            pass
+        self.populate()
+
+    def populate(self):
+        print('populating')
+        frame = self._frame
+        extra_payments = self._loan.get_extra_payments()
+        tk.Label(frame, text=self._loan.name()).grid(column=1, row=0)
+        tk.Label(frame, text="").grid(column=0, row=1)
+
+        tk.Entry(frame, textvariable=self._start).grid(column=0, row=2)
+        tk.Entry(frame, textvariable=self._duration).grid(column=1, row=2)
+        tk.Entry(frame, textvariable=self._amount).grid(column=2, row=2)
+        add_button = tk.Button(frame, text='Add')
+        add_button.grid(column=2, row=3)
+        add_button.bind("<Button-1>", lambda e: self.new_payment())
+
+        for i in range(len(extra_payments)):
+            tk.Label(frame, text=extra_payments[i].start).grid(column=0, row=5+i)
+            tk.Label(frame, text=extra_payments[i].length).grid(column=1, row=5+i)
+            tk.Label(frame, text=extra_payments[i].amount).grid(column=2, row=5+i)
+
+
 
 
 class Loan(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
         super(Loan, self).__init__(name, desc)
         self._type = "Loan"
-        self._monthly_payment = 0
+        self._monthly_payment = 1200
         self._extra_payments = []
 
-        self._data.update({"total": 0})
-        self._data.update({"rate": 0})
-        self._data.update({"term": 0})
-        self._data.update({"down payment": 0})
-        self._data.update({"principal": 0})
+        self._data.update({"total": 240000})
+        self._data.update({"rate": 2.875})
+        self._data.update({"term": 360})
+        self._data.update({"down payment": 80000})
+        self._data.update({"principal": 160000})
 
         self._data.update({"origination": date(2020, 1, 1)})
         self._data.update({'first payment': date(2020, 2, 1)})
+        self.calc_monthly()
 
     def set_origination(self, new_year, new_month, new_day=1) -> None:
         """
@@ -165,6 +219,9 @@ class Loan(FinanceObj):
             return True
         return False
 
+    def get_extra_payments(self) -> list:
+        return self._extra_payments
+
     # TO DO: factor in a prorated amount and use the start of the loan
     def amortization_schedule(self, extra_payments=False) -> list:
         """
@@ -223,10 +280,9 @@ class Loan(FinanceObj):
         form.grid(column=0, row=0)
 
 
-
 class Mortgage(Loan):
     def __init__(self, name: str, desc: str = "") -> None:
-        super(Loan, self).__init__(name, desc)
+        super(Mortgage, self).__init__(name, desc)
         self._type = "Mortgage"
 
         self._pmi_required = True
@@ -346,11 +402,56 @@ class Mortgage(Loan):
             self._property_tax = self._total * (self._property_tax_rate / 100)
         return self._property_tax
 
+    def launch_extra_payments(self, parent):
+        root = parent.get_root()
+        ExtraPaymentWindow(root, self)
+
+    def get_editable(self, root, parent):
+        frame = tk.Frame(root)
+        frame.pack(fill='both')
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=2)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=1)
+        frame.columnconfigure(4, weight=1)
+
+        cancel = tk.Button(frame, text='X', anchor='e')
+        cancel.grid(column=4, row=0)
+        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
+
+        name_string = tk.StringVar()
+        name_string.set(self._name)
+        tk.Label(frame, text="Name", anchor='e').grid(column=1, row=1)
+        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=1, columnspan=2, sticky=W + E)
+
+        desc_string = tk.StringVar()
+        desc_string.set(self._desc)
+        tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
+        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W + E)
+
+        extra_payments =tk.Button(frame, text='Extra Payments')
+        extra_payments.grid(column=1, row=3)
+        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
+
+    def get_detail(self, root, parent):
+        frame = tk.Frame(root)
+        frame.pack(fill='both')
+        frame.pack_propagate(True)
+        sched1, sched2 = self.compare_schedules()
+        #print(schedule)
+        fig = pyplot.Figure(figsize=(5, 3), dpi=100)
+        p = fig.add_subplot(111)
+        p.plot(range(0, len(sched1)), sched1)
+        p.plot(range(0, len(sched2)), sched2)
+        canvas = FigureCanvasTkAgg(fig, frame)
+        canvas.get_tk_widget().pack()
+        #canvas.show()
+
 
 #TODO Implement
 class VariableRateMortgage(Mortgage):
     def __init__(self, total=0, rate=1, length=60) -> None:
-        super(Mortgage, self).__init__(total=total, rate=rate, length=length)
+        super(Mortgage, self).__init__()
 
 
 #TODO Implement

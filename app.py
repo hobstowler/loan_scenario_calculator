@@ -39,8 +39,10 @@ class NavLabel:
 
 class NavButton(NavLabel):
     """Button on the top-level navigation menu."""
-    def __init__(self, label: str, detail: str, parent, fin_objects: list):
-        super(NavButton, self).__init__(label)
+    def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
+        super(NavButton, self).__init__(label.__str__())
+        print(repr(label))
+        print("test:",label.__str__())
         self.detail = detail
         self._fin_list = fin_objects
         self._parent = parent
@@ -129,13 +131,14 @@ class BottomMenu():
 
 
 class LeftPanel:
-    def __init__(self, parent: tk.Tk, fin_vars: dict):
+    def __init__(self, root: tk.Tk, fin_vars: dict):
         """
         Initializes the Left Panel for the app. Creates a navigation menu, drawer, and bottom menu for the drawer.
-        :param parent: The root for the application.
+        :param root: The root for the application.
         :param fin_vars: The financial objects from the loaded data.
         """
-        self.frame = tk.Frame(parent, name="leftpanel")
+        self._root = root
+        self.frame = tk.Frame(self._root, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
         # drawer variables
@@ -143,11 +146,11 @@ class LeftPanel:
         # self._selected_fin_obj = None
 
         # nav menu variables
-        self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
+        self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=600)
         self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
         self._nav_menu_elements = [
             NavLabel("scenarios"),
-            NavButton("scenarios", "Select a Scenario.", self, fin_vars.get("scenarios")),
+            NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
             NavLabel("income"),
             NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
             NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
@@ -166,17 +169,12 @@ class LeftPanel:
         self._nav_text = StringVar()
         self._nav_text.set(self._nav_selection.detail + " Right click to modify.")
         self._nav_label = tk.Label(self.frame, name="nav_label", textvariable=self._nav_text)
-        self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1,0))
+        self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1, 0))
         self._nav_label.grid_propagate(False)
 
-        # bottom menu variables
-        self._del_button = None
-
         # instantiate major components
-        self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=500)
-        self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
-
-        self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=500)
+        self._detail_panel = None
+        self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=600)
         self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
         self._drawer.pack_propagate(False)
         self._bottom_menu = BottomMenu(self)
@@ -190,6 +188,12 @@ class LeftPanel:
         self._nav_selection.click()
 
         #TODO implement scroll bar. may need to be part of the refresh
+
+    def set_detail_panel(self, panel) -> None:
+        self._detail_panel = panel
+
+    def get_root(self) -> tk.Tk:
+        return self._root
 
     def new_context(self, clicked: NavButton, fin_list: list):
         self._nav_selection.activate(False)
@@ -212,6 +216,8 @@ class LeftPanel:
         when returning from mid panel.
         :return: Nothing.
         """
+        if self._detail_panel is not None:
+            self._detail_panel.reset()
         for c in self._drawer.winfo_children():
             c.destroy()
 
@@ -230,6 +236,14 @@ class LeftPanel:
             c.destroy()
 
         fin_object.get_editable(self._drawer, self)
+
+    def populate_detail(self, fin_object: FinanceObj):
+        self._detail_panel.reset()
+        fin_object.get_detail(self._detail_panel.get_frame(), self)
+
+    def populate_new(self):
+        self._nav_selection
+        self.populate_editable()
 
     def drawer_button_click(self, fin_obj, button: Frame) -> None:
         """
@@ -588,12 +602,20 @@ class MidPanel:
 
 # TODO implement!
 class RightPanel:
-    def __init__(self, parent: tk.Tk):
-        panel = tk.Frame(parent)
-        panel.grid(column=2, row=0, sticky=N+S)
+    def __init__(self, root: tk.Tk):
+        self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=600, height=600)
+        self._frame.grid(column=2, row=0, sticky=N + S)
+        self._frame.pack_propagate(False)
 
-        stat_panel = tk.Frame(panel, borderwidth=2, relief='ridge', width=500, height=550)
-        stat_panel.grid(column=0, row=0, rowspan=2, sticky=N+S)
+        #stat_panel = tk.Frame(self._frame, borderwidth=2, relief='ridge', width=500, height=550)
+        #stat_panel.grid(column=0, row=0, rowspan=2, sticky=N+S)
+
+    def get_frame(self) -> tk.Frame:
+        return self._frame
+
+    def reset(self) -> None:
+        for c in self._frame.winfo_children():
+            c.destroy()
 
 
 def main():
@@ -610,6 +632,7 @@ def main():
         'assets': [],
         'mortgages': [Mortgage('test mortgage', 'mortgage description')],
         'student loans': [Student('test student loan', 'student loan description')],
+        'loans': [Loan('test loan', 'test description')]
     }
 
     # create the three main panels.
@@ -618,7 +641,7 @@ def main():
     right_panel = RightPanel(root)
 
     #set panel relationships
-    #left_panel.set_mid_panel(mid_panel)
+    left_panel.set_detail_panel(right_panel)
     #mid_panel.set_left_panel(left_panel)
     #mid_panel.set_right_panel(right_panel)
 

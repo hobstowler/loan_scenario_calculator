@@ -87,7 +87,7 @@ class FinanceObj:
                 self._data.update({k: data.get(k)})
 
     def left_click(self, parent):
-        #parent.populate_detail(self)
+        parent.populate_detail(self)
         print('click')
 
     def right_click(self, parent):
@@ -144,7 +144,7 @@ class FinanceObj:
         tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
         tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W+E)
 
-    def get_detail(self, root):
+    def get_detail(self, root, parent):
         pass
 
 

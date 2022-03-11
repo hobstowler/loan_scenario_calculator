@@ -22,6 +22,10 @@ class Scenario(FinanceObj):
         self._monthly_income = 0
         self._monthly_expense = 0
 
+    @staticmethod
+    def __str__():
+        return f"Scenario"
+
     def add_job(self, job: Job) -> bool:
         """
         Adds a job to the list of jobs in the scenario. Raises exception if job is already in the list.
