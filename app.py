@@ -157,7 +157,7 @@ class LeftPanel:
             NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
             NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
             NavLabel("loans"),
-            NavButton("mortgages", "Select a Mortgage.", self, fin_vars.get("mortgages")),
+            NavButton("mortgage", "Select a Mortgage.", self, fin_vars.get("mortgages")),
             NavButton("student", "Select a Student Loan.", self, fin_vars.get("student loans")),
             NavButton("auto", "Select an Auto Loan.", self, fin_vars.get("auto loans")),
             NavButton("personal", "Select a Personal Loan.", self, fin_vars.get("loans")),
@@ -393,7 +393,7 @@ def main():
         'jobs': [Job('Data Analyst II', 'Cerner Corporation'),Job('Data Analyst I', 'Cerner Corporation')],
         'assets': [],
         'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
-        'student loans': [Student('test student loan', 'student loan description')],
+        'student loans': [Student('Virginia Tech', 'BA in English Literature')],
         'loans': [Loan('test loan', 'test description')]
     }
 
