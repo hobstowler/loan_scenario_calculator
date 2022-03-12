@@ -5,11 +5,11 @@
 import math
 import tkinter
 from datetime import date
-from tkinter import W, E
+from tkinter import W, E, LEFT, RIGHT
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from income import FinanceObj
+from income import FinanceObj, colors
 from matplotlib import pyplot
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -90,8 +90,6 @@ class ExtraPaymentWindow:
 
     def exit(self):
         self._frame.winfo_toplevel().destroy()
-
-
 
 
 class Loan(FinanceObj):
@@ -263,20 +261,16 @@ class Loan(FinanceObj):
 
         schedule = []
         schedule.append(principal)
-        print(schedule[0])
         for i in range(1, term + 1):
             interest = self.calc_m_interest(principal)
             principal = principal + interest - monthly_payment
             if extra_payments:
-                print("so extra")
                 for e in self._extra_payments:
-                    print(e.start)
                     if e.start <= i < e.end:
                         principal -= e.amount
             if principal < 0:
                 principal = 0
             schedule.append(principal)
-            print(schedule[i])
 
         return schedule
 
@@ -470,6 +464,37 @@ class Mortgage(Loan):
         canvas = FigureCanvasTkAgg(fig, frame)
         canvas.get_tk_widget().pack()
         #canvas.show()
+
+    def get_list_button(self, root, parent):
+        frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
+        frame.pack(fill="x", ipady=2)
+        frame.bind("<Button-1>", lambda e: self.left_click())
+        # TODO Move to JSON for data load to allow changes to main attributes
+        # if self._active:
+        #    frame['bg'] = colors.get("b_sel")
+
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        name = tk.Label(frame, text=self._name, justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name.grid(column=0, row=0, sticky=W)
+        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
+        f_type.grid(column=1, row=0, sticky=E)
+        desc = tk.Label(frame, text=self._desc, justify=LEFT, anchor="w")
+        desc.grid(column=0, row=1, sticky=W, columnspan=2)
+        amount_string = str(self._data.get('total')) + " | " + str(self._data.get('principal')) + " | "+ str(self._data.get('rate'))
+        tk.Label(frame, text=amount_string).grid(column=0, row=2, sticky=W, columnspan=3)
+
+        frame.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
+        frame.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+        for c in frame.winfo_children():
+            c.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
+            c.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+            if self._active:
+                c['bg'] = colors.get("b_sel")
+
+        if self._active:
+            frame['bg'] = colors.get("b_sel")
 
 
 #TODO Implement

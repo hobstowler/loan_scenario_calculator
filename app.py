@@ -145,8 +145,7 @@ class LeftPanel:
         self.frame.grid(column=0, row=0)
 
         # drawer variables
-        self._drawer_button_sel = None
-        # self._selected_fin_obj = None
+        self._fin_obj_selection = None
 
         # nav menu variables
         self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=600)
@@ -199,6 +198,11 @@ class LeftPanel:
         return self._root
 
     def new_context(self, clicked: NavButton, fin_list: list):
+        print("new context")
+        if self._fin_obj_selection is not None:
+            print("clear fin obj")
+            self._fin_obj_selection.activate(False)
+            self._fin_obj_selection = None
         self._nav_selection.activate(False)
         self._nav_selection = clicked
         self._nav_selection.activate()
@@ -219,14 +223,15 @@ class LeftPanel:
         when returning from mid panel.
         :return: Nothing.
         """
-        if self._detail_panel is not None:
+        if self._detail_panel is not None and not refresh:
             self._detail_panel.reset()
         for c in self._drawer.winfo_children():
             c.destroy()
 
-        if fin_list is None and not refresh:
-            return
-        if refresh:
+        if not refresh:
+            if fin_list is None:
+                return
+        else:
             print("refreshing")
             fin_list = self._nav_selection.get_fin_list()
 
@@ -241,6 +246,12 @@ class LeftPanel:
         fin_object.get_editable(self._drawer, self)
 
     def populate_detail(self, fin_object: FinanceObj):
+        if self._fin_obj_selection is not None:
+            if fin_object != self._fin_obj_selection:
+                self._fin_obj_selection.activate(False)
+                self._fin_obj_selection = fin_object
+        else:
+            self._fin_obj_selection = fin_object
         self._detail_panel.reset()
         fin_object.get_detail(self._detail_panel.get_frame(), self)
 
@@ -350,258 +361,6 @@ class LeftPanel:
 
         self.populate_list()
 
-    def set_mid_panel(self, mid: tk.Frame) -> None:
-        """
-        Used during initialization of app to set a reference to the mid panel.
-        :param mid: The mid panel for the application.
-        :return: Nothing.
-        """
-        self._mid_panel = mid
-
-
-class MidPanel:
-    """
-    Represents the Middle Panel of the applications. Used to display detailed information about a selected financial
-    object and is also used to edit those objects.
-    """
-    def __init__(self, parent: tk.Tk):
-        """
-        Initializes the Middle Panel.
-        :param parent: The root of the window.
-        """
-        self._form = None
-        self.frame = tk.Frame(parent)
-        self.frame.grid(column=1, row=0, sticky=N+S)
-
-        self._label = tk.StringVar()
-        detail_label = tk.Label(self.frame, name="detail_label", textvariable=self._label, width=20)
-        detail_label.grid(column=0, row=0, sticky=N+S+W+E, pady=(1, 0))
-        detail_label.grid_propagate(False)
-        self._label.set("")
-
-        self.detail_panel = tk.Frame(self.frame, name="detail_panel", borderwidth=2, relief='groove', width=300, height=500)
-        self.detail_panel.grid(column=0, row=1, sticky=N+E+S+W)
-        self.detail_panel.grid_propagate(False)
-        self._bottom_menu = None
-        self._left_panel = None
-        self._right_panel = None
-
-        # buffer for changes on form.
-        self._form_buffer = {}
-
-        self._form_vars = {}
-
-    # TODO there is a better way to do this.
-    def create_new_form(self) -> DetailForm:
-        context = self._left_panel.get_context()
-        if context == "scenarios":
-            return DetailForm(Scenario("new scenario", "new scenario"))
-        if context == "loans":
-            return DetailForm(Loan("new loan", "new loan"))
-        if context == "jobs":
-            return DetailForm(Job("new job", "new job"))
-        if context == "expenses":
-            return DetailForm(Expenses("new expense list", "new expense list"))
-        if context == "taxes":
-            return DetailForm(TaxBracket("new tax bracket", "new tax bracket"))
-
-    def create_bottom_menu(self, active: bool = False):
-        """
-        "Shows" the bottom menu in the middle panel by creating it.
-        :return: None
-        """
-        b_menu = tk.Frame(self.frame, name="bottom_menu")
-        b_menu.grid(column=0, row=2, sticky=N + W + S + E)
-        for i in range(5):
-            b_menu.columnconfigure(i, weight=1)
-            if i % 2 == 0:
-                # add padding frames between the two buttons
-                tk.Frame(b_menu).grid(column=i, row=0)
-        tk.Button(b_menu, text="Cancel", width=7, command=lambda: self.cancel()).grid(column=1, row=0, sticky=W + E)
-        tk.Button(b_menu, text="Save", width=7, command=lambda: self.save()).grid(column=3, row=0, sticky=W + E)
-        for c in b_menu.winfo_children():
-            if not active and c.winfo_class() != "Frame":
-                c['state'] = "disabled"
-
-        self._bottom_menu = b_menu
-
-    def populate_list(self, obj=None) -> None:
-        """
-        Populates the middle panel with a form corresponding to the selected financial object on the left panel.
-        :param active: If true, the panel loads in an editable state.
-        :param obj: Used to differentiate between a new object and existing. None if new object.
-        :return: Nothing.
-        """
-        print("populating")
-        self.reset_panel(False)
-        context = self._left_panel.get_context()
-
-        panel = self.detail_panel
-        if obj is None:
-            self._form = self.create_new_form()
-            obj = self._form.get_fin_obj()
-        else:
-            self._form = DetailForm(obj)
-
-        #TODO make type-based
-        form = self._form.get_form(context)
-
-        self._label.set(form[0])
-        for i in range(1, len(form)):
-            for j in range(0, len(form[i])):
-                tk_type = form[i][j][0]
-                text = form[i][j][1]
-                name = form[i][j][2]
-                col_span = form[i][j][3]
-                if tk_type == "Label":
-                    tk.Label(panel, text=text, name=name)\
-                        .grid(row=i, column=j, columnspan=col_span)
-                elif tk_type == "Entry":
-                    s = tk.StringVar()
-                    if name == "name":
-                        s.set(obj.name())
-                    elif name == "desc":
-                        s.set(obj.desc())
-                    else:
-                        s.set(obj.get_data().get(name))
-                    self._form_vars.update({name: s})
-                    e = ttk.Entry(panel, textvariable=s, name=name)
-                    e.bind("<FocusOut>", lambda e, t=name: self.buffer_change(t))
-                    e.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
-                elif tk_type == "CheckButton":
-                    var = tk.IntVar()
-                    var.set(0)
-                    self._form_vars.update({name: var})
-                    check = ttk.Checkbutton(panel, text=text, name=name, variable=var, onvalue=1, offvalue=0)
-                    check.grid(row=i, column=j, columnspan=col_span)
-                elif tk_type == "Space":
-                    tk.Frame(panel, height=10).grid(row=i, column=j, columnspan=col_span)
-                elif tk_type == "Combo":
-                    s = tk.StringVar()
-                    s_var = obj.get_data().get(name)
-                    index = form[i][j][5]
-                    if s_var is None and index >= 0:
-                        s_var = form[i][j][4][index]
-                    s.set(s_var)
-                    self._form_vars.update({name: s})
-                    combo = ttk.Combobox(panel, text=text, textvariable=s)
-                    combo.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
-                    combo['values'] = form[i][j][4]
-                elif tk_type == "Button":
-                    button = tk.Button(panel, text=text)
-                    button.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
-        panel.columnconfigure(0, weight=0)
-        panel.columnconfigure(1, weight=2)
-        panel.columnconfigure(2, weight=1)
-        for c in panel.winfo_children():
-            c.grid(pady=(1, 1))
-            if c.winfo_class() != "Frame":
-                c['state'] = "disabled"
-
-        self.create_bottom_menu()
-
-    def reset_panel(self, clear=True) -> None:
-        """
-        Resets the middle panel. If the panel should be empty at the end, clear should be True.
-        :param clear: Determines whether to fully clear the panel or not.
-        :return: Nothing
-        """
-        print("reset_panel")
-        for c in self.detail_panel.winfo_children():
-            c.destroy()
-        self._form = None
-        self._form_vars.clear()
-        self._form_buffer = {}
-        if clear:
-            self._left_panel.activate()
-            self._left_panel.populate_list()
-            self.destroy_bottom_menu()
-            self._label.set("")
-
-    def activate(self, state="active") -> None:
-        """
-        Used to activate the mid panel to allow editing of the loaded form.
-        :param state: active by default.
-        :return: Nothing.
-        """
-        print("activate mid panel")
-        if self._bottom_menu is None:
-            print("nothing is selected")
-            return
-        for c in self._bottom_menu.winfo_children():
-            if c.winfo_class() != "Frame":
-                c['state'] = state
-        for c in self.detail_panel.winfo_children():
-            if c.winfo_class() != "Frame":
-                c['state'] = state
-
-    def buffer_change(self, key: str) -> None:
-        """
-        Sends a form change to a buffer dict. When save is clicked, buffer writes out to the financial object and saves
-        to file.
-        :param key: The name of the field used as the key.
-        :return: Nothing.
-        """
-        print("send change:", key)
-        s_var = str(self._form_vars.get(key).get())
-        if s_var.isnumeric():
-            if len(s_var) > 0 and s_var == "0":
-                pass
-        self._form_buffer.update({key: s_var})
-        #self._form.update_fin_obj(self._left_panel.get_context(), {key: s_var})
-
-    def cancel(self) -> None:
-        """
-        Cancel button for the mid panel. Resets the form and leaves it blank.
-        :return: Nothing.
-        """
-        print("cancel")
-        self.reset_panel()
-
-
-    #TODO change this to call into fin objects update method and send the buffered changes.
-    def save(self) -> None:
-        """
-        Save button for the mid panel. Writes all buffer data to the financial object and clears the panel.
-        :return: Nothing.
-        """
-        print("save")
-        if self._form is None:
-            return
-        for k in self._form_vars.keys():
-            self.buffer_change(k)
-        fin_obj = self._form.get_fin_obj()
-        fin_obj.update(self._form_buffer)
-        self._left_panel.add_fin_obj(fin_obj)
-        self.reset_panel()
-
-    def destroy_bottom_menu(self):
-        """
-        Usually called by clear(). "Hides" the bottom menu for the middle panel by destroying the frame.
-        :return: None
-        """
-        print("hide bottom menu")
-        if self._bottom_menu is None:
-            return
-        self._bottom_menu.destroy()
-        self._bottom_menu = None
-
-    def set_left_panel(self, left: tk.Frame) -> None:
-        """
-        Used during initialization of the app to set a reference to the left panel.
-        :param left: The left panel for the app.
-        :return: Nothing.
-        """
-        self._left_panel = left
-
-    def set_right_panel(self, right: tk.Frame) -> None:
-        """
-        Used during initialization of the app to set a reference to the right panel.
-        :param right: The right panel for the app.
-        :return: Nothing.
-        """
-        self._right_panel = right
-
 
 # TODO implement!
 class RightPanel:
@@ -631,9 +390,9 @@ def main():
     #save_all(fin_vars)
     fin_vars = {
         'scenarios': [Scenario('test scenario', 'scenario description')],
-        'jobs': [Job('Data Analyst II', 'Cerner Corporation')],
+        'jobs': [Job('Data Analyst II', 'Cerner Corporation'),Job('Data Analyst I', 'Cerner Corporation')],
         'assets': [],
-        'mortgages': [Mortgage('test mortgage', 'mortgage description')],
+        'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
         'student loans': [Student('test student loan', 'student loan description')],
         'loans': [Loan('test loan', 'test description')]
     }

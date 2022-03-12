@@ -26,7 +26,7 @@ class FinanceObj:
         """
         self._name = name
         self._desc = desc
-        self._active = True
+        self._active = False
         self._data = {}
 
     def set_name(self, new_name: str) -> bool:
@@ -86,13 +86,16 @@ class FinanceObj:
             else:
                 self._data.update({k: data.get(k)})
 
+    def activate(self, active=True):
+        self._active = active
+
     def left_click(self, parent):
         parent.populate_detail(self)
-        print('click')
+        self._active = True
+        parent.populate_list(refresh=True)
 
     def right_click(self, parent):
         parent.populate_editable(self)
-        print('right click')
 
     def cancel(self, parent):
         parent.populate_list(refresh=True)
@@ -102,8 +105,6 @@ class FinanceObj:
         frame.pack(fill="x", ipady=2)
         frame.bind("<Button-1>", lambda e: self.left_click())
         #TODO Move to JSON for data load to allow changes to main attributes
-        #if self._active:
-        #    frame['bg'] = colors.get("b_sel")
 
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -120,6 +121,11 @@ class FinanceObj:
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
             c.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+            if self._active:
+                c['bg'] = colors.get("b_sel")
+
+        if self._active:
+            frame['bg'] = colors.get("b_sel")
 
     def get_editable(self, root, parent):
         frame = tk.Frame(root)
