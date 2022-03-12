@@ -4,10 +4,13 @@
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from scenario import *
-from income import *
-from dataload import *
-from forms import *
+from tkinter import N, W, S, E
+
+from dataload import save_all
+from forms import DetailForm
+from income import FinanceObj, Job, TaxBracket
+from loans import Loan, Mortgage, Student
+from scenario import Scenario
 
 colors = {
             "t_type": "navy",
@@ -42,7 +45,7 @@ class NavButton(NavLabel):
     def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
         super(NavButton, self).__init__(label.__str__())
         print(repr(label))
-        print("test:",label.__str__())
+        print("test:", label.__str__())
         self.detail = detail
         self._fin_list = fin_objects
         self._parent = parent
@@ -166,7 +169,7 @@ class LeftPanel:
         self._nav_selection = self._nav_menu_elements[3]
         #self._nav_selection._active = True
 
-        self._nav_text = StringVar()
+        self._nav_text = tk.StringVar()
         self._nav_text.set(self._nav_selection.detail + " Right click to modify.")
         self._nav_label = tk.Label(self.frame, name="nav_label", textvariable=self._nav_text)
         self._nav_label.grid(column=1, row=0, columnspan=5, sticky=N+S+W+E, pady=(1, 0))
@@ -245,7 +248,7 @@ class LeftPanel:
         self._nav_selection
         self.populate_editable()
 
-    def drawer_button_click(self, fin_obj, button: Frame) -> None:
+    def drawer_button_click(self, fin_obj, button: tk.Frame) -> None:
         """
         Called when a button in the drawer is clicked. Can be expanded to do specific things based on the type of fin
         object passed, but currently opens the form editor in a disabled mode when clicked.
@@ -347,7 +350,7 @@ class LeftPanel:
 
         self.populate_list()
 
-    def set_mid_panel(self, mid: Frame) -> None:
+    def set_mid_panel(self, mid: tk.Frame) -> None:
         """
         Used during initialization of app to set a reference to the mid panel.
         :param mid: The mid panel for the application.
@@ -370,7 +373,7 @@ class MidPanel:
         self.frame = tk.Frame(parent)
         self.frame.grid(column=1, row=0, sticky=N+S)
 
-        self._label = StringVar()
+        self._label = tk.StringVar()
         detail_label = tk.Label(self.frame, name="detail_label", textvariable=self._label, width=20)
         detail_label.grid(column=0, row=0, sticky=N+S+W+E, pady=(1, 0))
         detail_label.grid_propagate(False)
@@ -454,7 +457,7 @@ class MidPanel:
                     tk.Label(panel, text=text, name=name)\
                         .grid(row=i, column=j, columnspan=col_span)
                 elif tk_type == "Entry":
-                    s = StringVar()
+                    s = tk.StringVar()
                     if name == "name":
                         s.set(obj.name())
                     elif name == "desc":
@@ -466,7 +469,7 @@ class MidPanel:
                     e.bind("<FocusOut>", lambda e, t=name: self.buffer_change(t))
                     e.grid(row=i, column=j, columnspan=col_span, sticky=W+E)
                 elif tk_type == "CheckButton":
-                    var = IntVar()
+                    var = tk.IntVar()
                     var.set(0)
                     self._form_vars.update({name: var})
                     check = ttk.Checkbutton(panel, text=text, name=name, variable=var, onvalue=1, offvalue=0)
@@ -474,7 +477,7 @@ class MidPanel:
                 elif tk_type == "Space":
                     tk.Frame(panel, height=10).grid(row=i, column=j, columnspan=col_span)
                 elif tk_type == "Combo":
-                    s = StringVar()
+                    s = tk.StringVar()
                     s_var = obj.get_data().get(name)
                     index = form[i][j][5]
                     if s_var is None and index >= 0:
@@ -583,7 +586,7 @@ class MidPanel:
         self._bottom_menu.destroy()
         self._bottom_menu = None
 
-    def set_left_panel(self, left: Frame) -> None:
+    def set_left_panel(self, left: tk.Frame) -> None:
         """
         Used during initialization of the app to set a reference to the left panel.
         :param left: The left panel for the app.
@@ -591,7 +594,7 @@ class MidPanel:
         """
         self._left_panel = left
 
-    def set_right_panel(self, right: Frame) -> None:
+    def set_right_panel(self, right: tk.Frame) -> None:
         """
         Used during initialization of the app to set a reference to the right panel.
         :param right: The right panel for the app.
@@ -620,7 +623,7 @@ class RightPanel:
 
 def main():
     # create the root
-    root = Tk()
+    root = tk.Tk()
     root.title("Loan Calculator")
 
     # load the data
@@ -642,8 +645,6 @@ def main():
 
     #set panel relationships
     left_panel.set_detail_panel(right_panel)
-    #mid_panel.set_left_panel(left_panel)
-    #mid_panel.set_right_panel(right_panel)
 
     root.mainloop()
 

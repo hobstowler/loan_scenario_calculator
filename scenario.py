@@ -1,7 +1,6 @@
 # Author: Hobs Towler
 # Date: 12/1/2021
 # Description:
-
 from loans import *
 from income import *
 from matplotlib import pyplot

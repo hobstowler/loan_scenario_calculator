@@ -3,6 +3,7 @@
 # Description:
 
 import math
+import tkinter
 from datetime import date
 from tkinter import W, E
 
@@ -12,6 +13,7 @@ from income import FinanceObj
 from matplotlib import pyplot
 import tkinter as tk
 import tkinter.ttk as ttk
+from errors import ErrorBox
 
 
 class ExtraPayment:
@@ -35,37 +37,59 @@ class ExtraPaymentWindow:
         #window.geometry("200x200")
         window.grid_propagate(True)
         self._frame = tk.Frame(window)
-        self._frame.grid(column=0,row=0)
+        self._frame.grid(column=0, row=0)
         #self._frame.pack_propagate(True)
         self.populate()
+        self._root = root
 
-    def new_payment(self):
-        if self._start.get() != "" and self._duration.get() != "" and self._amount.get() != "":
-            new_extra_payment = ExtraPayment(self._start.get(), self._duration.get(), self._amount.get())
-            self._loan.add_extra_payment(new_extra_payment)
-        else:
-            #TODO pass back error message
-            pass
-        self.populate()
+    def new_extra_payment(self):
+        try:
+            if self._start.get() == 0 or self._duration.get() == 0 or self._amount.get() == 0:
+                ErrorBox(self._root, "invalid inputs")
+            else:
+                new_extra_payment = ExtraPayment(self._start.get(), self._duration.get(), self._amount.get())
+                self._loan.add_extra_payment(new_extra_payment)
+            self.populate()
+        except tkinter.TclError:
+            ErrorBox(self._root, "invalid inputs")
+        self._start.set(0)
+        self._duration.set(0)
+        self._amount.set(0)
 
     def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
         print('populating')
         frame = self._frame
         extra_payments = self._loan.get_extra_payments()
-        tk.Label(frame, text=self._loan.name()).grid(column=1, row=0)
+        tk.Label(frame, text=self._loan.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
 
-        tk.Entry(frame, textvariable=self._start).grid(column=0, row=2)
-        tk.Entry(frame, textvariable=self._duration).grid(column=1, row=2)
-        tk.Entry(frame, textvariable=self._amount).grid(column=2, row=2)
+        tk.Label(frame, text="Start Month").grid(column=0, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._start).grid(column=0, row=3, columnspan=2)
+        tk.Label(frame, text="Duration").grid(column=2, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._duration).grid(column=2, row=3, columnspan=2)
+        tk.Label(frame, text="Amount").grid(column=4, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
         add_button = tk.Button(frame, text='Add')
-        add_button.grid(column=2, row=3)
-        add_button.bind("<Button-1>", lambda e: self.new_payment())
+        add_button.grid(column=5, row=5, sticky=W+E)
+        add_button.bind("<Button-1>", lambda e: self.new_extra_payment())
 
+        last = 6
         for i in range(len(extra_payments)):
-            tk.Label(frame, text=extra_payments[i].start).grid(column=0, row=5+i)
-            tk.Label(frame, text=extra_payments[i].length).grid(column=1, row=5+i)
-            tk.Label(frame, text=extra_payments[i].amount).grid(column=2, row=5+i)
+            tk.Label(frame, text=extra_payments[i].start).grid(column=0, row=6+i, columnspan=2, sticky=W+E)
+            tk.Label(frame, text=extra_payments[i].length).grid(column=2, row=6+i, columnspan=2, sticky=W+E)
+            tk.Label(frame, text=extra_payments[i].amount).grid(column=4, row=6+i, columnspan=2, sticky=W+E)
+            last += 1
+
+        tk.Label(frame, text="").grid(column=0, row=last)
+
+        quit_button = tk.Button(frame, text='Close')
+        quit_button.grid(column=2, row=last+1, columnspan=2, sticky=W+E)
+        quit_button.bind("<Button-1>", lambda e: self.exit())
+
+    def exit(self):
+        self._frame.winfo_toplevel().destroy()
 
 
 
