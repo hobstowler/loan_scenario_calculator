@@ -24,10 +24,11 @@ class FinanceObj:
         :param name: The name of the object. Used in display functions
         :param desc: The longer form description of the object.
         """
-        self._name = name
-        self._desc = desc
-        self._active = False
         self._data = {}
+        self._data.update({'name': name})
+        self._data.update({'desc': desc})
+        self._active = False
+        self._form_strings = {}
 
     def set_name(self, new_name: str) -> bool:
         """
@@ -46,7 +47,7 @@ class FinanceObj:
         Gets the name of the object.
         :return: The name.
         """
-        return self._name
+        return self._data.get('name')
 
     def set_desc(self, new_desc: str) -> bool:
         """
@@ -66,7 +67,7 @@ class FinanceObj:
         Gets the description of the object.
         :return: The description.
         """
-        return self._desc
+        return self._data.get('desc')
 
     def get_data(self) -> dict:
         return self._data
@@ -100,6 +101,9 @@ class FinanceObj:
     def cancel(self, parent):
         parent.populate_list(refresh=True)
 
+    def save(self):
+        pass
+
     def get_list_button(self, root, parent):
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
         frame.pack(fill="x", ipady=2)
@@ -109,11 +113,11 @@ class FinanceObj:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._name, justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
         name.grid(column=0, row=0, sticky=W)
         f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
-        desc = tk.Label(frame, text=self._desc, justify=LEFT, anchor="w")
+        desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
         frame.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
@@ -127,7 +131,11 @@ class FinanceObj:
         if self._active:
             frame['bg'] = colors.get("b_sel")
 
-    def get_editable(self, root, parent):
+    def get_editable(self, root, parent, name: str = None, desc: str = None):
+        if name is None:
+            name = "Name"
+        if desc is None:
+            desc = "Description"
         frame = tk.Frame(root)
         frame.pack(fill='both')
         frame.columnconfigure(0, weight=1)
@@ -140,15 +148,21 @@ class FinanceObj:
         cancel.grid(column=4, row=0)
         cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
 
-        name_string = StringVar()
-        name_string.set(self._name)
-        tk.Label(frame, text="Name", anchor='e').grid(column=1, row=1)
-        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=1, columnspan=2, sticky=W+E)
+        key = 'name'
+        value = self._data.get(key)
+        s_var = StringVar()
+        s_var.set(value)
+        self._form_strings.update({key: s_var})
+        tk.Label(frame, text=name, anchor='e').grid(column=1, row=1)
+        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=1, columnspan=2, sticky=W+E)
 
-        desc_string = StringVar()
-        desc_string.set(self._desc)
-        tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
-        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W+E)
+        key = 'desc'
+        value = self._data.get(key)
+        s_var = StringVar()
+        s_var.set(value)
+        self._form_strings.update({key: s_var})
+        tk.Label(frame, text=desc, anchor='e').grid(column=1, row=2)
+        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=2, columnspan=2, sticky=W+E)
         return frame
 
     def get_detail(self, root, parent):
@@ -508,29 +522,7 @@ class Job(FinanceObj):
         return False
 
     def get_editable(self, root, parent):
-        frame = tk.Frame(root)
-        frame.pack(fill='both')
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=2)
-        frame.columnconfigure(2, weight=4)
-        frame.columnconfigure(3, weight=1)
-        frame.columnconfigure(4, weight=1)
-
-        cancel = tk.Button(frame, text='X', anchor='e')
-        cancel.grid(column=4, row=0)
-        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
-
-        tk.Label(frame).grid(column=1, row=1)
-
-        name_string = StringVar()
-        name_string.set(self._name)
-        tk.Label(frame, text="Title", anchor='e', justify=RIGHT).grid(column=1, row=2)
-        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=2, columnspan=2, sticky=W + E)
-
-        desc_string = StringVar()
-        desc_string.set(self._desc)
-        tk.Label(frame, text="Company", anchor='e').grid(column=1, row=3)
-        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=3, columnspan=2, sticky=W + E)
+        frame = super().get_editable(root, parent, name="Title", desc="Company")
 
         tk.Label(frame).grid(column=1, row=4)
 

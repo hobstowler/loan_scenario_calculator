@@ -455,7 +455,7 @@ class Mortgage(Loan):
         ExtraPaymentWindow(root, self)
 
     def get_editable(self, root, parent):
-        frame = super().get_editable(root, parent)
+        frame = super().get_editable(root, parent,)
 
         tk.Label(frame, text="").grid(column=0, row=10)
 

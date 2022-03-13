@@ -285,7 +285,7 @@ def main():
     #save_all(fin_vars)
     fin_vars = {
         'scenarios': [Scenario('test scenario', 'scenario description')],
-        'jobs': [Job('Data Analyst II', 'Cerner Corporation'),Job('Data Analyst I', 'Cerner Corporation')],
+        'jobs': [Job('Data Analyst II', 'Cerner Corporation'), Job('Data Analyst I', 'Cerner Corporation')],
         'assets': [],
         'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
         'student loans': [Student('Virginia Tech', 'BA in English Literature')],
