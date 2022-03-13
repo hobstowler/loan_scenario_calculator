@@ -78,33 +78,20 @@ class NavButton(NavLabel):
         return button
 
 
-class BottomMenu():
+class BottomMenu:
     def __init__(self, parent):
         self._parent = parent
         self._del_button = None
 
     def new(self) -> None:
-        pass
-        #if not self._active:
-        #    return
-        #self.drawer_button_click(None, None)
-        #self._mid_panel.populate_list()
-        #self._mid_panel.activate()
-        #self.activate("disabled")
+        self._parent.new_fin_object()
 
+    #TODO remove?
     def edit(self) -> None:
-        pass
-        #if not self._active:
-        #    return
-        #if self._drawer_button_sel is None:
-        #    print("nothing is selected")
-        #    return
-        #self._mid_panel.activate()
-        #self.activate("disabled")
+        self._parent.edit_selected_fin_object()
 
     def delete(self):
-        pass
-        #self._drawer_button_sel
+        self._parent.delete_selected_fin_object()
 
     def toggle_delete(self):
         if self._del_button['state'] == "disabled":
@@ -238,7 +225,6 @@ class LeftPanel:
         for fin_obj in fin_list:
             fin_obj.get_list_button(self._drawer, self)
 
-    # TODO break populate_list in two to simplify flow. remove Mid Panel altogether and move two a two panel flow
     def populate_editable(self, fin_object: FinanceObj, active=False):
         for c in self._drawer.winfo_children():
             c.destroy()
@@ -255,111 +241,20 @@ class LeftPanel:
         self._detail_panel.reset()
         fin_object.get_detail(self._detail_panel.get_frame(), self)
 
+    #TODO implement
     def populate_new(self):
         self._nav_selection
         self.populate_editable()
 
-    def drawer_button_click(self, fin_obj, button: tk.Frame) -> None:
-        """
-        Called when a button in the drawer is clicked. Can be expanded to do specific things based on the type of fin
-        object passed, but currently opens the form editor in a disabled mode when clicked.
-        :param fin_obj: The financial object contained in the button.
-        :param button: The Frame representing the button.
-        :return: Nothing.
-        """
-        if not self._active:
-            return
-        if self._drawer_button_sel is not None:
-            self.recolor_widget_bg(self._drawer_button_sel, self._colors.get("b_reset"))
-        if button is None:
-            return
-        self.recolor_widget_bg(button, self._colors.get("b_sel"))
-        self._drawer_button_sel = button
-        self._mid_panel.populate_list(fin_obj)
-        self.reset_delete_button()
+    def delete_selected_fin_object(self):
+        if self._fin_obj_selection is not None:
+            self._nav_selection.get_fin_list().remove(self._fin_obj_selection)
+            self._fin_obj_selection = None
+            self.populate_list(refresh=True)
 
-    def set_context(self, widget: tk.Button) -> None:
-        """
-        Sets the context for the Left Panel view. Called when button on Nav Menu is clicked.
-        :param widget: The button that was clicked.
-        :return: Nothing
-        """
-        if not self._active:
-            return
-        if widget.winfo_name() == self.get_context() or widget['state'] == "disabled":
-            return
-
-        # resets the current selection and sets the selected color for the new selection
-        self.recolor_widget_bg(self._nav_button_sel, self._colors.get("b_reset"))
-        self.recolor_widget_bg(widget, self._colors.get("b_sel"))
-
-        # clean up variables
-        self._drawer_button_sel = None
-        self._nav_button_sel = widget
-        self._nav_label['text'] = self._context_vars.get(widget.winfo_name())[0]
-        self._mid_panel.reset_panel()
-        self.populate_list()
-        self.reset_delete_button()
-
-    def get_context(self) -> str:
-        """
-        Returns the current view context of the Left Panel.
-        :return: The current context.
-        """
-        return self._nav_button_sel.winfo_name()
-
-    def activate(self, state="active") -> None:
-        """
-        Activates/Deactivates the Left Panel. Typically called when focus is returned from editing or new fin obj flow.
-        :param state: The new state of the window.
-        :return: Nothing.
-        """
-        if state == "active":
-            self._active = True
-        else:
-            self._active = False
-
-        for c in self._nav_menu.winfo_children():
-            if isinstance(c, tk.Button):
-                c['state'] = state
-        for c in self._drawer.winfo_children():
-            if not isinstance(c, tk.Frame):
-                c['state'] = state
-            else:
-                for fc in c.winfo_children():
-                    fc['state'] = state
-        for c in self._bottom_menu.winfo_children():
-            c['state'] = state
-
-        self.reset_delete_button()
-
-    # TODO Can this be done iteratively?
-    def add_fin_obj(self, fin_obj: FinanceObj) -> None:
-        """
-        Adds a financial object to the appropriate list. Called when saving a new object.
-        :param fin_obj: The new financial object to be added to the list.
-        :return: Nothing.
-        """
-        context = ""
-        if isinstance(fin_obj, Loan):
-            context = "loans"
-        elif isinstance(fin_obj, Job):
-            context = "jobs"
-        elif isinstance(fin_obj, Expenses):
-            context = "expenses"
-        elif isinstance(fin_obj, TaxBracket):
-            context = "taxes"
-        elif isinstance(fin_obj, Scenario):
-            context = "scenarios"
-
-        fin_list = self._context_vars.get(context)[1]
-        if fin_obj not in fin_list:
-            fin_list.append(fin_obj)
-
-        save_all({context: fin_list})
-
-
-        self.populate_list()
+    def edit_selected_fin_object(self):
+        if self._fin_obj_selection is not None:
+            self.populate_editable(self._fin_obj_selection)
 
 
 # TODO implement!
