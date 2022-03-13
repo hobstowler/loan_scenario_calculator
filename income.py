@@ -24,10 +24,10 @@ class FinanceObj:
         :param name: The name of the object. Used in display functions
         :param desc: The longer form description of the object.
         """
-        self._name = name
-        self._desc = desc
-        self._active = False
         self._data = {}
+        self._data.update({'name': name})
+        self._data.update({'desc': desc})
+        self._active = False
 
     def set_name(self, new_name: str) -> bool:
         """
