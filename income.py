@@ -101,8 +101,20 @@ class FinanceObj:
     def cancel(self, parent):
         parent.populate_list(refresh=True)
 
-    def save(self):
+    def save(self, parent):
+        for key in self._form_strings:
+            self._data.update({key: self._form_strings.get(key).get()})
+        parent.populate_list(refresh=True)
+
+    def validate_string(self) -> bool:
         pass
+
+    def validate_integer(self) -> bool:
+        pass
+
+    def tk_line_break(self, root, index) -> int:
+        tk.Label(root, text="").grid(column=0, row=index)
+        return index + 1
 
     def get_list_button(self, root, parent):
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
@@ -120,11 +132,11 @@ class FinanceObj:
         desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
-        frame.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
-        frame.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+        frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
+        frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
         for c in frame.winfo_children():
-            c.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
-            c.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+            c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
+            c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
             if self._active:
                 c['bg'] = colors.get("b_sel")
 
@@ -132,10 +144,12 @@ class FinanceObj:
             frame['bg'] = colors.get("b_sel")
 
     def get_editable(self, root, parent, name: str = None, desc: str = None):
+        index = 0
         if name is None:
             name = "Name"
         if desc is None:
             desc = "Description"
+
         frame = tk.Frame(root)
         frame.pack(fill='both')
         frame.columnconfigure(0, weight=1)
@@ -144,26 +158,35 @@ class FinanceObj:
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(4, weight=1)
 
+        save = tk.Button(frame, text='Save')
+        save.grid(column=3, row=index)
+        save.bind('<Button-1>', lambda e, p=parent: self.save(p))
         cancel = tk.Button(frame, text='X', anchor='e')
-        cancel.grid(column=4, row=0)
-        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
+        cancel.grid(column=4, row=index)
+        cancel.bind('<Button-1>', lambda e, p=parent: self.cancel(p))
+        index += 1
+
+        index = self.tk_line_break(frame, index)
 
         key = 'name'
         value = self._data.get(key)
         s_var = StringVar()
         s_var.set(value)
         self._form_strings.update({key: s_var})
-        tk.Label(frame, text=name, anchor='e').grid(column=1, row=1)
-        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=1, columnspan=2, sticky=W+E)
+        tk.Label(frame, text=name, anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
 
         key = 'desc'
         value = self._data.get(key)
         s_var = StringVar()
         s_var.set(value)
         self._form_strings.update({key: s_var})
-        tk.Label(frame, text=desc, anchor='e').grid(column=1, row=2)
-        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=2, columnspan=2, sticky=W+E)
-        return frame
+        tk.Label(frame, text=desc, anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
+
+        return frame, index
 
     def get_detail(self, root, parent):
         pass
@@ -521,15 +544,16 @@ class Job(FinanceObj):
             return True
         return False
 
-    def get_editable(self, root, parent):
-        frame = super().get_editable(root, parent, name="Title", desc="Company")
+    def get_editable(self, root, parent) -> tuple:
+        frame, index = super().get_editable(root, parent, name="Title", desc="Company")
 
-        tk.Label(frame).grid(column=1, row=4)
+        index = self.tk_line_break(frame, index)
 
         income_string = StringVar()
         income_string.set(str(self._income))
-        tk.Label(frame, text="Income", anchor='e').grid(column=1, row=5)
-        tk.Entry(frame, name='income', textvariable=income_string).grid(column=2, row=5, columnspan=2, sticky=W + E)
+        tk.Label(frame, text="Income", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='income', textvariable=income_string).grid(column=2, row=index, columnspan=2, sticky=W + E)
+        index += 1
 
         pay_vals = self._valid_pay_frequency
         pay_freq_string = StringVar()
@@ -537,21 +561,25 @@ class Job(FinanceObj):
         pay_freq = tk.OptionMenu(frame, pay_freq_string, *pay_vals)
         tk.Label(frame, text="Pay Frequency", anchor='e').grid(column=1, row=6)
         pay_freq.grid(column=2, row=6, columnspan=2, sticky=W + E)
+        index += 1
 
         retirement_string = StringVar()
         retirement_string.set(self._401k_rate)
         tk.Label(frame, text="401k Contribution", anchor='e').grid(column=1, row=7)
         tk.Entry(frame, name='401k', textvariable=retirement_string).grid(column=2, row=7, columnspan=2, sticky=W + E)
+        index += 1
 
         roth_string = StringVar()
         roth_string.set(self._401k_rate)
         tk.Label(frame, text="Roth Contribution", anchor='e').grid(column=1, row=8)
         tk.Entry(frame, name='roth', textvariable=roth_string).grid(column=2, row=8, columnspan=2, sticky=W + E)
+        index += 1
 
         tk.Label(frame).grid(column=1, row=9)
         tk.Button(frame, text="Tax Brackets").grid(column=2, row=10, sticky=W + E)
         tk.Button(frame, text="Pre Tax Deductions").grid(column=2, row=11, sticky=W + E)
         tk.Button(frame, text="Post Tax Deductions").grid(column=2, row=12, sticky=W + E)
+        index += 1
 
 
 #TODO add support for assets like 401k, IRA, houses, bank accounts

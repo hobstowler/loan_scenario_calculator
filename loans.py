@@ -293,39 +293,44 @@ class Loan(FinanceObj):
 
         return schedule_no_extra, schedule_extra
 
-    def get_editable(self, root, parent):
-        frame = super().get_editable(root, parent)
+    def get_editable(self, root, parent) -> tuple:
+        frame, index = super().get_editable(root, parent)
 
-        tk.Label(frame, text="").grid(column=1, row=3)
+        index = self.tk_line_break(frame, index)
 
         start_string = tk.StringVar()
         start_string.set(self._data.get('origination'))
-        tk.Label(frame, text="Loan Start (MM/DD/YYYY)", anchor='e').grid(column=1, row=4)
-        tk.Entry(frame, name='origination', textvariable=start_string).grid(column=2, row=4, columnspan=2, sticky=W+E)
+        tk.Label(frame, text="Loan Start (MM/DD/YYYY)", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='origination', textvariable=start_string).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
 
         term = tk.StringVar()
         term.set(self._data.get('term'))
-        tk.Label(frame, text="Loan Term (Months)", anchor='e').grid(column=1, row=5)
-        tk.Entry(frame, name='term', textvariable=term).grid(column=2, row=5, columnspan=2, sticky=W+E)
+        tk.Label(frame, text="Loan Term (Months)", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='term', textvariable=term).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
 
-        tk.Label(frame, text="").grid(column=1, row=6)
+        index = self.tk_line_break(frame, index)
 
         total = tk.StringVar()
         total.set(self._data.get('total'))
-        tk.Label(frame, text="Total Amount", anchor='e').grid(column=1, row=7)
-        tk.Entry(frame, name='total', textvariable=total).grid(column=2, row=7, columnspan=2, sticky=W+E)
+        tk.Label(frame, text="Total Amount", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='total', textvariable=total).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
 
         down_payment = tk.StringVar()
         down_payment.set(self._data.get('down payment'))
-        tk.Label(frame, text="Down Payment", anchor='e').grid(column=1, row=8)
-        tk.Entry(frame, name='down payment', textvariable=down_payment).grid(column=2, row=8, columnspan=2, sticky=W+E)
+        tk.Label(frame, text="Down Payment", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='down payment', textvariable=down_payment).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
 
         rate = tk.StringVar()
         rate.set(self._data.get('rate'))
         tk.Label(frame, text="Rate", anchor='e').grid(column=1, row=9)
         tk.Entry(frame, name='rate', textvariable=rate).grid(column=2, row=9, columnspan=2, sticky=W+E)
+        index += 1
 
-        return frame
+        return frame, index
 
 
 class Mortgage(Loan):
@@ -455,9 +460,9 @@ class Mortgage(Loan):
         ExtraPaymentWindow(root, self)
 
     def get_editable(self, root, parent):
-        frame = super().get_editable(root, parent,)
+        frame, index = super().get_editable(root, parent,)
 
-        tk.Label(frame, text="").grid(column=0, row=10)
+        index = self.tk_line_break(frame, index)
 
         extra_payments = tk.Button(frame, text='Extra Payments')
         extra_payments.grid(column=1, row=11)
@@ -489,20 +494,20 @@ class Mortgage(Loan):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._name, justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
         name.grid(column=0, row=0, sticky=W)
         f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
-        desc = tk.Label(frame, text=self._desc, justify=LEFT, anchor="w")
+        desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
         amount_string = str(self._data.get('total')) + " | " + str(self._data.get('principal')) + " | "+ str(self._data.get('rate'))
         tk.Label(frame, text=amount_string).grid(column=0, row=2, sticky=W, columnspan=3)
 
-        frame.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
-        frame.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+        frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
+        frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
         for c in frame.winfo_children():
-            c.bind("<Button-1>", lambda e, w=parent: self.left_click(w))
-            c.bind("<Button-3>", lambda e, w=parent: self.right_click(w))
+            c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
+            c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
             if self._active:
                 c['bg'] = colors.get("b_sel")
 

@@ -128,6 +128,8 @@ class LeftPanel:
         :param fin_vars: The financial objects from the loaded data.
         """
         self._root = root
+        self._fin_vars = fin_vars
+
         self.frame = tk.Frame(self._root, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
@@ -153,7 +155,6 @@ class LeftPanel:
             NavButton("taxes", "Select a Tax Bracket.", self, fin_vars.get("taxes"))
         ]
         self._nav_selection = self._nav_menu_elements[3]
-        #self._nav_selection._active = True
 
         self._nav_text = tk.StringVar()
         self._nav_text.set(self._nav_selection.detail + " Right click to modify.")
