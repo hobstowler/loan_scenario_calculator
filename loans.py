@@ -293,9 +293,39 @@ class Loan(FinanceObj):
 
         return schedule_no_extra, schedule_extra
 
-    def get_form(self, root):
-        form = tk.Frame(root)
-        form.grid(column=0, row=0)
+    def get_editable(self, root, parent):
+        frame = super().get_editable(root, parent)
+
+        tk.Label(frame, text="").grid(column=1, row=3)
+
+        start_string = tk.StringVar()
+        start_string.set(self._data.get('origination'))
+        tk.Label(frame, text="Loan Start (MM/DD/YYYY)", anchor='e').grid(column=1, row=4)
+        tk.Entry(frame, name='origination', textvariable=start_string).grid(column=2, row=4, columnspan=2, sticky=W+E)
+
+        term = tk.StringVar()
+        term.set(self._data.get('term'))
+        tk.Label(frame, text="Loan Term (Months)", anchor='e').grid(column=1, row=5)
+        tk.Entry(frame, name='term', textvariable=term).grid(column=2, row=5, columnspan=2, sticky=W+E)
+
+        tk.Label(frame, text="").grid(column=1, row=6)
+
+        total = tk.StringVar()
+        total.set(self._data.get('total'))
+        tk.Label(frame, text="Total Amount", anchor='e').grid(column=1, row=7)
+        tk.Entry(frame, name='total', textvariable=total).grid(column=2, row=7, columnspan=2, sticky=W+E)
+
+        down_payment = tk.StringVar()
+        down_payment.set(self._data.get('down payment'))
+        tk.Label(frame, text="Down Payment", anchor='e').grid(column=1, row=8)
+        tk.Entry(frame, name='down payment', textvariable=down_payment).grid(column=2, row=8, columnspan=2, sticky=W+E)
+
+        rate = tk.StringVar()
+        rate.set(self._data.get('rate'))
+        tk.Label(frame, text="Rate", anchor='e').grid(column=1, row=9)
+        tk.Entry(frame, name='rate', textvariable=rate).grid(column=2, row=9, columnspan=2, sticky=W+E)
+
+        return frame
 
 
 class Mortgage(Loan):
@@ -425,30 +455,12 @@ class Mortgage(Loan):
         ExtraPaymentWindow(root, self)
 
     def get_editable(self, root, parent):
-        frame = tk.Frame(root)
-        frame.pack(fill='both')
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=2)
-        frame.columnconfigure(2, weight=4)
-        frame.columnconfigure(3, weight=1)
-        frame.columnconfigure(4, weight=1)
+        frame = super().get_editable(root, parent)
 
-        cancel = tk.Button(frame, text='X', anchor='e')
-        cancel.grid(column=4, row=0)
-        cancel.bind('<Button-1>', lambda e, w=parent: self.cancel(w))
+        tk.Label(frame, text="").grid(column=0, row=10)
 
-        name_string = tk.StringVar()
-        name_string.set(self._name)
-        tk.Label(frame, text="Name", anchor='e').grid(column=1, row=1)
-        tk.Entry(frame, name='name', textvariable=name_string).grid(column=2, row=1, columnspan=2, sticky=W + E)
-
-        desc_string = tk.StringVar()
-        desc_string.set(self._desc)
-        tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
-        tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W + E)
-
-        extra_payments =tk.Button(frame, text='Extra Payments')
-        extra_payments.grid(column=1, row=3)
+        extra_payments = tk.Button(frame, text='Extra Payments')
+        extra_payments.grid(column=1, row=11)
         extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
 
     def get_detail(self, root, parent):
@@ -466,6 +478,7 @@ class Mortgage(Loan):
         #canvas.show()
 
     def get_list_button(self, root, parent):
+        #super().get_list_button(root, parent)
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
         frame.pack(fill="x", ipady=2)
         frame.bind("<Button-1>", lambda e: self.left_click())

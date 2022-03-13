@@ -149,6 +149,7 @@ class FinanceObj:
         desc_string.set(self._desc)
         tk.Label(frame, text="Description", anchor='e').grid(column=1, row=2)
         tk.Entry(frame, name='desc', textvariable=desc_string).grid(column=2, row=2, columnspan=2, sticky=W+E)
+        return frame
 
     def get_detail(self, root, parent):
         pass
