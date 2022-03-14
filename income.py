@@ -7,10 +7,13 @@ import tkinter.ttk as ttk
 from tkinter import *
 
 colors = {
-            "t_type": "navy",
-            "t_name": "red",
-            "b_sel": "green",
-            "b_reset": "SystemButtonFace"
+            "l_sel": "lightblue2",
+            "l_hover": "lightblue1",
+            'l_active_hover': 'lightblue3',
+            "b_reset": "SystemButtonFace",
+            "b_sel": 'medium turquoise',
+            'b_hover': 'turquoise',
+            'b_active_hover': 'dark turquoise'
         }
 
 
@@ -49,19 +52,6 @@ class FinanceObj:
         """
         return self._data.get('name')
 
-    def set_desc(self, new_desc: str) -> bool:
-        """
-        Sets a new description for the object. Returns true if the operation is successful.
-        :param new_desc: The new description.
-        :return: True if successful.
-        """
-        if isinstance(new_desc, str):
-            self._desc = new_desc
-            print("success")
-            return True
-        else:
-            return False
-
     def desc(self) -> str:
         """
         Gets the description of the object.
@@ -69,11 +59,12 @@ class FinanceObj:
         """
         return self._data.get('desc')
 
-    def get_data(self) -> dict:
+    def data(self) -> dict:
+        """
+        Gets the data dict from this object.
+        :return: The dict of data for the object.
+        """
         return self._data
-
-    def set_data(self, data: dict) -> None:
-        self._data = data
 
     def type(self) -> str:
         return type(self).__name__

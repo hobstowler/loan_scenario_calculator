@@ -326,9 +326,11 @@ class Loan(FinanceObj):
 
         rate = tk.StringVar()
         rate.set(self._data.get('rate'))
-        tk.Label(frame, text="Rate", anchor='e').grid(column=1, row=9)
-        tk.Entry(frame, name='rate', textvariable=rate).grid(column=2, row=9, columnspan=2, sticky=W+E)
+        tk.Label(frame, text="Rate", anchor='e').grid(column=1, row=index)
+        tk.Entry(frame, name='rate', textvariable=rate).grid(column=2, row=index, columnspan=2, sticky=W+E)
         index += 1
+
+        index = self.tk_line_break(frame, index)
 
         return frame, index
 
@@ -465,7 +467,7 @@ class Mortgage(Loan):
         index = self.tk_line_break(frame, index)
 
         extra_payments = tk.Button(frame, text='Extra Payments')
-        extra_payments.grid(column=1, row=11)
+        extra_payments.grid(column=1, row=index)
         extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
 
     def get_detail(self, root, parent):

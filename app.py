@@ -13,111 +13,14 @@ from loans import Loan, Mortgage, Student
 from scenario import Scenario
 
 colors = {
-            "t_type": "navy",
-            "t_name": "red",
-            "b_sel": "green",
-            "b_reset": "SystemButtonFace"
+            "l_sel": "lightblue2",
+            "l_hover": "lightblue1",
+            'l_active_hover': 'lightblue3',
+            "b_reset": "SystemButtonFace",
+            "b_sel": 'medium turquoise',
+            'b_hover': 'turquoise',
+            'b_active_hover': 'dark turquoise'
         }
-
-
-class NavLabel:
-    """Text label on the top-level navigation menu."""
-    def __init__(self, label: str):
-        """
-        Initializes the label object.
-        :param label: Label string.
-        """
-        #super.__init__()
-        self.label = label
-
-    def get_gui(self, root: tk.Frame) -> None:
-        """
-        Creates the visual using tkinter Label.
-        :param root: The parent frame.
-        :return: Nothing
-        """
-        label = tk.Label(root, width=13, text=self.label.capitalize(), anchor='w')
-        label.pack()
-
-
-class NavButton(NavLabel):
-    """Button on the top-level navigation menu."""
-    def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
-        super(NavButton, self).__init__(label.__str__())
-        print(repr(label))
-        print("test:", label.__str__())
-        self.detail = detail
-        self._fin_list = fin_objects
-        self._parent = parent
-        self._active = False
-
-    def activate(self, active=True) -> None:
-        """
-        Activates the button. Behaviour when button is selected.
-        :param active:
-        :return:
-        """
-        self._active = active
-
-    def click(self):
-        self._active = True
-        self._parent.new_context(self, self._fin_list)
-
-    def get_fin_list(self) -> list:
-        return self._fin_list
-
-    def get_gui(self, root: tk.Frame):
-        button = tk.Button(root, text=self.label.capitalize(), width=10)
-        button.pack()
-        button.bind("<Button-1>", lambda e: self.click())
-        if self._active:
-            button['bg'] = colors.get('b_sel')
-        else:
-            button['bg'] = colors.get('b_reset')
-
-        return button
-
-
-class BottomMenu:
-    def __init__(self, parent):
-        self._parent = parent
-        self._del_button = None
-
-    def new(self) -> None:
-        self._parent.new_fin_object()
-
-    #TODO remove?
-    def edit(self) -> None:
-        self._parent.edit_selected_fin_object()
-
-    def delete(self):
-        self._parent.delete_selected_fin_object()
-
-    def toggle_delete(self):
-        if self._del_button['state'] == "disabled":
-            self._del_button['state'] = "active"
-        else:
-            self._del_button['state'] = "disabled"
-
-    def reset(self):
-        self._del_button['state'] = "disabled"
-
-    def create(self, root):
-        bottom_menu = tk.Frame(root, name="left_bottom_menu", width=300, height=50)
-        bottom_menu.grid(column=1, row=2, sticky=N + W + S + E)
-
-        for i in range(3):
-            bottom_menu.columnconfigure(i, weight=1)
-
-        # Buttons for the bottom menu. Edit, New, and Delete.
-        tk.Button(bottom_menu, name="new_item", text="New...", command=lambda: self.new()) \
-            .grid(column=0, row=0, sticky=W + E)
-        tk.Button(bottom_menu, name="edit_item", text="Edit...", command=lambda: self.edit()) \
-            .grid(column=1, row=0, sticky=W + E)
-        self._del_button = tk.Button(bottom_menu, name="delete_item", text="Delete...", state="disabled",
-                                     command=lambda: self.delete())
-        self._del_button.grid(column=2, row=0, sticky=W + E)
-        tk.Checkbutton(bottom_menu, name="delete_check", command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
 
 class LeftPanel:
@@ -140,19 +43,19 @@ class LeftPanel:
         self._nav_menu = tk.Frame(self.frame, name="nav_menu", width=25, height=600)
         self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
         self._nav_menu_elements = [
-            NavLabel("scenarios"),
-            NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
-            NavLabel("income"),
-            NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
-            NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
-            NavLabel("loans"),
-            NavButton("mortgage", "Select a Mortgage.", self, fin_vars.get("mortgages")),
-            NavButton("student", "Select a Student Loan.", self, fin_vars.get("student loans")),
-            NavButton("auto", "Select an Auto Loan.", self, fin_vars.get("auto loans")),
-            NavButton("personal", "Select a Personal Loan.", self, fin_vars.get("loans")),
-            NavLabel("expenses"),
-            NavButton("expenses", "Select an Expense.", self, fin_vars.get("expenses")),
-            NavButton("taxes", "Select a Tax Bracket.", self, fin_vars.get("taxes"))
+            self.NavLabel("scenarios"),
+            self.NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
+            self.NavLabel("income"),
+            self.NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
+            self.NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
+            self.NavLabel("loans"),
+            self.NavButton("mortgage", "Select a Mortgage.", self, fin_vars.get("mortgages")),
+            self.NavButton("student", "Select a Student Loan.", self, fin_vars.get("student loans")),
+            self.NavButton("auto", "Select an Auto Loan.", self, fin_vars.get("auto loans")),
+            self.NavButton("personal", "Select a Personal Loan.", self, fin_vars.get("loans")),
+            self.NavLabel("expenses"),
+            self.NavButton("expenses", "Select an Expense.", self, fin_vars.get("expenses")),
+            self.NavButton("taxes", "Select a Tax Bracket.", self, fin_vars.get("taxes"))
         ]
         self._nav_selection = self._nav_menu_elements[3]
 
@@ -167,7 +70,7 @@ class LeftPanel:
         self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=600)
         self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
         self._drawer.pack_propagate(False)
-        self._bottom_menu = BottomMenu(self)
+        self._bottom_menu = self.BottomMenu(self)
         self._bottom_menu.create(self.frame)
         #self._mid_panel = None
 
@@ -178,6 +81,178 @@ class LeftPanel:
         self._nav_selection.click()
 
         #TODO implement scroll bar. may need to be part of the refresh
+
+    class NavLabel:
+        """Text label on the top-level navigation menu."""
+        def __init__(self, label: str):
+            """
+            Initializes the label object.
+            :param label: Label string.
+            """
+            # super.__init__()
+            self.label = label
+
+        def get_gui(self, root: tk.Frame) -> None:
+            """
+            Creates the visual using tkinter Label.
+            :param root: The parent frame.
+            :return: Nothing
+            """
+            label = tk.Label(root, width=13, text=self.label.capitalize(), anchor='w')
+            label.pack()
+
+    class NavButton(NavLabel):
+        """Button on the top-level navigation menu."""
+        def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
+            super().__init__(label.__str__())
+            self.detail = detail
+            self._fin_list = fin_objects
+            self._parent = parent
+            self._active = False
+
+        def activate(self, active=True) -> None:
+            """
+            Activates the button. Behavior when button is clicked.
+            :param active:
+            """
+            self._active = active
+
+        def click(self, e=None) -> None:
+            """
+            Called when button is clicked on.
+            """
+            self.activate()
+            self._parent.new_context(self, self._fin_list)
+
+        # TODO move into LeftPanel and pass key string instead?
+        def get_fin_list(self) -> list:
+            """
+            Gets the list of financial objects associates with this Nav Button.
+            :return:
+            """
+            return self._fin_list
+
+        def enter(self, e):
+            """
+            Called when cursor moves over button. Changes background to hover color.
+            :param e: The event.
+            """
+            button = e.widget
+            if self._active:
+                button['bg'] = colors.get('b_active_hover')
+            else:
+                button['bg'] = colors.get('b_hover')
+
+        def leave(self, e):
+            """
+            Called when cursor leaves button. Changes background back to normal colors.
+            :param e: The event.
+            :return:
+            """
+            button = e.widget
+            if self._active:
+                button['bg'] = colors.get('b_sel')
+            else:
+                button['bg'] = colors.get('b_reset')
+
+        def get_gui(self, root: tk.Frame) -> tk.Button:
+            """
+            Creates the Navigation button with Tkinter widgets.
+            :param root: The root widget.
+            """
+            button = tk.Button(root, text=self.label.capitalize(), width=10)
+            button.pack()
+            button.bind("<Button-1>", self.click)
+            button.bind("<Enter>", self.enter)
+            button.bind("<Leave>", self.leave)
+            if self._active:
+                button['bg'] = colors.get('b_sel')
+            else:
+                button['bg'] = colors.get('b_reset')
+
+            return button
+
+    class BottomMenu:
+        """Class representing the bottom menu with controls for editing, deleting, and creating new items."""
+        def __init__(self, parent):
+            """
+            Initializes the bottom menu.
+            :param parent: The parent LeftPanel object.
+            """
+            self._parent = parent
+            self._del_button = None
+            self._check_var = None
+
+        def new(self) -> None:
+            """
+            Called when clicking new button. Passthrough to create a new Finance Object with parent LeftPanel.
+            """
+            self._parent.new_fin_object()
+
+        def edit(self) -> None:
+            """
+            Called when clicking edit button. Passthrough to edit the select Finance Object with parent LeftPanel.
+            """
+            self._parent.edit_selected_fin_object()
+
+        def delete(self):
+            """
+            Called when clicking the
+            :return:
+            """
+            self._parent.delete_selected_fin_object()
+
+        def toggle_delete(self):
+            if self._del_button['state'] == "disabled":
+                self._del_button['state'] = "active"
+            else:
+                self._del_button['state'] = "disabled"
+
+        def reset(self):
+            self._del_button['state'] = "disabled"
+            if self._check_var is not None:
+                self._check_var.set(0)
+
+        @staticmethod
+        def enter(e):
+            """
+            Called when cursor moves over button. Changes background to hover color.
+            :param e: The event.
+            """
+            button = e.widget
+            if button['state'] != 'disabled':
+                button['bg'] = colors.get('b_hover')
+
+        def leave(self, e):
+            """
+            Called when cursor leaves button. Changes background back to normal colors.
+            :param e: The event.
+            :return:
+            """
+            button = e.widget
+            button['bg'] = colors.get('b_reset')
+
+        def create(self, root):
+            frame = tk.Frame(root, name="left_bottom_menu", width=300, height=50)
+            frame.grid(column=1, row=2, sticky=N + W + S + E)
+
+            for i in range(3):
+                frame.columnconfigure(i, weight=1)
+
+            # Buttons for the bottom menu. Edit, New, and Delete.
+            tk.Button(frame, text="New", command=lambda: self.new()).grid(column=0, row=0, sticky=W + E)
+            tk.Button(frame, text="Edit", command=lambda: self.edit()).grid(column=1, row=0, sticky=W + E)
+            self._del_button = tk.Button(frame, text="Delete", state="disabled", command=lambda: self.delete())
+            self._del_button.grid(column=2, row=0, sticky=W + E)
+            self._check_var = tk.IntVar()
+            self._check_var.set(0)
+            tk.Checkbutton(frame, variable=self._check_var, command=lambda: self.toggle_delete())\
+                .grid(column=3, row=0)
+
+            for c in frame.winfo_children():
+                if c.winfo_class() == "Button":
+                    c.bind("<Enter>", self.enter)
+                    c.bind("<Leave>", self.leave)
 
     def set_detail_panel(self, panel) -> None:
         self._detail_panel = panel
@@ -192,6 +267,7 @@ class LeftPanel:
             self._fin_obj_selection.activate(False)
             self._fin_obj_selection = None
         self._nav_selection.activate(False)
+        self._bottom_menu.reset()
         self._nav_selection = clicked
         self._nav_selection.activate()
         self._nav_text.set(clicked.detail + " Right click to modify.")

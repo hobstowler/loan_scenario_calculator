@@ -115,5 +115,5 @@ class DetailForm:
             elif key == "desc" and self._fin_obj.desc() != val:
                 self._fin_obj.set_desc(val)
             else:
-                self._fin_obj.get_data().update({key: val})
+                self._fin_obj.data().update({key: val})
 
