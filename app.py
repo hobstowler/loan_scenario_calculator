@@ -4,7 +4,7 @@
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import N, W, S, E
+from tkinter import N, W, S, E, RIGHT
 
 from dataload import save_all
 from forms import DetailForm
@@ -67,6 +67,7 @@ class LeftPanel:
 
         # instantiate major components
         self._detail_panel = None
+        self._info_panel = None
         self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=600)
         self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
         self._drawer.pack_propagate(False)
@@ -75,8 +76,6 @@ class LeftPanel:
         #self._mid_panel = None
 
         # Populates the drawer with the initial context
-        #self.populate_list()
-        #self._active = True
         self.populate_nav_menu()
         self._nav_selection.click()
 
@@ -195,44 +194,35 @@ class LeftPanel:
             """
             self._parent.edit_selected_fin_object()
 
-        def delete(self):
+        def delete(self) -> None:
             """
             Called when clicking the
             :return:
             """
             self._parent.delete_selected_fin_object()
 
-        def toggle_delete(self):
+        def toggle_delete(self) -> None:
+            """
+            Toggles the delete button on or off when the checkbutton is selected.
+            """
             if self._del_button['state'] == "disabled":
                 self._del_button['state'] = "active"
             else:
                 self._del_button['state'] = "disabled"
 
-        def reset(self):
+        def reset(self) -> None:
+            """
+            Resets the delete button when changing contexts (new nav menu selection) in LeftPanel.
+            """
             self._del_button['state'] = "disabled"
             if self._check_var is not None:
                 self._check_var.set(0)
 
-        @staticmethod
-        def enter(e):
+        def create(self, root) -> None:
             """
-            Called when cursor moves over button. Changes background to hover color.
-            :param e: The event.
+            Creates the bottom menu using Tkinter widgets.
+            :param root: The root frame.
             """
-            button = e.widget
-            if button['state'] != 'disabled':
-                button['bg'] = colors.get('b_hover')
-
-        def leave(self, e):
-            """
-            Called when cursor leaves button. Changes background back to normal colors.
-            :param e: The event.
-            :return:
-            """
-            button = e.widget
-            button['bg'] = colors.get('b_reset')
-
-        def create(self, root):
             frame = tk.Frame(root, name="left_bottom_menu", width=300, height=50)
             frame.grid(column=1, row=2, sticky=N + W + S + E)
 
@@ -246,16 +236,37 @@ class LeftPanel:
             self._del_button.grid(column=2, row=0, sticky=W + E)
             self._check_var = tk.IntVar()
             self._check_var.set(0)
-            tk.Checkbutton(frame, variable=self._check_var, command=lambda: self.toggle_delete())\
-                .grid(column=3, row=0)
+            tk.Checkbutton(frame, variable=self._check_var, command=lambda: self.toggle_delete()).grid(column=3, row=0)
 
             for c in frame.winfo_children():
                 if c.winfo_class() == "Button":
                     c.bind("<Enter>", self.enter)
                     c.bind("<Leave>", self.leave)
 
+        @staticmethod
+        def enter(e):
+            """
+            Called when cursor moves over button. Changes background to hover color.
+            :param e: The event.
+            """
+            button = e.widget
+            if button['state'] != 'disabled':
+                button['bg'] = colors.get('b_hover')
+
+        @staticmethod
+        def leave(e):
+            """
+            Called when cursor leaves button. Changes background back to normal colors.
+            :param e: The event.
+            """
+            button = e.widget
+            button['bg'] = colors.get('b_reset')
+
     def set_detail_panel(self, panel) -> None:
         self._detail_panel = panel
+
+    def set_info_panel(self, panel) -> None:
+        self._info_panel = panel
 
     def get_root(self) -> tk.Tk:
         return self._root
@@ -352,6 +363,24 @@ class RightPanel:
             c.destroy()
 
 
+class InfoPanel:
+    def __init__(self, root: tk.Tk):
+        self._frame = tk.Frame(root, height=15)
+        self._frame.grid(column=0, row=1, columnspan=3, sticky=W+E)
+        self._frame.pack_propagate(False)
+
+        self._info = tk.StringVar()
+        self._info.set("Testing information panel...")
+        label = tk.Label(self._frame, textvariable=self._info)
+        label.pack(side=RIGHT)
+
+    def message(self, message: str):
+        self._info.set(message)
+
+    def clear(self):
+        self.message("")
+
+
 def main():
     # create the root
     root = tk.Tk()
@@ -369,13 +398,14 @@ def main():
         'loans': [Loan('test loan', 'test description')]
     }
 
-    # create the three main panels.
+    # create the main panels.
     left_panel = LeftPanel(root, fin_vars)
-    #mid_panel = MidPanel(root)
     right_panel = RightPanel(root)
+    info_panel = InfoPanel(root)
 
     #set panel relationships
     left_panel.set_detail_panel(right_panel)
+    left_panel.set_info_panel(info_panel)
 
     root.mainloop()
 
