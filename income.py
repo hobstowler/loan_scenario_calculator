@@ -13,7 +13,8 @@ colors = {
             "b_reset": "SystemButtonFace",
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
-            'b_active_hover': 'dark turquoise'
+            'b_active_hover': 'dark turquoise',
+            'fin_type': 'red'
         }
 
 
@@ -107,6 +108,39 @@ class FinanceObj:
         tk.Label(root, text="").grid(column=0, row=index)
         return index + 1
 
+    def list_enter(self, e):
+        if e.widget.winfo_class() == 'Frame':
+            widget = e.widget
+        else:
+            parent_name = e.widget.winfo_parent()
+            widget = e.widget._nametowidget(parent_name)
+
+        if self._active:
+            widget['bg'] = colors.get('b_active_hover')
+            for c in widget.winfo_children():
+                c['bg'] = colors.get('b_active_hover')
+        else:
+            widget['bg'] = colors.get('b_hover')
+            for c in widget.winfo_children():
+                c['bg'] = colors.get('b_hover')
+
+
+    def list_leave(self, e):
+        if e.widget.winfo_class() == 'Frame':
+            widget = e.widget
+        else:
+            parent_name = e.widget.winfo_parent()
+            widget = e.widget._nametowidget(parent_name)
+
+        if self._active:
+            widget['bg'] = colors.get('b_sel')
+            for c in widget.winfo_children():
+                c['bg'] = colors.get('b_sel')
+        else:
+            widget['bg'] = colors.get('b_reset')
+            for c in widget.winfo_children():
+                c['bg'] = colors.get('b_reset')
+
     def get_list_button(self, root, parent):
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
         frame.pack(fill="x", ipady=2)
@@ -116,7 +150,7 @@ class FinanceObj:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
         name.grid(column=0, row=0, sticky=W)
         f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
@@ -125,9 +159,13 @@ class FinanceObj:
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
         frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
+        frame.bind("<Enter>", self.list_enter)
+        frame.bind("<Leave>", self.list_leave)
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
+            c.bind("<Enter>", self.list_enter)
+            c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
 

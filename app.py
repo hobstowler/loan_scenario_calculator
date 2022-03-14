@@ -19,7 +19,8 @@ colors = {
             "b_reset": "SystemButtonFace",
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
-            'b_active_hover': 'dark turquoise'
+            'b_active_hover': 'dark turquoise',
+            'fin_type': 'red'
         }
 
 
@@ -346,9 +347,9 @@ class LeftPanel:
 
 
 # TODO implement!
-class RightPanel:
+class DetailPanel:
     def __init__(self, root: tk.Tk):
-        self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=600, height=600)
+        self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=700, height=600)
         self._frame.grid(column=2, row=0, sticky=N + S)
         self._frame.pack_propagate(False)
 
@@ -387,8 +388,6 @@ def main():
     root.title("Loan Calculator")
 
     # load the data
-    #fin_vars = load_all()
-    #save_all(fin_vars)
     fin_vars = {
         'scenarios': [Scenario('test scenario', 'scenario description')],
         'jobs': [Job('Data Analyst II', 'Cerner Corporation'), Job('Data Analyst I', 'Cerner Corporation')],
@@ -400,7 +399,7 @@ def main():
 
     # create the main panels.
     left_panel = LeftPanel(root, fin_vars)
-    right_panel = RightPanel(root)
+    right_panel = DetailPanel(root)
     info_panel = InfoPanel(root)
 
     #set panel relationships
@@ -408,6 +407,7 @@ def main():
     left_panel.set_info_panel(info_panel)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

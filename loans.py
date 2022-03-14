@@ -5,7 +5,7 @@
 import math
 import tkinter
 from datetime import date
-from tkinter import W, E, LEFT, RIGHT
+from tkinter import W, E, LEFT, RIGHT, N, S, BOTH, X
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -109,86 +109,6 @@ class Loan(FinanceObj):
         self._data.update({'first payment': date(2020, 2, 1)})
         self.calc_monthly()
 
-    def set_origination(self, new_year, new_month, new_day=1) -> None:
-        """
-        Sets a new loan origination date. Also updates the first payment to the first day of the next month.
-        :param new_year: The new year of the origination date.
-        :param new_month: The new month of the origination date.
-        :param new_day: The new day of the origination date.
-        :return: Nothing.
-        """
-        origination = self._data.get("origination")
-        first_payment = self._data.get("first payment")
-
-        origination.replace(year=new_year, month=new_month, day=new_day)
-        if new_month == 12:
-            new_month = 1
-            new_year += 1
-        first_payment.replace(year=new_year, month=new_month, day=1)
-
-    def get_first_payment_date(self) -> date:
-        """
-        Returns the first payment date of the loan.
-        :return: The date object with the date of first payment.
-        """
-        return self._data.get("first payment")
-
-    def set_total(self, new_total, down_payment=None) -> None:
-        """
-        Sets the total value of the item for which the loan was taken out. If a down payment is specified, calculates
-        the principal amount for the loan.
-        :param down_payment: Optional. The down payment for the loan.
-        :param new_total: The new total value.
-        :return: Nothing.
-        """
-        self._data.update({"total": new_total})
-        if down_payment is not None:
-            self._data.update({"principal": new_total - down_payment})
-
-    def get_total(self) -> float:
-        """
-        Returns the total amount without down payment.
-        @return: The total amount for the loan.
-        """
-        return self._data.get("total")
-
-    def get_principal(self) -> float:
-        """
-        Returns the principal amount of the loan
-        :return:
-        """
-        return self._data.get("principal")
-
-    def set_rate(self, new_rate):
-        """
-        Sets the rate for the loan.
-        :param new_rate: The new rate
-        :return: Nothing.
-        """
-        self._data.update({"rate": new_rate})
-
-    def get_rate(self):
-        """
-        Returns the rate for the loan.
-        @return: The rate.
-        """
-        return self._data.get("rate")
-
-    def set_term(self, new_length):
-        """
-        Sets the length of the loan in months.
-        :param new_length: New length in months
-        :return: Nothing
-        """
-        self._data.update({"term": new_length})
-
-    def get_term(self):
-        """
-        Returns the length of the loan in months.
-        @return: The length in months
-        """
-        return self._data.get("term")
-
     def calc_m_interest(self, amount) -> float:
         """
         Calculates the monthly interest for a given amount and month.
@@ -244,13 +164,14 @@ class Loan(FinanceObj):
     def get_extra_payments(self) -> list:
         return self._extra_payments
 
-    # TO DO: factor in a prorated amount and use the start of the loan
-    def amortization_schedule(self, extra_payments=False) -> list:
+    # TODO support for insurance and property tax escrow
+    def amortization_schedule(self, extra_payments=False) -> dict:
         """
         Calculates the amortization schedule with extra payments for the loan and returns the schedule as a list.
         @param extra_payments: The amount of extra payment per month
         @return: The amortization schedule.
         """
+        amortization ={}
         principal = self._data.get("principal")
         monthly_payment = self._monthly_payment
         term = self._data.get("term")
@@ -259,20 +180,36 @@ class Loan(FinanceObj):
         origination = self._data.get("origination")
         first_payment = self._data.get("first payment")
 
-        schedule = []
-        schedule.append(principal)
+        schedule = [[0, principal, 0, 0]]
+        total_interest = 0
+        total = 0
+        last_month = 0
         for i in range(1, term + 1):
-            interest = self.calc_m_interest(principal)
-            principal = principal + interest - monthly_payment
-            if extra_payments:
-                for e in self._extra_payments:
-                    if e.start <= i < e.end:
-                        principal -= e.amount
-            if principal < 0:
-                principal = 0
-            schedule.append(principal)
+            if principal != 0:
+                extra = 0
+                interest = self.calc_m_interest(principal)
+                principal = principal + interest - monthly_payment
+                if extra_payments:
+                    for e in self._extra_payments:
+                        if e.start <= i < e.end:
+                            extra += e.amount
+                    principal -= extra
+                if principal < 0:
+                    extra -= principal
+                    principal = 0
+                    amortization.update({'last_month': i})
+                schedule.append([i, principal, interest, extra])
+            else:
+                schedule.append([0, 0, 0])
 
-        return schedule
+        amortization.update({'total': total})
+        amortization.update({'total interest': total_interest})
+        amortization.update({'monthly payment': monthly_payment})
+        amortization.update({'schedule': schedule})
+        if last_month == 0:
+            amortization.update({'last_month': term})
+
+        return amortization
 
     def compare_schedules(self, display_graph=False) -> tuple:
         """
@@ -280,10 +217,18 @@ class Loan(FinanceObj):
         :param display_graph: Optional. Displays a graph of the two schedules principal amounts over time.
         :return: Tuple of the schedules, Schedule with no extra payments and Schedule with extra payments.
         """
-        schedule_no_extra = self.amortization_schedule()
-        schedule_extra = self.amortization_schedule(True)
+        no_extra = self.amortization_schedule()
+        extra = self.amortization_schedule(True)
+        difference = {}
+        comparison = {
+            'no extra': no_extra,
+            'extra': extra,
+            'difference': difference
+        }
 
         if display_graph:
+            schedule_no_extra = [item[1] for item in no_extra.get('schedule')]
+            schedule_extra = [item[1] for item in extra.get('schedule')]
             term = self._data.get("term")
             pyplot.plot(range(term+1), schedule_no_extra, color='r', label="no extra payment")
             pyplot.plot(range(term+1), schedule_extra, color='b', label="with extra payments")
@@ -291,7 +236,7 @@ class Loan(FinanceObj):
             pyplot.ylabel("principal")
             pyplot.show()
 
-        return schedule_no_extra, schedule_extra
+        return comparison
 
     def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent)
@@ -471,18 +416,54 @@ class Mortgage(Loan):
         extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
 
     def get_detail(self, root, parent):
+        comparison = self.compare_schedules()
+
         frame = tk.Frame(root)
         frame.pack(fill='both')
         frame.pack_propagate(True)
+
+        base_stats = tk.Frame(root, width=200, height=300)
+        base_stats.grid(column=0, row=1, columnspan=2, sticky=N+S+W+E)
+        base_stats.pack_propagate(False)
+
+        tk.Label(base_stats, text='Total:').pack()
+        tk.Label(base_stats, text=self._data.get('total')).pack()
+        tk.Label(base_stats, text='Down Payment:').pack()
+        tk.Label(base_stats, text=self._data.get('down payment')).pack()
+        tk.Label(base_stats, text='Principal:').pack()
+        tk.Label(base_stats, text=self._data.get('principal')).pack()
+        tk.Label(base_stats, text='Loan Term:').pack()
+        term_string = str(self._data.get('term')) + " months"
+        tk.Label(base_stats, text=term_string).pack()
+        tk.Label(base_stats, text='Rate:').pack()
+        tk.Label(base_stats, text=self._data.get('rate')).pack()
+
+        graph = tk.Frame(root, width=500, height=300)
+        graph.grid(column=2, row=1, columnspan=5, sticky=N+S+W+E)
+        graph.pack_propagate(False)
+
+        self.create_graph(graph, title="Loan Comparison")
+
+        tk.Frame(root, height=10).grid(column=0, row=2)
+
+        loan_detail = tk.Frame(root, width=300, height=350)
+        loan_detail.grid(column=0, row=3, columnspan=3)
+        tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 14)).pack(fill=X)
+
+        extra_detail = tk.Frame(root, width=300, height=350)
+        extra_detail.grid(column=4, row=3, columnspan=3)
+        tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 14)).pack(fill=X)
+
+
+    def create_graph(self, root, title=""):
         sched1, sched2 = self.compare_schedules()
-        #print(schedule)
         fig = pyplot.Figure(figsize=(5, 3), dpi=100)
+        fig.suptitle(title, fontsize=14)
         p = fig.add_subplot(111)
         p.plot(range(0, len(sched1)), sched1)
         p.plot(range(0, len(sched2)), sched2)
-        canvas = FigureCanvasTkAgg(fig, frame)
+        canvas = FigureCanvasTkAgg(fig, root)
         canvas.get_tk_widget().pack()
-        #canvas.show()
 
     def get_list_button(self, root, parent):
         #super().get_list_button(root, parent)
@@ -496,7 +477,7 @@ class Mortgage(Loan):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get("t_name"))
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
         name.grid(column=0, row=0, sticky=W)
         f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
@@ -507,14 +488,15 @@ class Mortgage(Loan):
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
         frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
+        frame.bind("<Enter>", self.list_enter)
+        frame.bind("<Leave>", self.list_leave)
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
+            c.bind("<Enter>", self.list_enter)
+            c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
-
-        if self._active:
-            frame['bg'] = colors.get("b_sel")
 
 
 #TODO Implement
