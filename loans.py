@@ -4,20 +4,26 @@
 
 import math
 import tkinter
+import tkinter as tk
 from datetime import date
-from tkinter import W, E, LEFT, RIGHT, N, S, BOTH, X
+from tkinter import W, E, LEFT, RIGHT, N, S, X
 
+from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from income import FinanceObj, colors
-from matplotlib import pyplot
-import tkinter as tk
-import tkinter.ttk as ttk
 from errors import ErrorBox
+from income import FinanceObj, colors
 
 
 class ExtraPayment:
+    """Class representing an extra payment on a loan. Has a defined start, length, and amount."""
     def __init__(self, start_month, length, amount):
+        """
+        Initializes the extra payment with a start month, length, and amount.
+        :param start_month: The month that extra payments start occurring.
+        :param length: The number of months that extra payments will be made.
+        :param amount: The amount of extra money paid in each installment.
+        """
         self.start = start_month
         self.length = length
         self.end = start_month + length
@@ -25,6 +31,9 @@ class ExtraPayment:
 
 
 class ExtraPaymentWindow:
+    """
+    Class representing a window interface for adding new and removing existing ExtraPayments from a Loan.
+    """
     def __init__(self, root, loan):
         self._loan = loan
 
@@ -99,14 +108,15 @@ class Loan(FinanceObj):
         self._monthly_payment = 1200
         self._extra_payments = []
 
-        self._data.update({"total": 240000})
-        self._data.update({"rate": 2.875})
-        self._data.update({"term": 360})
-        self._data.update({"down payment": 80000})
-        self._data.update({"principal": 160000})
-
-        self._data.update({"origination": date(2020, 1, 1)})
-        self._data.update({'first payment': date(2020, 2, 1)})
+        self._data.update({
+            "total": 240000,
+            "rate": 2.875,
+            "term": 360,
+            "down payment": 80000,
+            "principal": 160000,
+            "origination": date(2020, 1, 1),
+            'first payment': date(2020, 2, 1)
+        })
         self.calc_monthly()
 
     def calc_m_interest(self, amount) -> float:
@@ -129,10 +139,9 @@ class Loan(FinanceObj):
         m_rate = float(self._data.get("rate")) / 100 / 12
         compound = math.pow(1 + m_rate, self._data.get("term"))
 
-        numer = principal * m_rate * compound
-        denom = compound - 1
-
-        self._monthly_payment = numer / denom
+        monthly = (principal * m_rate * compound) / (compound - 1)
+        self._monthly_payment = monthly
+        return monthly
 
     def get_monthly(self):
         """
@@ -195,19 +204,23 @@ class Loan(FinanceObj):
                             extra += e.amount
                     principal -= extra
                 if principal < 0:
+                    print("last month:", i)
                     extra -= principal
                     principal = 0
-                    amortization.update({'last_month': i})
+                    last_month = i
                 schedule.append([i, principal, interest, extra])
+                total_interest += interest
+                total += extra + interest + principal
             else:
                 schedule.append([0, 0, 0])
 
-        amortization.update({'total': total})
-        amortization.update({'total interest': total_interest})
+        amortization.update({'total': round(total, 2)})
+        amortization.update({'total interest': round(total_interest, 2)})
         amortization.update({'monthly payment': monthly_payment})
         amortization.update({'schedule': schedule})
         if last_month == 0:
-            amortization.update({'last_month': term})
+            last_month = term
+        amortization.update({'last month': last_month})
 
         return amortization
 
@@ -219,7 +232,16 @@ class Loan(FinanceObj):
         """
         no_extra = self.amortization_schedule()
         extra = self.amortization_schedule(True)
-        difference = {}
+        m_saved =(no_extra.get('last month') - extra.get('last month')) % 12
+        print(no_extra.get('last month'))
+        print(extra.get('last month'))
+        y_saved = int((no_extra.get('last month') - extra.get('last month')) / 12)
+        diff_interest = (no_extra.get('total interest') - extra.get('total interest'))
+        difference = {
+            'months saved': m_saved,
+            'years saved': y_saved,
+            'interest saved': diff_interest
+        }
         comparison = {
             'no extra': no_extra,
             'extra': extra,
@@ -286,19 +308,18 @@ class Mortgage(Loan):
         self._type = "Mortgage"
 
         self._pmi_required = True
-        self._PMI_rate = .005
-
-        self._property_tax = 1890
-        self._property_tax_rate = 1
         self._property_tax_override = False
-
-        self._hoa = 0
-
-        self._insurance = 75
-        self._insurance_co = "None"
-
-        self._m_payment = ""
-        self._t_payment = ""
+        self._data.update({
+            'pmi rate': 0.005,
+            'property tax': 1890,
+            'property tax rate': 1,
+            'hoa': 0,
+            'mortgage company': "Friendly Neighborhood Credit Union",
+            'insurance': 550,
+            'insurance company': "State Farm",
+            'total_monthly': 0
+        })
+        self.calc_total_monthly
 
     def mortgage_monthly(self) -> float:
         """
@@ -328,7 +349,7 @@ class Mortgage(Loan):
         :return: The PMI amount if required.
         """
         if principal == None:
-            principal = self._principal
+            principal = self.data('principal')
         percent_down = round(1-(principal / self._total),2)
         #print(percent_down)
         if percent_down < 0.2 and self._pmi_required:
@@ -402,6 +423,20 @@ class Mortgage(Loan):
             self._property_tax = self._total * (self._property_tax_rate / 100)
         return self._property_tax
 
+    def calc_total_monthly(self) -> None:
+        """
+        Calculates the monthly payment.
+        :return: Nothing.
+        """
+        monthly = super().calc_monthly()
+        pmi = 0
+        if self._pmi_required:
+            pmi = self.PMI()
+
+        monthly += (self.data('insurance premium') / 12) + (self.data('property tax') / 12) + pmi
+        self._monthly_payment = monthly
+        return monthly
+
     def launch_extra_payments(self, parent):
         root = parent.get_root()
         ExtraPaymentWindow(root, self)
@@ -417,34 +452,58 @@ class Mortgage(Loan):
 
     def get_detail(self, root, parent):
         comparison = self.compare_schedules()
+        differences = comparison.get('difference')
+        months_saved = differences.get('months saved')
+        years_saved = differences.get('years saved')
+        interest_saved = differences.get('interest saved')
 
         frame = tk.Frame(root)
         frame.pack(fill='both')
         frame.pack_propagate(True)
 
+        # TOP INFORMATION BANNER
+        information = tk.Frame(root, width=700, height=50)
+        information.grid(column=0, row=0, columnspan=7, sticky=W+E)
+
+        address = tk.Label(information, text=self.name() + ", " + self.desc())
+        address.grid(column=0, row=0, sticky=W)
+        mortgage_co = tk.Label(information, text=self.data('mortgage company'))
+        mortgage_co.grid(column=0, row=1, sticky=W)
+
+        # BASE STATS WINDOW
         base_stats = tk.Frame(root, width=200, height=300)
         base_stats.grid(column=0, row=1, columnspan=2, sticky=N+S+W+E)
         base_stats.pack_propagate(False)
 
         tk.Label(base_stats, text='Total:').pack()
-        tk.Label(base_stats, text=self._data.get('total')).pack()
+        tk.Label(base_stats, text=f'${self.data("total"):,}').pack()
         tk.Label(base_stats, text='Down Payment:').pack()
-        tk.Label(base_stats, text=self._data.get('down payment')).pack()
+        tk.Label(base_stats, text=f'${self.data("down payment"):,}').pack()
         tk.Label(base_stats, text='Principal:').pack()
-        tk.Label(base_stats, text=self._data.get('principal')).pack()
+        tk.Label(base_stats, text=f'${self.data("principal"):,}').pack()
         tk.Label(base_stats, text='Loan Term:').pack()
-        term_string = str(self._data.get('term')) + " months"
-        tk.Label(base_stats, text=term_string).pack()
+        tk.Label(base_stats, text=str(self._data.get('term')) + " months").pack()
         tk.Label(base_stats, text='Rate:').pack()
-        tk.Label(base_stats, text=self._data.get('rate')).pack()
+        tk.Label(base_stats, text=str(self._data.get('rate')) + " %").pack()
 
+        # MAIN GRAPH
         graph = tk.Frame(root, width=500, height=300)
         graph.grid(column=2, row=1, columnspan=5, sticky=N+S+W+E)
         graph.pack_propagate(False)
 
-        self.create_graph(graph, title="Loan Comparison")
+        s1 = [sched[1] for sched in comparison.get('no extra').get('schedule')]
+        s2 = [sched[1] for sched in comparison.get('extra').get('schedule')]
+        schedules = [s1, s2]
+        self.create_graph(graph, schedules, title="Loan Comparison")
 
-        tk.Frame(root, height=10).grid(column=0, row=2)
+        savings = tk.Frame(root, height=10)
+        savings.grid(column=0, row=2, columnspan=7)
+        savings_header = 'By making extra payments...'
+        savings_string = f'You could pay off your mortgage {years_saved} year(s) and {months_saved} month(s) earlier.'
+        interest_string = f'You could save ${interest_saved:,}.'
+        tk.Label(savings, text=savings_header).pack(side=LEFT)
+        tk.Label(savings, text=savings_string).pack(side=LEFT)
+        tk.Label(savings, text=interest_string).pack(side=LEFT)
 
         loan_detail = tk.Frame(root, width=300, height=350)
         loan_detail.grid(column=0, row=3, columnspan=3)
@@ -455,13 +514,14 @@ class Mortgage(Loan):
         tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 14)).pack(fill=X)
 
 
-    def create_graph(self, root, title=""):
-        sched1, sched2 = self.compare_schedules()
+    def create_graph(self, root, schedules, title=""):
         fig = pyplot.Figure(figsize=(5, 3), dpi=100)
         fig.suptitle(title, fontsize=14)
         p = fig.add_subplot(111)
-        p.plot(range(0, len(sched1)), sched1)
-        p.plot(range(0, len(sched2)), sched2)
+
+        for schedule in schedules:
+            p.plot(range(0, len(schedule)), schedule)
+
         canvas = FigureCanvasTkAgg(fig, root)
         canvas.get_tk_widget().pack()
 
@@ -514,18 +574,6 @@ class Auto(Loan):
 class Student(Loan):
     def __init__(self, name: str, desc: str = ""):
         super().__init__(name, desc)
-
-
-def loan_to_mortgage(self, loan: Loan) -> Mortgage:
-    new_mortgage = Mortgage(self.name(), self.desc())
-    new_mortgage.set_data(self._data)
-    return new_mortgage
-
-
-def to_auto(self, loan: Loan) -> Auto:
-    new_auto = Auto(self.name(), self.desc())
-    new_auto.set_data(self._data)
-    return new_auto
 
 
 def main():

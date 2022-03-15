@@ -3,13 +3,13 @@
 # Description:
 
 import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import *
 
 colors = {
             "l_sel": "lightblue2",
             "l_hover": "lightblue1",
             'l_active_hover': 'lightblue3',
+            "l_reset": "SystemButtonFace",
             "b_reset": "SystemButtonFace",
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
@@ -60,12 +60,12 @@ class FinanceObj:
         """
         return self._data.get('desc')
 
-    def data(self) -> dict:
+    def data(self, key: str) -> dict:
         """
         Gets the data dict from this object.
         :return: The dict of data for the object.
         """
-        return self._data
+        return self._data.get(key)
 
     def type(self) -> str:
         return type(self).__name__
@@ -116,14 +116,13 @@ class FinanceObj:
             widget = e.widget._nametowidget(parent_name)
 
         if self._active:
-            widget['bg'] = colors.get('b_active_hover')
+            widget['bg'] = colors.get('l_active_hover')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('b_active_hover')
+                c['bg'] = colors.get('l_active_hover')
         else:
-            widget['bg'] = colors.get('b_hover')
+            widget['bg'] = colors.get('l_hover')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('b_hover')
-
+                c['bg'] = colors.get('l_hover')
 
     def list_leave(self, e):
         if e.widget.winfo_class() == 'Frame':
@@ -133,13 +132,13 @@ class FinanceObj:
             widget = e.widget._nametowidget(parent_name)
 
         if self._active:
-            widget['bg'] = colors.get('b_sel')
+            widget['bg'] = colors.get('l_sel')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('b_sel')
+                c['bg'] = colors.get('l_sel')
         else:
-            widget['bg'] = colors.get('b_reset')
+            widget['bg'] = colors.get('l_reset')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('b_reset')
+                c['bg'] = colors.get('l_reset')
 
     def get_list_button(self, root, parent):
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)

@@ -3,12 +3,9 @@
 # Description:
 
 import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import N, W, S, E, RIGHT
 
-from dataload import save_all
-from forms import DetailForm
-from income import FinanceObj, Job, TaxBracket
+from income import FinanceObj, Job
 from loans import Loan, Mortgage, Student
 from scenario import Scenario
 
@@ -320,7 +317,7 @@ class LeftPanel:
 
         fin_object.get_editable(self._drawer, self)
 
-    def populate_detail(self, fin_object: FinanceObj):
+    def populate_detail(self, fin_object: FinanceObj, refresh=False):
         if self._fin_obj_selection is not None:
             if fin_object != self._fin_obj_selection:
                 self._fin_obj_selection.activate(False)
