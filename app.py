@@ -119,7 +119,7 @@ class LeftPanel:
             Called when button is clicked on.
             """
             self.activate()
-            self._parent.new_context(self, self._fin_list)
+            self._parent.new_context(self)
 
         # TODO move into LeftPanel and pass key string instead?
         def get_fin_list(self) -> list:
@@ -269,21 +269,32 @@ class LeftPanel:
     def get_root(self) -> tk.Tk:
         return self._root
 
-    def new_context(self, clicked: NavButton, fin_list: list):
-        print("new context")
+    # TODO streamline so that Navbutton holds the dict key instead of the list
+    def new_context(self, clicked: NavButton) -> None:
+        """
+        Called when a Navigation button is clicked. Loads the list of FinanceObjs in the drawer and activates
+        necessary elements.
+        :param clicked: The clicked navigation button.
+        """
+        # Clear previous selection.
         if self._fin_obj_selection is not None:
-            print("clear fin obj")
             self._fin_obj_selection.activate(False)
             self._fin_obj_selection = None
+
         self._nav_selection.activate(False)
-        self._bottom_menu.reset()
         self._nav_selection = clicked
         self._nav_selection.activate()
         self._nav_text.set(clicked.detail + " Right click to modify.")
+
+        # refresh to update gui with any active elements
+        self._bottom_menu.reset()
         self.populate_nav_menu()
         self.populate_list(clicked.get_fin_list())
 
     def populate_nav_menu(self) -> None:
+        """
+        Destroys all child widgets in the navigation menu and repopulates them to bring in updated activation elements.
+        """
         for c in self._nav_menu.winfo_children():
             c.destroy()
 
@@ -292,9 +303,8 @@ class LeftPanel:
 
     def populate_list(self, fin_list: list = None, refresh=False) -> None:
         """
-        Populates the drawer with a list of all financial objects of the given context. Called when context changes or
-        when returning from mid panel.
-        :return: Nothing.
+        Populates the drawer with a list of all financial objects of the given context. Called when a navigation button
+        is selected or when a FinanceObj in the list activates (is clicked on).
         """
         if self._detail_panel is not None and not refresh:
             self._detail_panel.reset()
@@ -311,7 +321,12 @@ class LeftPanel:
         for fin_obj in fin_list:
             fin_obj.get_list_button(self._drawer, self)
 
-    def populate_editable(self, fin_object: FinanceObj, active=False):
+    def populate_editable(self, fin_object: FinanceObj):
+        """
+        Populates the editable view for a selected FinanceObj. Called on right click or clicking the edit button from
+        the Bottom Menu.
+        :param fin_object: The selected FinanceObj.
+        """
         for c in self._drawer.winfo_children():
             c.destroy()
 
