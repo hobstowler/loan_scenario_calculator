@@ -105,7 +105,7 @@ class Loan(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
         super(Loan, self).__init__(name, desc)
         self._type = "Loan"
-        self._monthly_payment = 1200
+        #self._monthly_payment = 1200
         self._extra_payments = []
 
         self._data.update({
@@ -115,7 +115,8 @@ class Loan(FinanceObj):
             "down payment": 80000,
             "principal": 160000,
             "origination": date(2020, 1, 1),
-            'first payment': date(2020, 2, 1)
+            'first payment': date(2020, 2, 1),
+            'monthly payment': 1200
         })
         self.calc_monthly()
 
@@ -140,15 +141,8 @@ class Loan(FinanceObj):
         compound = math.pow(1 + m_rate, self._data.get("term"))
 
         monthly = (principal * m_rate * compound) / (compound - 1)
-        self._monthly_payment = monthly
+        self._data.update({'monthly payment': monthly})
         return monthly
-
-    def get_monthly(self):
-        """
-        Returns the monthly payment amount for this loan.
-        :return: The monthly amount in dollars.
-        """
-        return round(self._monthly_payment, 2)
 
     def add_extra_payment(self, new_ex_payment: ExtraPayment) -> None:
         """
@@ -182,7 +176,8 @@ class Loan(FinanceObj):
         """
         amortization ={}
         principal = self._data.get("principal")
-        monthly_payment = self._monthly_payment
+        monthly_payment = self.data('monthly payment')
+        print('monthly payment:', monthly_payment)
         term = self._data.get("term")
 
         #TODO support for real dates
@@ -264,39 +259,12 @@ class Loan(FinanceObj):
         frame, index = super().get_editable(root, parent)
 
         index = self.tk_line_break(frame, index)
-
-        start_string = tk.StringVar()
-        start_string.set(self._data.get('origination'))
-        tk.Label(frame, text="Loan Start (MM/DD/YYYY)", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='origination', textvariable=start_string).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
-        term = tk.StringVar()
-        term.set(self._data.get('term'))
-        tk.Label(frame, text="Loan Term (Months)", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='term', textvariable=term).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
+        index = self.tk_editable_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, index)
+        index = self.tk_editable_pair('term', 'Loan Term (Months)', frame, index)
         index = self.tk_line_break(frame, index)
-
-        total = tk.StringVar()
-        total.set(self._data.get('total'))
-        tk.Label(frame, text="Total Amount", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='total', textvariable=total).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
-        down_payment = tk.StringVar()
-        down_payment.set(self._data.get('down payment'))
-        tk.Label(frame, text="Down Payment", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='down payment', textvariable=down_payment).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
-        rate = tk.StringVar()
-        rate.set(self._data.get('rate'))
-        tk.Label(frame, text="Rate", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='rate', textvariable=rate).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
+        index = self.tk_editable_pair('total', 'Total Amount', frame, index)
+        index = self.tk_editable_pair('down payment', 'Down Payment', frame, index)
+        index = self.tk_editable_pair('rate', 'Rate', frame, index)
         index = self.tk_line_break(frame, index)
 
         return frame, index
@@ -308,18 +276,19 @@ class Mortgage(Loan):
         self._type = "Mortgage"
 
         self._pmi_required = True
-        self._property_tax_override = False
+        self._property_tax_required = True
         self._data.update({
+            'pmi': 100,
             'pmi rate': 0.005,
             'property tax': 1890,
             'property tax rate': 1,
             'hoa': 0,
             'mortgage company': "Friendly Neighborhood Credit Union",
-            'insurance': 550,
+            'insurance premium': 550,
             'insurance company': "State Farm",
-            'total_monthly': 0
+            'total monthly': 0
         })
-        self.calc_total_monthly
+        self.calc_total_monthly()
 
     def mortgage_monthly(self) -> float:
         """
@@ -350,7 +319,7 @@ class Mortgage(Loan):
         """
         if principal == None:
             principal = self.data('principal')
-        percent_down = round(1-(principal / self._total),2)
+        percent_down = round(1-(principal / self.data('total')), 2)
         #print(percent_down)
         if percent_down < 0.2 and self._pmi_required:
             return round((principal * self._PMI_rate)/12, 2)
@@ -434,7 +403,8 @@ class Mortgage(Loan):
             pmi = self.PMI()
 
         monthly += (self.data('insurance premium') / 12) + (self.data('property tax') / 12) + pmi
-        self._monthly_payment = monthly
+        self._data.update({'total monthly': monthly})
+        print("m:", monthly)
         return monthly
 
     def launch_extra_payments(self, parent):
@@ -457,34 +427,56 @@ class Mortgage(Loan):
         years_saved = differences.get('years saved')
         interest_saved = differences.get('interest saved')
 
-        frame = tk.Frame(root)
-        frame.pack(fill='both')
-        frame.pack_propagate(True)
+        frame, information = super().get_detail(root, parent)
 
-        # TOP INFORMATION BANNER
-        information = tk.Frame(root, width=700, height=50)
-        information.grid(column=0, row=0, columnspan=7, sticky=W+E)
-
-        address = tk.Label(information, text=self.name() + ", " + self.desc())
-        address.grid(column=0, row=0, sticky=W)
-        mortgage_co = tk.Label(information, text=self.data('mortgage company'))
-        mortgage_co.grid(column=0, row=1, sticky=W)
+        desc = tk.Label(information, text=self.data('mortgage company'))
+        desc.grid(column=0, row=1, sticky=W)
+        desc['bg'] = colors.get('bg_header')
 
         # BASE STATS WINDOW
-        base_stats = tk.Frame(root, width=200, height=300)
-        base_stats.grid(column=0, row=1, columnspan=2, sticky=N+S+W+E)
+        base_stats = tk.Frame(root, width=190, height=290)
+        base_stats.grid(column=0, row=1, columnspan=2, sticky=N+S+W+E, padx=(0, 10), pady=(5,5))
         base_stats.pack_propagate(False)
 
-        tk.Label(base_stats, text='Total:').pack()
-        tk.Label(base_stats, text=f'${self.data("total"):,}').pack()
-        tk.Label(base_stats, text='Down Payment:').pack()
-        tk.Label(base_stats, text=f'${self.data("down payment"):,}').pack()
-        tk.Label(base_stats, text='Principal:').pack()
-        tk.Label(base_stats, text=f'${self.data("principal"):,}').pack()
-        tk.Label(base_stats, text='Loan Term:').pack()
-        tk.Label(base_stats, text=str(self._data.get('term')) + " months").pack()
-        tk.Label(base_stats, text='Rate:').pack()
-        tk.Label(base_stats, text=str(self._data.get('rate')) + " %").pack()
+        stat_desc = tk.Frame(base_stats)
+        stat_desc.pack(side=LEFT)
+
+        #tk.Label(stat_desc, text='Total:')
+        #tk.Label(stat_desc, text='Down Payment:')
+        tk.Label(stat_desc, text='Principal:')
+        tk.Label(stat_desc, text='Loan Term:')
+        tk.Label(stat_desc, text='Monthly Payment:')
+        if self._property_tax_required:
+            tk.Label(stat_desc, text='Property Tax:')
+        tk.Label(stat_desc, text='Insurance:')
+        if self._pmi_required:
+            tk.Label(stat_desc, text='Monthly PMI:')
+        tk.Label(stat_desc, text='Total Monthly:')
+        tk.Label(stat_desc, text='Rate:')
+        for c in stat_desc.winfo_children():
+            c.configure(anchor=W)
+            c.pack(fill=X)
+            c['bg'] = 'orange'
+
+        stats = tk.Frame(base_stats)
+        stats.pack(side=RIGHT)
+
+        #tk.Label(stats, text=f'${self.data("total"):,}')
+        #tk.Label(stats, text=f'${self.data("down payment"):,}')
+        tk.Label(stats, text=f'${self.data("principal"):,}')
+        tk.Label(stats, text=str(self._data.get('term')) + " months")
+        tk.Label(stats, text=f'${round(self.data("monthly payment"),2):,}')
+        if self._property_tax_required:
+            tk.Label(stats, text=f'${round(self.data("property tax")/12,2):,}')
+        tk.Label(stats, text=f'${round(self.data("insurance premium")/12,2):,}')
+        if self._pmi_required:
+            tk.Label(stats, text=f'${round(self.data("pmi"),2):,}')
+        tk.Label(stats, text=f'${round(self.data("total monthly"),2):,}')
+        tk.Label(stats, text=str(self._data.get('rate')) + " %")
+        for c in stats.winfo_children():
+            c.configure(anchor=E)
+            c.pack(fill=X)
+            c['bg'] = 'green'
 
         # MAIN GRAPH
         graph = tk.Frame(root, width=500, height=300)
@@ -496,14 +488,29 @@ class Mortgage(Loan):
         schedules = [s1, s2]
         self.create_graph(graph, schedules, title="Loan Comparison")
 
-        savings = tk.Frame(root, height=10)
-        savings.grid(column=0, row=2, columnspan=7)
+        summary = tk.Frame(root, height=100, width=500)
+        summary.grid(column=0, row=2, columnspan=5, sticky=W+E)
+        summary.grid_propagate(False)
+        summary['bg'] = 'red'
         savings_header = 'By making extra payments...'
         savings_string = f'You could pay off your mortgage {years_saved} year(s) and {months_saved} month(s) earlier.'
-        interest_string = f'You could save ${interest_saved:,}.'
-        tk.Label(savings, text=savings_header).pack(side=LEFT)
-        tk.Label(savings, text=savings_string).pack(side=LEFT)
-        tk.Label(savings, text=interest_string).pack(side=LEFT)
+        interest_string = f'You could save ${interest_saved:,} in interest over the life of the loan.'
+        tk.Label(summary, text='Summary', font=('bold', 14), anchor=W)
+        tk.Label(summary, text=savings_header, anchor=W)
+        tk.Label(summary, text=savings_string, anchor=W)
+        tk.Label(summary, text=interest_string, anchor=W)
+        row = 0
+        for c in summary.winfo_children():
+            c.grid(column=0, columnspan=5, row=row, sticky=W+E)
+            c['bg'] = 'red'
+            if row > 1:
+                c.grid(padx=(10, 0))
+            row += 1
+
+        detail = tk.Frame(root, height=100, width=200)
+        detail.grid(column=5, row=2, columnspan=2, sticky=W+E)
+        detail.pack_propagate(False)
+        detail['bg'] = 'blue'
 
         loan_detail = tk.Frame(root, width=300, height=350)
         loan_detail.grid(column=0, row=3, columnspan=3)

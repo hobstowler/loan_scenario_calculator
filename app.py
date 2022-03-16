@@ -398,6 +398,7 @@ def main():
     # create the root
     root = tk.Tk()
     root.title("Loan Calculator")
+    root.tk_setPalette(background='#fff')
 
     # load the data
     fin_vars = {

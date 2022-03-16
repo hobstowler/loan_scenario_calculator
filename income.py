@@ -14,7 +14,8 @@ colors = {
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
             'b_active_hover': 'dark turquoise',
-            'fin_type': 'red'
+            'fin_type': 'red',
+            'bg_header': 'cadetblue'
         }
 
 
@@ -70,15 +71,6 @@ class FinanceObj:
     def type(self) -> str:
         return type(self).__name__
 
-    def update(self, data: dict):
-        for k in data.keys():
-            if k == "name":
-                self._name = data.get(k)
-            elif k == "desc":
-                self._desc = data.get(k)
-            else:
-                self._data.update({k: data.get(k)})
-
     def activate(self, active=True):
         self._active = active
 
@@ -93,9 +85,15 @@ class FinanceObj:
     def cancel(self, parent):
         parent.populate_list(refresh=True)
 
-    def save(self, parent):
+    def save(self, key):
+        print('saving:', key)
+        self._data.update({key: self._form_strings.get(key).get()})
+
+    def save_all(self, parent):
         for key in self._form_strings:
+            print('saving:', key)
             self._data.update({key: self._form_strings.get(key).get()})
+
         parent.populate_list(refresh=True)
 
     def validate_string(self) -> bool:
@@ -104,8 +102,20 @@ class FinanceObj:
     def validate_integer(self) -> bool:
         pass
 
+    # TODO make methods in app
     def tk_line_break(self, root, index) -> int:
         tk.Label(root, text="").grid(column=0, row=index)
+        return index + 1
+
+    def tk_editable_pair(self, key, text, root, index):
+        #key = 'origination'
+        s_var = tk.StringVar()
+        s_var.set(self._data.get(key))
+        self._form_strings.update({key: s_var})
+        tk.Label(root, text=text, anchor='e').grid(column=1, row=index)
+        entry = tk.Entry(root, name=key, textvariable=s_var)
+        entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
         return index + 1
 
     def list_enter(self, e):
@@ -188,36 +198,37 @@ class FinanceObj:
 
         save = tk.Button(frame, text='Save')
         save.grid(column=3, row=index)
-        save.bind('<Button-1>', lambda e, p=parent: self.save(p))
+        save.bind('<Button-1>', lambda e, p=parent: self.save_all(p))
         cancel = tk.Button(frame, text='X', anchor='e')
         cancel.grid(column=4, row=index)
         cancel.bind('<Button-1>', lambda e, p=parent: self.cancel(p))
         index += 1
 
         index = self.tk_line_break(frame, index)
-
-        key = 'name'
-        value = self._data.get(key)
-        s_var = StringVar()
-        s_var.set(value)
-        self._form_strings.update({key: s_var})
-        tk.Label(frame, text=name, anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
-
-        key = 'desc'
-        value = self._data.get(key)
-        s_var = StringVar()
-        s_var.set(value)
-        self._form_strings.update({key: s_var})
-        tk.Label(frame, text=desc, anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name=key, textvariable=s_var).grid(column=2, row=index, columnspan=2, sticky=W+E)
-        index += 1
+        index = self.tk_editable_pair('name', name, frame, index)
+        index = self.tk_editable_pair('desc', desc, frame, index)
 
         return frame, index
 
     def get_detail(self, root, parent):
-        pass
+        frame = tk.Frame(root)
+        frame.pack(fill='both')
+        frame.pack_propagate(False)
+        frame.grid_propagate(False)
+
+        # TOP INFORMATION BANNER
+        information = tk.Frame(root, width=700, height=49)
+        information.grid(column=0, row=0, columnspan=7, sticky=W+E, pady=(0, 3))
+        information.grid_propagate(False)
+
+        name = tk.Label(information, text=self.name() + ", " + self.desc(), font=('bold', 13))
+        name.grid(column=0, row=0, sticky=W)
+
+        information['bg'] = colors.get('bg_header')
+        for c in information.winfo_children():
+            c['bg'] = colors.get('bg_header')
+
+        return frame, information
 
 
 class InvalidExpenseType(Exception):
