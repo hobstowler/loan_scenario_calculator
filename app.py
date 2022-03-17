@@ -5,8 +5,8 @@
 import tkinter as tk
 from tkinter import N, W, S, E, RIGHT
 
-from income import FinanceObj, Job
-from loans import Loan, Mortgage, Student
+from income import FinanceObj, Job, Assets, Expenses, TaxBracket
+from loans import Loan, Mortgage, Student, Auto, Personal
 from scenario import Scenario
 
 colors = {
@@ -44,16 +44,16 @@ class LeftPanel:
             self.NavLabel("scenarios"),
             self.NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
             self.NavLabel("income"),
-            self.NavButton("jobs", "Select a Job.", self, fin_vars.get("jobs")),
-            self.NavButton("assets", "Select an Asset.", self, fin_vars.get("assets")),
+            self.NavButton(Job, "Select a Job.", self, fin_vars.get("jobs")),
+            self.NavButton(Assets, "Select an Asset.", self, fin_vars.get("assets")),
             self.NavLabel("loans"),
-            self.NavButton("mortgage", "Select a Mortgage.", self, fin_vars.get("mortgages")),
-            self.NavButton("student", "Select a Student Loan.", self, fin_vars.get("student loans")),
-            self.NavButton("auto", "Select an Auto Loan.", self, fin_vars.get("auto loans")),
-            self.NavButton("personal", "Select a Personal Loan.", self, fin_vars.get("loans")),
+            self.NavButton(Mortgage, "Select a Mortgage.", self, fin_vars.get("mortgages")),
+            self.NavButton(Student, "Select a Student Loan.", self, fin_vars.get("student loans")),
+            self.NavButton(Auto, "Select an Auto Loan.", self, fin_vars.get("auto loans")),
+            self.NavButton(Personal, "Select a Personal Loan.", self, fin_vars.get("loans")),
             self.NavLabel("expenses"),
-            self.NavButton("expenses", "Select an Expense.", self, fin_vars.get("expenses")),
-            self.NavButton("taxes", "Select a Tax Bracket.", self, fin_vars.get("taxes"))
+            self.NavButton(Expenses, "Select an Expense.", self, fin_vars.get("expenses")),
+            self.NavButton(TaxBracket, "Select a Tax Bracket.", self, fin_vars.get("taxes"))
         ]
         self._nav_selection = self._nav_menu_elements[3]
 
@@ -102,6 +102,7 @@ class LeftPanel:
         """Button on the top-level navigation menu."""
         def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
             super().__init__(label.__str__())
+            self._fin_obj = label
             self.detail = detail
             self._fin_list = fin_objects
             self._parent = parent
@@ -184,7 +185,7 @@ class LeftPanel:
             """
             Called when clicking new button. Passthrough to create a new Finance Object with parent LeftPanel.
             """
-            self._parent.new_fin_object()
+            self._parent.populate_new()
 
         def edit(self) -> None:
             """
@@ -259,6 +260,20 @@ class LeftPanel:
             """
             button = e.widget
             button['bg'] = colors.get('b_reset')
+
+    #TODO implement saving and loading using JSONs
+    def save_all(self):
+        pass
+
+    def save_fin_obj(self, fin_obj):
+        fin_list = self._nav_selection.get_fin_list()
+        print(fin_list)
+        if fin_obj not in fin_list:
+            fin_list.append(fin_obj)
+        self.populate_list(refresh=True)
+
+    def load_all(self):
+        pass
 
     def set_detail_panel(self, panel) -> None:
         self._detail_panel = panel
@@ -344,8 +359,10 @@ class LeftPanel:
 
     #TODO implement
     def populate_new(self):
-        self._nav_selection
-        self.populate_editable()
+        if self._fin_obj_selection is not None:
+            self._fin_obj_selection.activate(False)
+        new_obj = self._nav_selection._fin_obj('name', 'desc')
+        self.populate_editable(new_obj)
 
     def delete_selected_fin_object(self):
         if self._fin_obj_selection is not None:

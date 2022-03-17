@@ -120,6 +120,10 @@ class Loan(FinanceObj):
         })
         self.calc_monthly()
 
+    @staticmethod
+    def __str__():
+        return f'Loan'
+
     def calc_m_interest(self, amount) -> float:
         """
         Calculates the monthly interest for a given amount and month.
@@ -131,11 +135,18 @@ class Loan(FinanceObj):
         m_rate = float(self._data.get("rate")) / 100 / 12 # TODO make this work by month
         return round(amount * m_rate, 2)
 
+    def calc_principal(self):
+        total = self.data('total')
+        down = self.data('down payment')
+        principal = total - down
+        self._data.update({'principal': principal})
+
     def calc_monthly(self) -> None:
         """
         Calculates the monthly payment.
         :return: Nothing.
         """
+        self.calc_principal()
         principal = self._data.get("principal")
         m_rate = float(self._data.get("rate")) / 100 / 12
         compound = math.pow(1 + m_rate, self._data.get("term"))
@@ -259,12 +270,12 @@ class Loan(FinanceObj):
         frame, index = super().get_editable(root, parent, name, desc)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, index)
-        index = self.tk_editable_pair('term', 'Loan Term (Months)', frame, index)
+        index = self.tk_editable_string_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, index)
+        index = self.tk_editable_int_pair('term', 'Loan Term (Months)', frame, index)
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_pair('total', 'Total Amount', frame, index)
-        index = self.tk_editable_pair('down payment', 'Down Payment', frame, index)
-        index = self.tk_editable_pair('rate', 'Rate', frame, index)
+        index = self.tk_editable_int_pair('total', 'Total Amount', frame, index)
+        index = self.tk_editable_int_pair('down payment', 'Down Payment', frame, index)
+        index = self.tk_editable_float_pair('rate', 'Rate', frame, index)
         index = self.tk_line_break(frame, index)
 
         return frame, index
@@ -289,6 +300,10 @@ class Mortgage(Loan):
             'total monthly': 0
         })
         self.calc_total_monthly()
+
+    @staticmethod
+    def __str__():
+        return f'Mortgage'
 
     def mortgage_monthly(self) -> float:
         """
@@ -322,7 +337,7 @@ class Mortgage(Loan):
         percent_down = round(1-(principal / self.data('total')), 2)
         #print(percent_down)
         if percent_down < 0.2 and self._pmi_required:
-            return round((principal * self._PMI_rate)/12, 2)
+            return round((principal * self.data('pmi rate'))/12, 2)
         else:
             return 0
 
@@ -421,6 +436,7 @@ class Mortgage(Loan):
         extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
 
     def get_detail(self, root, parent):
+        self.calc_total_monthly()
         comparison = self.compare_schedules()
         differences = comparison.get('difference')
         months_saved = differences.get('months saved')
@@ -577,10 +593,27 @@ class Auto(Loan):
     def __init__(self, name: str, desc: str = ""):
         super().__init__(name, desc)
 
+    @staticmethod
+    def __str__():
+        return f'Auto'
+
 
 class Student(Loan):
     def __init__(self, name: str, desc: str = ""):
         super().__init__(name, desc)
+
+    @staticmethod
+    def __str__():
+        return f'Student'
+
+
+class Personal(Loan):
+    def __init__(self, name: str, desc: str = ""):
+        super().__init__(name, desc)
+
+    @staticmethod
+    def __str__():
+        return f'Personal'
 
 
 def main():

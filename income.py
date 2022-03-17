@@ -35,6 +35,10 @@ class FinanceObj:
         self._active = False
         self._form_strings = {}
 
+    @staticmethod
+    def __str__():
+        return f'Finance Object'
+
     def set_name(self, new_name: str) -> bool:
         """
         Sets a new name for the object. Returns true if the operation is successful.
@@ -93,6 +97,7 @@ class FinanceObj:
         for key in self._form_strings:
             print('saving:', key)
             self._data.update({key: self._form_strings.get(key).get()})
+        parent.save_fin_obj(self)
 
         parent.populate_list(refresh=True)
 
@@ -107,9 +112,31 @@ class FinanceObj:
         tk.Label(root, text="").grid(column=0, row=index)
         return index + 1
 
-    def tk_editable_pair(self, key, text, root, index):
-        #key = 'origination'
+    def tk_editable_string_pair(self, key, text, root, index):
+        # key = 'origination'
         s_var = tk.StringVar()
+        s_var.set(self._data.get(key))
+        self._form_strings.update({key: s_var})
+        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
+        entry = tk.Entry(root, name=key, textvariable=s_var)
+        entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+        return index + 1
+
+    def tk_editable_int_pair(self, key, text, root, index):
+        #key = 'origination'
+        s_var = tk.IntVar()
+        s_var.set(self._data.get(key))
+        self._form_strings.update({key: s_var})
+        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
+        entry = tk.Entry(root, name=key, textvariable=s_var)
+        entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+        return index + 1
+
+    def tk_editable_float_pair(self, key, text, root, index):
+        #key = 'origination'
+        s_var = tk.DoubleVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
         tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
@@ -205,8 +232,8 @@ class FinanceObj:
         index += 1
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_pair('name', name, frame, index)
-        index = self.tk_editable_pair('desc', desc, frame, index)
+        index = self.tk_editable_string_pair('name', name, frame, index)
+        index = self.tk_editable_string_pair('desc', desc, frame, index)
 
         return frame, index
 
@@ -257,6 +284,10 @@ class Expenses(FinanceObj):
         super(Expenses, self).__init__(name, desc)
         self._expenses = {}
         self._yearly_expenses = {}
+
+    @staticmethod
+    def __str__():
+        return f'Expenses'
 
     def add(self, label: str, amount: (int, float)) -> bool:
         """
@@ -323,6 +354,10 @@ class Income(FinanceObj):
     def __init__(self, name, desc=""):
         super(Income, self).__init__(name, desc)
 
+    @staticmethod
+    def __str__():
+        return f'Income'
+
 
 class TaxBracket(FinanceObj):
     """
@@ -339,6 +374,10 @@ class TaxBracket(FinanceObj):
 
         self._valid_types = ["STATE", "FEDERAL", "LOCAL"]
         self._valid_status = ["SINGLE", "MARRIED, JOINT", "MARRIED, SEPARATE", "HEAD OF HOUSEHOLD"]
+
+    @staticmethod
+    def __str__():
+        return f'Tax Brackets'
 
     def change_label(self, new_label):
         """
@@ -531,6 +570,10 @@ class Job(FinanceObj):
 
         self._valid_pay_frequency = ['Hourly', 'Weekly', 'Bi-Weekly', 'Monthly', 'Annually']
 
+    @staticmethod
+    def __str__():
+        return f'Job'
+
     def get_gross_income(self) -> (int, float):
         """
         Returns the annual amount earned before taxes and deductions like retirement and health insurance.
@@ -625,4 +668,8 @@ class Job(FinanceObj):
 class Assets(FinanceObj):
     def __init__(self):
         pass
+
+    @staticmethod
+    def __str__():
+        return f'Assets'
 
