@@ -1,7 +1,7 @@
 # Author: Hobs Towler
 # Date: 12/1/2021
 # Description:
-
+import json
 import tkinter as tk
 from tkinter import *
 
@@ -29,15 +29,24 @@ class FinanceObj:
         :param name: The name of the object. Used in display functions
         :param desc: The longer form description of the object.
         """
-        self._data = {}
-        self._data.update({'name': name})
-        self._data.update({'desc': desc})
+        self._data = {
+            'name': name,
+            'desc': desc
+        }
         self._active = False
         self._form_strings = {}
 
     @staticmethod
     def __str__():
         return f'Finance Object'
+
+    def get_jsonification(self) -> dict:
+        jsonification = {
+            'name': self._data.get('name'),
+            'desc': self._data.get('desc'),
+            'data': self._data
+        }
+        return json.dumps(jsonification)
 
     def set_name(self, new_name: str) -> bool:
         """
@@ -113,7 +122,6 @@ class FinanceObj:
         return index + 1
 
     def tk_editable_string_pair(self, key, text, root, index):
-        # key = 'origination'
         s_var = tk.StringVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
@@ -124,7 +132,6 @@ class FinanceObj:
         return index + 1
 
     def tk_editable_int_pair(self, key, text, root, index):
-        #key = 'origination'
         s_var = tk.IntVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
@@ -135,7 +142,6 @@ class FinanceObj:
         return index + 1
 
     def tk_editable_float_pair(self, key, text, root, index):
-        #key = 'origination'
         s_var = tk.DoubleVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
