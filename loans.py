@@ -255,8 +255,8 @@ class Loan(FinanceObj):
 
         return comparison
 
-    def get_editable(self, root, parent) -> tuple:
-        frame, index = super().get_editable(root, parent)
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        frame, index = super().get_editable(root, parent, name, desc)
 
         index = self.tk_line_break(frame, index)
         index = self.tk_editable_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, index)
@@ -412,7 +412,7 @@ class Mortgage(Loan):
         ExtraPaymentWindow(root, self)
 
     def get_editable(self, root, parent):
-        frame, index = super().get_editable(root, parent,)
+        frame, index = super().get_editable(root, parent, "Street Address", "City, State ZIP")
 
         index = self.tk_line_break(frame, index)
 

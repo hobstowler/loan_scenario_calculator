@@ -102,7 +102,7 @@ class FinanceObj:
     def validate_integer(self) -> bool:
         pass
 
-    # TODO make methods in app
+    # TODO make standalone methods in app
     def tk_line_break(self, root, index) -> int:
         tk.Label(root, text="").grid(column=0, row=index)
         return index + 1
@@ -112,7 +112,7 @@ class FinanceObj:
         s_var = tk.StringVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
-        tk.Label(root, text=text, anchor='e').grid(column=1, row=index)
+        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
         entry = tk.Entry(root, name=key, textvariable=s_var)
         entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
         entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
