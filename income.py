@@ -207,7 +207,7 @@ class FinanceObj:
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
             c.bind("<Enter>", self.list_enter)
-            c.bind("<Leave>", self.list_leave)
+            #c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
 
@@ -295,6 +295,10 @@ class Expenses(FinanceObj):
     def __str__():
         return f'Expenses'
 
+    # TODO implement
+    def get_jsonification(self) -> dict:
+        jsonification = super().get_jsonification()
+
     def add(self, label: str, amount: (int, float)) -> bool:
         """
         Adds an expense with a label and monthly amount.
@@ -365,6 +369,30 @@ class Income(FinanceObj):
         return f'Income'
 
 
+class Bracket:
+    def __init__(self, rate, lower, upper):
+        self.rate = rate
+        self.lower = lower
+        self.upper = upper
+
+
+class BracketWindow:
+    def __init__(self, root, tax_bracket):
+        pass
+
+    def new_bracket(self):
+        pass
+
+    def delete_bracket(self):
+        pass
+
+    def populate(self):
+        pass
+
+    def exit(self):
+        pass
+
+
 class TaxBracket(FinanceObj):
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
@@ -372,77 +400,19 @@ class TaxBracket(FinanceObj):
     def __init__(self, name: str, desc: str="") -> None:
         super(TaxBracket, self).__init__(name, desc)
         self._brackets = []
-        self._label = ""
-        self._state = ""
-        self._status = ""
-        self._tax_type = "FEDERAL"
-        self._standard_deduction = 24000
+        self._data.update({
+            'state': '',
+            'filing status': '',
+            'type': 'Federal',
+            'standard deduction': 24000
+        })
 
-        self._valid_types = ["STATE", "FEDERAL", "LOCAL"]
+        self._valid_types = ["FEDERAL", "STATE", "LOCAL"]
         self._valid_status = ["SINGLE", "MARRIED, JOINT", "MARRIED, SEPARATE", "HEAD OF HOUSEHOLD"]
 
     @staticmethod
     def __str__():
         return f'Tax Brackets'
-
-    def change_label(self, new_label):
-        """
-        Changes the display label of the tax type.
-        :param new_label: the new label.
-        :return: Nothing.
-        """
-        if new_label.isalpha():
-            self._label = new_label.capitalize
-
-    def label(self):
-        """
-        Returns the display label for the tax bracket
-        :return: the tax bracket label.
-        """
-        return self._label
-
-    def tax_type(self):
-        """
-        Returns the tax type: Federal, State, or Local.
-        :return: The tax type
-        """
-        return self._tax_type
-
-    def change_state(self, new_state):
-        """
-        Change the geographic state that the tax bracket applies to.
-        :param new_state: The new state.
-        :return: Nothing.
-        """
-        if new_state.isalpha():
-            self._state = new_state
-
-    def get_state(self):
-        """
-        Gets the geographic state that the tax bracket applies to.
-        :return: The geographic state.
-        """
-        return self._state
-
-    def change_status(self, new_status):
-        """
-        Changes the filing status for this tax bracket.
-        :param new_status: The new filing status.
-        :return: Nothing.
-        """
-        new_status = new_status.upper()
-        if new_status in self._valid_status:
-            self._status = new_status
-
-    def get_status(self):
-        """
-        Returns the filing status for this tax bracket.
-        :return: The filing status for the tax bracket.
-        """
-        return self._status
-
-    def set_standard_deduction(self, standard__deduction):
-        self._standard_deduction = standard__deduction
 
     def define_brackets(self, brackets):
         """
@@ -566,6 +536,12 @@ class Job(FinanceObj):
         """
         super(Job, self).__init__(title, desc)
 
+        self._data.update({
+            'income': income,
+            '401k rate': rate_401k,
+            'roth rate': rate_roth,
+            'pay frequency': 'Weekly'
+        })
         self._income = income
         self._401k_rate = rate_401k
         self._roth_rate = rate_roth

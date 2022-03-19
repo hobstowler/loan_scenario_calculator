@@ -17,7 +17,9 @@ colors = {
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
             'b_active_hover': 'dark turquoise',
-            'fin_type': 'red'
+            'fin_type': 'red',
+            'save_button': 'green',
+            'save_button_hover': 'darkgreen'
         }
 
 
@@ -320,23 +322,24 @@ class LeftPanel:
         """
         Populates the drawer with a list of all financial objects of the given context. Called when a navigation button
         is selected or when a FinanceObj in the list activates (is clicked on).
+        :param fin_list: The list of fin objects used to populate the list.
+        :param refresh: Indicates whether the list is being refreshed or not. If it is, the existing selection is used.
         """
-        if self._detail_panel is not None and not refresh:
-            self._detail_panel.reset()
         for c in self._drawer.winfo_children():
             c.destroy()
-
         if not refresh:
+            if self._detail_panel is not None:
+                blank_out = True if self._fin_obj_selection is None else False
+                self._detail_panel.reset(blank_out)
             if fin_list is None:
                 return
         else:
-            print("refreshing")
             fin_list = self._nav_selection.get_fin_list()
 
         for fin_obj in fin_list:
             fin_obj.get_list_button(self._drawer, self)
 
-    def populate_editable(self, fin_object: FinanceObj):
+    def populate_editable(self, fin_object: FinanceObj) -> None:
         """
         Populates the editable view for a selected FinanceObj. Called on right click or clicking the edit button from
         the Bottom Menu.
@@ -344,10 +347,15 @@ class LeftPanel:
         """
         for c in self._drawer.winfo_children():
             c.destroy()
+        self._bottom_menu.reset()
 
         fin_object.get_editable(self._drawer, self)
 
-    def populate_detail(self, fin_object: FinanceObj, refresh=False):
+    def populate_detail(self, fin_object: FinanceObj) -> None:
+        """
+        Populates the detail window from a finance object selection in the list.
+        :param fin_object: The selected Finance Object.
+        """
         if self._fin_obj_selection is not None:
             if fin_object != self._fin_obj_selection:
                 self._fin_obj_selection.activate(False)
@@ -357,14 +365,19 @@ class LeftPanel:
         self._detail_panel.reset()
         fin_object.get_detail(self._detail_panel.get_frame(), self)
 
-    #TODO implement
     def populate_new(self):
+        """
+        Populated the editable with a new finance object of the type selected in the navigation bar.
+        """
         if self._fin_obj_selection is not None:
             self._fin_obj_selection.activate(False)
-        new_obj = self._nav_selection._fin_obj('name', 'desc')
+        new_obj = self._nav_selection._fin_obj('name', 'desc')      # gets the static class and creates a new instance.
         self.populate_editable(new_obj)
 
     def delete_selected_fin_object(self):
+        """
+        Deletes the selected Finance Object in the list view.
+        """
         if self._fin_obj_selection is not None:
             self._nav_selection.get_fin_list().remove(self._fin_obj_selection)
             self._fin_obj_selection = None
@@ -377,24 +390,50 @@ class LeftPanel:
 
 # TODO implement!
 class DetailPanel:
+    """
+    Class representing a panel to display detailed information about Financial Objects.
+    """
     def __init__(self, root: tk.Tk):
+        """
+        Initializes the Detail Panel
+        :param root: Root window tk object.
+        """
         self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=700, height=600)
         self._frame.grid(column=2, row=0, sticky=N + S)
         self._frame.pack_propagate(False)
+        self._frame.grid_propagate(False)
 
-        #stat_panel = tk.Frame(self._frame, borderwidth=2, relief='ridge', width=500, height=550)
-        #stat_panel.grid(column=0, row=0, rowspan=2, sticky=N+S)
+        self.reset(True)
 
     def get_frame(self) -> tk.Frame:
+        """
+        Returns the base tk.Frame object related to this panel.
+        :return: The tk.Frame object.
+        """
         return self._frame
 
-    def reset(self) -> None:
+    def reset(self, blank=False) -> None:
+        """
+        Resets the panel and displays a helpful message if the panel is to remain blank until next user input.
+        :param blank: Whether the panel will remain blank after the current operations.
+        """
         for c in self._frame.winfo_children():
             c.destroy()
 
+        if blank:
+            nothing = tk.Label(self._frame, text="Click on something in the drawer to see detailed information.")
+            nothing.pack(expand=True)
+
 
 class InfoPanel:
-    def __init__(self, root: tk.Tk):
+    """
+    Class representing an informational panel in the bottom right of the screen.
+    """
+    def __init__(self, root: tk.Tk) -> None:
+        """
+        Initializes the information panel.
+        :param root: The root tk window.
+        """
         self._frame = tk.Frame(root, height=15)
         self._frame.grid(column=0, row=1, columnspan=3, sticky=W+E)
         self._frame.pack_propagate(False)
@@ -404,10 +443,17 @@ class InfoPanel:
         label = tk.Label(self._frame, textvariable=self._info)
         label.pack(side=RIGHT)
 
-    def message(self, message: str):
+    def message(self, message: str) -> None:
+        """
+        Sets the message in the info panel.
+        :param message: The message to be set.
+        """
         self._info.set(message)
 
-    def clear(self):
+    def clear(self) -> None:
+        """
+        Clears the message.
+        """
         self.message("")
 
 

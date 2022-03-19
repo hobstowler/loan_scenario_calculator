@@ -65,10 +65,16 @@ class ExtraPaymentWindow:
         self._duration.set(0)
         self._amount.set(0)
 
+    def delete_extra_payment(self, extra_payment):
+        extra_payments_list = self._loan.get_extra_payments()
+        if extra_payment in extra_payments_list:
+            extra_payments_list.remove(extra_payment)
+        self.populate()
+
     def populate(self):
         for c in self._frame.winfo_children():
             c.destroy()
-        print('populating')
+
         frame = self._frame
         extra_payments = self._loan.get_extra_payments()
         tk.Label(frame, text=self._loan.name().title()).grid(column=0, row=0, columnspan=6)
@@ -80,8 +86,8 @@ class ExtraPaymentWindow:
         tk.Entry(frame, textvariable=self._duration).grid(column=2, row=3, columnspan=2)
         tk.Label(frame, text="Amount").grid(column=4, row=2, columnspan=2)
         tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
-        add_button = tk.Button(frame, text='Add')
-        add_button.grid(column=5, row=5, sticky=W+E)
+        add_button = tk.Button(frame, text='Add', width=6)
+        add_button.grid(column=6, row=3, sticky=W+E)
         add_button.bind("<Button-1>", lambda e: self.new_extra_payment())
 
         last = 6
@@ -89,6 +95,9 @@ class ExtraPaymentWindow:
             tk.Label(frame, text=extra_payments[i].start).grid(column=0, row=6+i, columnspan=2, sticky=W+E)
             tk.Label(frame, text=extra_payments[i].length).grid(column=2, row=6+i, columnspan=2, sticky=W+E)
             tk.Label(frame, text=extra_payments[i].amount).grid(column=4, row=6+i, columnspan=2, sticky=W+E)
+            del_button = tk.Button(frame, text="Delete", width=6)
+            del_button.bind("<Button-1>", lambda e, p=extra_payments[i]: self.delete_extra_payment(p))
+            del_button.grid(column=6, row=6+i, columnspan=2, sticky=W+E)
             last += 1
 
         tk.Label(frame, text="").grid(column=0, row=last)
