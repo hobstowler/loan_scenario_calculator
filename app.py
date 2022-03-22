@@ -470,7 +470,8 @@ def main():
         'assets': [],
         'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
         'student loans': [Student('Virginia Tech', 'BA in English Literature')],
-        'loans': [Loan('test loan', 'test description')]
+        'loans': [Loan('test loan', 'test description')],
+        'taxes': []
     }
 
     # create the main panels.

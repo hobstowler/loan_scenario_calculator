@@ -43,7 +43,6 @@ class ExtraPaymentWindow:
 
         window = tk.Toplevel(root)
         window.title("Add Extra Payments")
-        #window.geometry("200x200")
         window.grid_propagate(True)
         self._frame = tk.Frame(window)
         self._frame.grid(column=0, row=0)
@@ -279,12 +278,12 @@ class Loan(FinanceObj):
         frame, index = super().get_editable(root, parent, name, desc)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_string_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, index)
-        index = self.tk_editable_int_pair('term', 'Loan Term (Months)', frame, index)
+        index = self.tk_editable_string_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, parent, index)
+        index = self.tk_editable_int_pair('term', 'Loan Term (Months)', frame, parent, index)
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_int_pair('total', 'Total Amount', frame, index)
-        index = self.tk_editable_int_pair('down payment', 'Down Payment', frame, index)
-        index = self.tk_editable_float_pair('rate', 'Rate', frame, index)
+        index = self.tk_editable_int_pair('total', 'Total Amount', frame, parent, index)
+        index = self.tk_editable_int_pair('down payment', 'Down Payment', frame, parent, index)
+        index = self.tk_editable_float_pair('rate', 'Rate', frame, parent, index)
         index = self.tk_line_break(frame, index)
 
         return frame, index

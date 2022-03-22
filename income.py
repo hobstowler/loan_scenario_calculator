@@ -98,9 +98,10 @@ class FinanceObj:
     def cancel(self, parent):
         parent.populate_list(refresh=True)
 
-    def save(self, key):
+    def save(self, key, parent):
         print('saving:', key)
         self._data.update({key: self._form_strings.get(key).get()})
+        parent.populate_editable(self)
 
     def save_all(self, parent):
         for key in self._form_strings:
@@ -121,34 +122,45 @@ class FinanceObj:
         tk.Label(root, text="").grid(column=0, row=index)
         return index + 1
 
-    def tk_editable_string_pair(self, key, text, root, index):
+    def tk_editable_string_pair(self, key, text, root, parent, index):
         s_var = tk.StringVar()
         s_var.set(self._data.get(key))
         self._form_strings.update({key: s_var})
         tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
         entry = tk.Entry(root, name=key, textvariable=s_var)
         entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
-        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+        entry.bind("<FocusOut>", lambda e, k=key, p=parent: self.save(k, p))
         return index + 1
 
-    def tk_editable_int_pair(self, key, text, root, index):
+    def tk_editable_int_pair(self, key, text, root, parent, index):
         s_var = tk.IntVar()
-        s_var.set(self._data.get(key))
+        s_var.set(self.data(key))
         self._form_strings.update({key: s_var})
         tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
         entry = tk.Entry(root, name=key, textvariable=s_var)
         entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
-        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+        entry.bind("<FocusOut>", lambda e, k=key, p=parent: self.save(k, p))
         return index + 1
 
-    def tk_editable_float_pair(self, key, text, root, index):
+    def tk_editable_float_pair(self, key, text, root, parent, index):
         s_var = tk.DoubleVar()
-        s_var.set(self._data.get(key))
+        s_var.set(self.data(key))
         self._form_strings.update({key: s_var})
         tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
         entry = tk.Entry(root, name=key, textvariable=s_var)
         entry.grid(column=2, row=index, columnspan=2, sticky=W + E)
-        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+        entry.bind("<FocusOut>", lambda e, k=key, p=parent: self.save(k, p))
+        return index + 1
+
+    def tk_editable_dropdown(self, key, text, values, root, parent, index) -> int:
+        s_var = StringVar()
+        s_var.set(self.data(key))
+        self._form_strings.update({key: s_var})
+        dropdown = tk.OptionMenu(root, s_var, *values)
+        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
+        dropdown.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        s_var.trace('w', lambda e, f, g, k=key, p=parent: self.save(k, p))
+
         return index + 1
 
     def list_enter(self, e):
@@ -183,7 +195,11 @@ class FinanceObj:
             for c in widget.winfo_children():
                 c['bg'] = colors.get('l_reset')
 
-    def get_list_button(self, root, parent):
+    def get_list_button(self, root, parent, name=None, desc=None):
+        if name is None:
+            name = self.data('name')
+        if desc is None:
+            desc = self.data('desc')
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
         frame.pack(fill="x", ipady=2)
         frame.bind("<Button-1>", lambda e: self.left_click())
@@ -192,11 +208,11 @@ class FinanceObj:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
+        name = tk.Label(frame, text=name, justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
         name.grid(column=0, row=0, sticky=W)
         f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
-        desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
+        desc = tk.Label(frame, text=desc, justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
@@ -238,8 +254,8 @@ class FinanceObj:
         index += 1
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_string_pair('name', name, frame, index)
-        index = self.tk_editable_string_pair('desc', desc, frame, index)
+        index = self.tk_editable_string_pair('name', name, frame, parent, index)
+        index = self.tk_editable_string_pair('desc', desc, frame, parent, index)
 
         return frame, index
 
@@ -378,7 +394,19 @@ class Bracket:
 
 class BracketWindow:
     def __init__(self, root, tax_bracket):
-        pass
+        self._bracket = tax_bracket
+
+        self._rate = tk.DoubleVar()
+        self._lower = tk.DoubleVar()
+        self._upper = tk.DoubleVar()
+
+        window = tk.Toplevel(root)
+        window.title(f"Define Tax Bracket: {tax_bracket.data('name')}")
+        window.grid_propagate(True)
+        self._frame = tk.Frame(window)
+        self._frame.grid(column=0, row=0)
+        self.populate()
+        self._root = root
 
     def new_bracket(self):
         pass
@@ -390,7 +418,7 @@ class BracketWindow:
         pass
 
     def exit(self):
-        pass
+        self._frame.winfo_toplevel().destroy()
 
 
 class TaxBracket(FinanceObj):
@@ -402,13 +430,14 @@ class TaxBracket(FinanceObj):
         self._brackets = []
         self._data.update({
             'state': '',
-            'filing status': '',
+            'locality': '',
+            'filing status': 'Single',
             'type': 'Federal',
             'standard deduction': 24000
         })
 
-        self._valid_types = ["FEDERAL", "STATE", "LOCAL"]
-        self._valid_status = ["SINGLE", "MARRIED, JOINT", "MARRIED, SEPARATE", "HEAD OF HOUSEHOLD"]
+        self._valid_types = ["Federal", "State", "Local"]
+        self._valid_status = ["Single", "Married, Joint", "Married, Separate", "Head of Household"]
 
     @staticmethod
     def __str__():
@@ -485,7 +514,7 @@ class TaxBracket(FinanceObj):
             return None
 
         taxed_amount = 0
-        if self._tax_type == "FEDERAL":
+        if self._tax_type.capitalize() == "Federal":
             income -= self._standard_deduction
 
             # Social Security Amount
@@ -515,6 +544,24 @@ class TaxBracket(FinanceObj):
                     taxed_amount += (income - lower_range) * self._brackets[i][1]
         
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
+
+    def get_editable(self, root, parent):
+        frame, index = super().get_editable(root, parent)
+
+        index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, parent, index)
+        if self.data('type').capitalize() == 'State':
+            index = self.tk_editable_string_pair('state', "State", frame, parent, index)
+        elif self.data('type').capitalize() == 'Local':
+            index = self.tk_editable_string_pair('locality', "Locality", frame, parent, index)
+        index = self.tk_editable_dropdown('filing status', 'Filing Status', self._valid_status, frame, parent, index)
+
+        return frame, index
+
+    def get_list_button(self, root, parent):
+        name = self.data('type')
+        desc = self.data('status')
+        super().get_list_button(root, parent, name, desc)
+
 
 
 class Job(FinanceObj):
@@ -612,32 +659,11 @@ class Job(FinanceObj):
         frame, index = super().get_editable(root, parent, name="Title", desc="Company")
 
         index = self.tk_line_break(frame, index)
-
-        income_string = StringVar()
-        income_string.set(str(self._income))
-        tk.Label(frame, text="Income", anchor='e').grid(column=1, row=index)
-        tk.Entry(frame, name='income', textvariable=income_string).grid(column=2, row=index, columnspan=2, sticky=W + E)
-        index += 1
-
-        pay_vals = self._valid_pay_frequency
-        pay_freq_string = StringVar()
-        pay_freq_string.set(pay_vals[4])
-        pay_freq = tk.OptionMenu(frame, pay_freq_string, *pay_vals)
-        tk.Label(frame, text="Pay Frequency", anchor='e').grid(column=1, row=6)
-        pay_freq.grid(column=2, row=6, columnspan=2, sticky=W + E)
-        index += 1
-
-        retirement_string = StringVar()
-        retirement_string.set(self._401k_rate)
-        tk.Label(frame, text="401k Contribution", anchor='e').grid(column=1, row=7)
-        tk.Entry(frame, name='401k', textvariable=retirement_string).grid(column=2, row=7, columnspan=2, sticky=W + E)
-        index += 1
-
-        roth_string = StringVar()
-        roth_string.set(self._401k_rate)
-        tk.Label(frame, text="Roth Contribution", anchor='e').grid(column=1, row=8)
-        tk.Entry(frame, name='roth', textvariable=roth_string).grid(column=2, row=8, columnspan=2, sticky=W + E)
-        index += 1
+        index = self.tk_editable_string_pair('income', 'Income', frame, parent, index)
+        index = self.tk_editable_dropdown('pay frequency', 'Pay Frequency', self._valid_pay_frequency,
+                                          self.data('pay frequency'), frame, parent, index)
+        index = self.tk_editable_float_pair('401k rate', '401k Contribution %', frame, parent, index)
+        index = self.tk_editable_float_pair('roth rate', 'Roth Contribution %', frame, parent, index)
 
         tk.Label(frame).grid(column=1, row=9)
         tk.Button(frame, text="Tax Brackets").grid(column=2, row=10, sticky=W + E)
