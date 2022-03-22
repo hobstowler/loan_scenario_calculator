@@ -124,7 +124,7 @@ class LeftPanel:
             self.activate()
             self._parent.new_context(self)
 
-        # TODO move into LeftPanel and pass key string instead?
+        # TODO move into LeftPanel and pass key as string instead?
         def get_fin_list(self) -> list:
             """
             Gets the list of financial objects associates with this Nav Button.
@@ -142,6 +142,7 @@ class LeftPanel:
                 button['bg'] = colors.get('b_active_hover')
             else:
                 button['bg'] = colors.get('b_hover')
+            self._parent.populate_info(self._fin_obj.button_hover_message())
 
         def leave(self, e):
             """
@@ -154,6 +155,7 @@ class LeftPanel:
                 button['bg'] = colors.get('b_sel')
             else:
                 button['bg'] = colors.get('b_reset')
+            self._parent.populate_info("")
 
         def get_gui(self, root: tk.Frame) -> tk.Button:
             """
@@ -373,6 +375,11 @@ class LeftPanel:
             self._fin_obj_selection.activate(False)
         new_obj = self._nav_selection._fin_obj('name', 'desc')      # gets the static class and creates a new instance.
         self.populate_editable(new_obj)
+
+    def populate_info(self, message):
+        if self._info_panel is None:
+            return
+        self._info_panel.message(message)
 
     def delete_selected_fin_object(self):
         """

@@ -23,7 +23,7 @@ class Scenario(FinanceObj):
 
     @staticmethod
     def __str__():
-        return f"Scenario"
+        return f"Scenarios"
 
     def add_job(self, job: Job) -> bool:
         """

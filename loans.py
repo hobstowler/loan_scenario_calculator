@@ -132,6 +132,10 @@ class Loan(FinanceObj):
     def __str__():
         return f'Loan'
 
+    @classmethod
+    def button_hover_message(cls):
+        return f"Click to populate a list of {cls.__str__()} Loans."
+
     def calc_m_interest(self, amount) -> float:
         """
         Calculates the monthly interest for a given amount and month.

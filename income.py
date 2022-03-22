@@ -35,10 +35,19 @@ class FinanceObj:
         }
         self._active = False
         self._form_strings = {}
+        self.button_hover_message = f"Click to populate a list of {self.__str__()}s."
 
     @staticmethod
     def __str__():
         return f'Finance Object'
+
+    @classmethod
+    def button_hover_message(cls):
+        return f"Click to populate a list of {cls.__str__()}."
+
+    @classmethod
+    def list_hover_message(cls):
+        return f"Left click to see more detail. Right click to edit."
 
     def get_jsonification(self) -> dict:
         jsonification = {
@@ -163,7 +172,7 @@ class FinanceObj:
 
         return index + 1
 
-    def list_enter(self, e):
+    def list_enter(self, parent, e):
         if e.widget.winfo_class() == 'Frame':
             widget = e.widget
         else:
@@ -178,8 +187,10 @@ class FinanceObj:
             widget['bg'] = colors.get('l_hover')
             for c in widget.winfo_children():
                 c['bg'] = colors.get('l_hover')
+        parent.populate_info(self.list_hover_message())
 
-    def list_leave(self, e):
+
+    def list_leave(self, parent, e):
         if e.widget.winfo_class() == 'Frame':
             widget = e.widget
         else:
@@ -194,6 +205,7 @@ class FinanceObj:
             widget['bg'] = colors.get('l_reset')
             for c in widget.winfo_children():
                 c['bg'] = colors.get('l_reset')
+        parent.populate_info("")
 
     def get_list_button(self, root, parent, name=None, desc=None):
         if name is None:
@@ -217,12 +229,12 @@ class FinanceObj:
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
         frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-        frame.bind("<Enter>", self.list_enter)
-        frame.bind("<Leave>", self.list_leave)
+        frame.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
+        frame.bind("<Leave>", lambda e, p=parent: self.list_leave(p, e))
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-            c.bind("<Enter>", self.list_enter)
+            c.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
             #c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
@@ -581,7 +593,7 @@ class Job(FinanceObj):
         :param rate_401k: 401k contribution rate.
         :param rate_roth: roth contribution rate.
         """
-        super(Job, self).__init__(title, desc)
+        super().__init__(title, desc)
 
         self._data.update({
             'income': income,
@@ -598,10 +610,11 @@ class Job(FinanceObj):
         self._post_tax_deductions = Expenses('post tax')
 
         self._valid_pay_frequency = ['Hourly', 'Weekly', 'Bi-Weekly', 'Monthly', 'Annually']
+        self.button_hover_message = f"Click to populate a list of {self.__str__()}s."
 
     @staticmethod
     def __str__():
-        return f'Job'
+        return f'Jobs'
 
     def get_gross_income(self) -> (int, float):
         """
