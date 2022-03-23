@@ -47,13 +47,13 @@ class LeftPanel:
             self.NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
             self.NavLabel("income"),
             self.NavButton(Job, "Select a Job.", self, fin_vars.get("jobs")),
-            self.NavButton(Assets, "Select an Asset.", self, fin_vars.get("assets")),
             self.NavLabel("loans"),
             self.NavButton(Mortgage, "Select a Mortgage.", self, fin_vars.get("mortgages")),
             self.NavButton(Student, "Select a Student Loan.", self, fin_vars.get("student loans")),
             self.NavButton(Auto, "Select an Auto Loan.", self, fin_vars.get("auto loans")),
             self.NavButton(Personal, "Select a Personal Loan.", self, fin_vars.get("loans")),
-            self.NavLabel("expenses"),
+            self.NavLabel("misc"),
+            self.NavButton(Assets, "Select an Asset.", self, fin_vars.get("assets")),
             self.NavButton(Expenses, "Select an Expense.", self, fin_vars.get("expenses")),
             self.NavButton(TaxBracket, "Select a Tax Bracket.", self, fin_vars.get("taxes"))
         ]

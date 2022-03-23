@@ -586,12 +586,12 @@ class Mortgage(Loan):
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
         frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-        frame.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
-        frame.bind("<Leave>", lambda e, p=parent: self.list_leave(p, e))
+        frame.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
+        frame.bind("<Leave>", lambda e, p=parent: self.list_button_leave(p, e))
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-            c.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
+            c.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
             #c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
