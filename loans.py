@@ -46,7 +46,6 @@ class ExtraPaymentWindow:
         window.grid_propagate(True)
         self._frame = tk.Frame(window)
         self._frame.grid(column=0, row=0)
-        #self._frame.pack_propagate(True)
         self.populate()
         self._root = root
 
@@ -76,6 +75,7 @@ class ExtraPaymentWindow:
 
         frame = self._frame
         extra_payments = self._loan.get_extra_payments()
+
         tk.Label(frame, text=self._loan.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
 
@@ -434,18 +434,21 @@ class Mortgage(Loan):
         print("m:", monthly)
         return monthly
 
-    def launch_extra_payments(self, parent):
+    def launch_extra_payment_editor(self, parent):
         root = parent.get_root()
         ExtraPaymentWindow(root, self)
 
-    def get_editable(self, root, parent):
+    def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent, "Street Address", "City, State ZIP")
 
         index = self.tk_line_break(frame, index)
 
         extra_payments = tk.Button(frame, text='Extra Payments')
         extra_payments.grid(column=1, row=index)
-        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payments(p))
+        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payment_editor(p))
+        index += 1
+
+        return frame, index
 
     def get_detail(self, root, parent):
         self.calc_total_monthly()
@@ -583,13 +586,13 @@ class Mortgage(Loan):
 
         frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
         frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-        frame.bind("<Enter>", self.list_enter)
-        frame.bind("<Leave>", self.list_leave)
+        frame.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
+        frame.bind("<Leave>", lambda e, p=parent: self.list_leave(p, e))
         for c in frame.winfo_children():
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-            c.bind("<Enter>", self.list_enter)
-            c.bind("<Leave>", self.list_leave)
+            c.bind("<Enter>", lambda e, p=parent: self.list_enter(p, e))
+            #c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = colors.get("b_sel")
 

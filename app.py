@@ -104,6 +104,8 @@ class LeftPanel:
         """Button on the top-level navigation menu."""
         def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
             super().__init__(label.__str__())
+            if fin_objects is None:
+                fin_objects = []
             self._fin_obj = label
             self.detail = detail
             self._fin_list = fin_objects

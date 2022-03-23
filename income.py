@@ -282,8 +282,10 @@ class FinanceObj:
         information.grid(column=0, row=0, columnspan=7, sticky=W+E, pady=(0, 3))
         information.grid_propagate(False)
 
-        name = tk.Label(information, text=self.name() + ", " + self.desc(), font=('bold', 13))
+        name = tk.Label(information, text=self.name(), font=('bold', 13))
         name.grid(column=0, row=0, sticky=W)
+        desc = tk.Label(information, text=self.desc())
+        desc.grid(column=0, row=1, sticky=W)
 
         information['bg'] = colors.get('bg_header')
         for c in information.winfo_children():
@@ -297,12 +299,28 @@ class InvalidExpenseType(Exception):
 
 
 class Expense:
-    def __init__(self, amount: (int, float), type: str):
+    """
+    Class representing a monthly expense.
+    """
+    def __init__(self, desc: str, amount: (int, float)):
+        """
+        Initializes the Expense object with a description and an amount
+        :param desc:
+        :param amount:
+        """
         self.amount = amount
-        if type.lower() not in ["annual", "monthly", "daily"]:
-            self.type = type
-        else:
-            raise InvalidExpenseType("Type must be 'annual', 'monthly', or 'daily'.")
+        self.desc = desc
+
+    def get_jsonification(self) -> dict:
+        """
+        Returns a dict representing the Expense object that can be easily jsonified.
+        :return: The dict representing the Expense.
+        """
+        jsonification = {
+            'amount': self.amount,
+            'desc': self.desc
+        }
+        return jsonification
 
 
 #TODO assert instead of if statements
@@ -316,8 +334,7 @@ class Expenses(FinanceObj):
         Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
         super(Expenses, self).__init__(name, desc)
-        self._expenses = {}
-        self._yearly_expenses = {}
+        self._expenses = []
 
     @staticmethod
     def __str__():
@@ -327,28 +344,20 @@ class Expenses(FinanceObj):
     def get_jsonification(self) -> dict:
         jsonification = super().get_jsonification()
 
-    def add(self, label: str, amount: (int, float)) -> bool:
-        """
-        Adds an expense with a label and monthly amount.
-        :param label: The label for the expense.
-        :param amount: The monthly amount
-        :return: Nothing.
-        """
-        if isinstance(label, str) and isinstance(amount, (int, float)):
-            self._expenses.update({label.capitalize(): round(amount, 2)})
-            return True
-        return False
+        expense_list = []
+        for expense in self._expenses:
+            expense_list.append(expense.get_jsonification())
+        jsonification.update({'expense list': expense_list})
 
-    def rem(self, label: str) -> bool:
-        """
-        Removes an expense.
-        :param label: The label of the expense to be removed
-        :return: True if removal was successful. False if key does not exist in dictionary.
-        """
-        if label in self._expenses:
-            del self._expenses[label]
-            return True
-        return False
+        return jsonification
+
+    def add_expense(self, new_expense: Expense):
+        if new_expense not in self._expenses:
+            self._expenses.append(new_expense)
+
+    def remove_expense(self, expense):
+        if expense in self._expenses:
+            self._expenses.remove(expense)
 
     def reset(self) -> None:
         """
@@ -357,35 +366,22 @@ class Expenses(FinanceObj):
         """
         self._expenses.clear()
 
-    def all(self) -> dict:
+    def get_expenses(self) -> list:
         """
         Returns the dictionary of expenses.
         :return: The expenses.
         """
         return self._expenses
 
-    def total(self) -> float:
+    def get_expense_total(self) -> float:
         """
         Returns the total of all expenses.
         :return: The total monthly expenditure.
         """
         total = 0
-        for e in self._expenses:
-            total += self._expenses.get(e)
+        for expense in self._expenses:
+            total += expense.amount
         return round(total, 2)
-
-    def change_label(self, old_label: str, new_label: str) -> bool:
-        """
-        Changes the label for an expense.
-        :param old_label: the old label.
-        :param new_label: the new label.
-        :return: True if successful.
-        """
-        if old_label in self._expenses:
-            self.add(new_label, self._expenses.get(old_label))
-            self.rem(old_label)
-            return True
-        return False
 
 
 class Income(FinanceObj):
@@ -398,9 +394,9 @@ class Income(FinanceObj):
 
 
 class Bracket:
-    def __init__(self, rate, lower, upper):
+    def __init__(self, rate, upper):
         self.rate = rate
-        self.lower = lower
+        #self.lower = lower
         self.upper = upper
 
 
@@ -409,7 +405,7 @@ class BracketWindow:
         self._bracket = tax_bracket
 
         self._rate = tk.DoubleVar()
-        self._lower = tk.DoubleVar()
+        #self._lower = tk.DoubleVar()
         self._upper = tk.DoubleVar()
 
         window = tk.Toplevel(root)
@@ -421,15 +417,52 @@ class BracketWindow:
         self._root = root
 
     def new_bracket(self):
-        pass
+        # todo logic for a valid bracket--cannot overlap
+        # todo blank out on click/focus to prevent weird errors with leading zeros
+        new_bracket = Bracket(self._rate.get(), self._upper.get())
+        bracket_list = self._bracket.get_brackets()
+        if new_bracket not in bracket_list:
+            bracket_list.append(new_bracket)
+            bracket_list.sort(key=lambda x: x.upper)
+        self._rate.set(0.0)
+        self._upper.set(0.0)
+        self.populate()
 
-    def delete_bracket(self):
-        pass
+    def delete_bracket(self, bracket):
+        bracket_list = self._bracket.get_brackets()
+        if bracket in bracket_list:
+            bracket_list.remove(bracket)
+        self.populate()
 
     def populate(self):
-        pass
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        frame = self._frame
+        bracket_list = self._bracket.get_brackets()
+
+        tk.Label(frame, text=self._bracket.name().title()).grid(column=0, row=0, columnspan=6)
+        tk.Label(frame, text="").grid(column=0, row=1)
+
+        tk.Label(frame, text='Tax Rate').grid(column=0, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._rate).grid(column=0, row=3, columnspan=2)
+        tk.Label(frame, text='Upper Range').grid(column=2, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._upper).grid(column=2, row=3, columnspan=2)
+        add_button = tk.Button(frame, text='Add', width=6)
+        add_button.grid(column=6, row=3, sticky=W+E)
+        add_button.bind("<Button-1>", lambda e: self.new_bracket())
+
+        last = 6
+        for i in range(len(bracket_list)):
+            tk.Label(frame, text=bracket_list[i].rate).grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
+            tk.Label(frame, text=bracket_list[i].upper).grid(column=2, row=6 + i, columnspan=2, sticky=W + E)
+            del_button = tk.Button(frame, text="Delete", width=6)
+            del_button.bind("<Button-1>", lambda e, p=bracket_list[i]: self.delete_extra_payment(p))
+            del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
+            last += 1
 
     def exit(self):
+        print('exit detected')
         self._frame.winfo_toplevel().destroy()
 
 
@@ -443,7 +476,7 @@ class TaxBracket(FinanceObj):
         self._data.update({
             'state': '',
             'locality': '',
-            'filing status': 'Single',
+            'status': 'Single',
             'type': 'Federal',
             'standard deduction': 24000
         })
@@ -469,6 +502,9 @@ class TaxBracket(FinanceObj):
         for b in brackets:
             if len(b) == 2:
                 self.add_range(b[0], b[1])
+
+    def get_brackets(self) -> list:
+        return self._brackets
 
     def add_range(self, upper_range: (int, float), rate: (int, float)):
         """
@@ -557,7 +593,11 @@ class TaxBracket(FinanceObj):
         
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
-    def get_editable(self, root, parent):
+    def launch_bracket_editor(self, parent):
+        root = parent.get_root()
+        BracketWindow(root, self)
+
+    def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent)
 
         index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, parent, index)
@@ -566,6 +606,10 @@ class TaxBracket(FinanceObj):
         elif self.data('type').capitalize() == 'Local':
             index = self.tk_editable_string_pair('locality', "Locality", frame, parent, index)
         index = self.tk_editable_dropdown('filing status', 'Filing Status', self._valid_status, frame, parent, index)
+
+        brackets = tk.Button(frame, text="Define Brackets")
+        brackets.grid(column=1, row=index)
+        brackets.bind("<Button-1>", lambda e, p=parent: self.launch_bracket_editor(p))
 
         return frame, index
 
@@ -674,7 +718,7 @@ class Job(FinanceObj):
         index = self.tk_line_break(frame, index)
         index = self.tk_editable_string_pair('income', 'Income', frame, parent, index)
         index = self.tk_editable_dropdown('pay frequency', 'Pay Frequency', self._valid_pay_frequency,
-                                          self.data('pay frequency'), frame, parent, index)
+                                          frame, parent, index)
         index = self.tk_editable_float_pair('401k rate', '401k Contribution %', frame, parent, index)
         index = self.tk_editable_float_pair('roth rate', 'Roth Contribution %', frame, parent, index)
 
