@@ -3,7 +3,7 @@
 # Description:
 
 import tkinter as tk
-from tkinter import N, W, S, E, RIGHT
+from tkinter import N, W, S, E, RIGHT, ttk
 
 from income import FinanceObj, Job, Assets, Expenses, TaxBracket
 from loans import Loan, Mortgage, Student, Auto, Personal
@@ -26,7 +26,8 @@ info_panel_messages = {
 
 }
 
-class LeftPanel:
+
+class App:
     def __init__(self, root: tk.Tk, fin_vars: dict):
         """
         Initializes the Left Panel for the app. Creates a navigation menu, drawer, and bottom menu for the drawer.
@@ -36,7 +37,7 @@ class LeftPanel:
         self._root = root
         self._fin_vars = fin_vars
 
-        self.frame = tk.Frame(self._root, name="leftpanel")
+        self.frame = ttk.Frame(self._root, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
         # drawer variables
@@ -69,14 +70,13 @@ class LeftPanel:
         self._nav_label.grid_propagate(False)
 
         # instantiate major components
-        self._detail_panel = None
-        self._info_panel = None
+        self._detail_panel = self.DetailPanel(root)
+        self._info_panel = self.InfoPanel(root)
         self._drawer = tk.Canvas(self.frame, borderwidth=2, relief='groove', width=300, height=600)
         self._drawer.grid(column=1, row=1, sticky=N + W + S + E)
         self._drawer.pack_propagate(False)
         self._bottom_menu = self.BottomMenu(self)
         self._bottom_menu.create(self.frame)
-        #self._mid_panel = None
 
         # Populates the drawer with the initial context
         self.populate_nav_menu()
@@ -105,7 +105,7 @@ class LeftPanel:
 
     class NavButton(NavLabel):
         """Button on the top-level navigation menu."""
-        def __init__(self, label: FinanceObj, detail: str, parent, fin_objects: list):
+        def __init__(self, label, detail: str, parent, fin_objects: list):
             super().__init__(label.__str__())
             if fin_objects is None:
                 fin_objects = []
@@ -178,6 +178,74 @@ class LeftPanel:
                 button['bg'] = colors.get('b_reset')
 
             return button
+
+    class DetailPanel:
+        """
+        Class representing a panel to display detailed information about Financial Objects.
+        """
+
+        def __init__(self, root: tk.Tk):
+            """
+            Initializes the Detail Panel
+            :param root: Root window tk object.
+            """
+            self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=700, height=600)
+            self._frame.grid(column=2, row=0, sticky=N + S)
+            self._frame.pack_propagate(False)
+            self._frame.grid_propagate(False)
+
+            self.reset(True)
+
+        def get_frame(self) -> tk.Frame:
+            """
+            Returns the base tk.Frame object related to this panel.
+            :return: The tk.Frame object.
+            """
+            return self._frame
+
+        def reset(self, blank=False) -> None:
+            """
+            Resets the panel and displays a helpful message if the panel is to remain blank until next user input.
+            :param blank: Whether the panel will remain blank after the current operations.
+            """
+            for c in self._frame.winfo_children():
+                c.destroy()
+
+            if blank:
+                nothing = tk.Label(self._frame, text="Click on something in the drawer to see detailed information.")
+                nothing.pack(expand=True)
+
+    class InfoPanel:
+        """
+        Class representing an informational panel in the bottom right of the screen.
+        """
+
+        def __init__(self, root: tk.Tk) -> None:
+            """
+            Initializes the information panel.
+            :param root: The root tk window.
+            """
+            self._frame = tk.Frame(root, height=15)
+            self._frame.grid(column=0, row=1, columnspan=3, sticky=W + E)
+            self._frame.pack_propagate(False)
+
+            self._info = tk.StringVar()
+            self._info.set("Testing information panel...")
+            label = tk.Label(self._frame, textvariable=self._info)
+            label.pack(side=RIGHT)
+
+        def message(self, message: str) -> None:
+            """
+            Sets the message in the info panel.
+            :param message: The message to be set.
+            """
+            self._info.set(message)
+
+        def clear(self) -> None:
+            """
+            Clears the message.
+            """
+            self.message("")
 
     class BottomMenu:
         """Class representing the bottom menu with controls for editing, deleting, and creating new items."""
@@ -284,11 +352,11 @@ class LeftPanel:
     def load_all(self):
         pass
 
-    def set_detail_panel(self, panel) -> None:
-        self._detail_panel = panel
+    #def set_detail_panel(self, panel) -> None:
+    #    self._detail_panel = panel
 
-    def set_info_panel(self, panel) -> None:
-        self._info_panel = panel
+    #def set_info_panel(self, panel) -> None:
+    #    self._info_panel = panel
 
     def get_root(self) -> tk.Tk:
         return self._root
@@ -400,75 +468,6 @@ class LeftPanel:
             self.populate_editable(self._fin_obj_selection)
 
 
-# TODO implement!
-class DetailPanel:
-    """
-    Class representing a panel to display detailed information about Financial Objects.
-    """
-    def __init__(self, root: tk.Tk):
-        """
-        Initializes the Detail Panel
-        :param root: Root window tk object.
-        """
-        self._frame = tk.Frame(root, borderwidth=2, relief='ridge', width=700, height=600)
-        self._frame.grid(column=2, row=0, sticky=N + S)
-        self._frame.pack_propagate(False)
-        self._frame.grid_propagate(False)
-
-        self.reset(True)
-
-    def get_frame(self) -> tk.Frame:
-        """
-        Returns the base tk.Frame object related to this panel.
-        :return: The tk.Frame object.
-        """
-        return self._frame
-
-    def reset(self, blank=False) -> None:
-        """
-        Resets the panel and displays a helpful message if the panel is to remain blank until next user input.
-        :param blank: Whether the panel will remain blank after the current operations.
-        """
-        for c in self._frame.winfo_children():
-            c.destroy()
-
-        if blank:
-            nothing = tk.Label(self._frame, text="Click on something in the drawer to see detailed information.")
-            nothing.pack(expand=True)
-
-
-class InfoPanel:
-    """
-    Class representing an informational panel in the bottom right of the screen.
-    """
-    def __init__(self, root: tk.Tk) -> None:
-        """
-        Initializes the information panel.
-        :param root: The root tk window.
-        """
-        self._frame = tk.Frame(root, height=15)
-        self._frame.grid(column=0, row=1, columnspan=3, sticky=W+E)
-        self._frame.pack_propagate(False)
-
-        self._info = tk.StringVar()
-        self._info.set("Testing information panel...")
-        label = tk.Label(self._frame, textvariable=self._info)
-        label.pack(side=RIGHT)
-
-    def message(self, message: str) -> None:
-        """
-        Sets the message in the info panel.
-        :param message: The message to be set.
-        """
-        self._info.set(message)
-
-    def clear(self) -> None:
-        """
-        Clears the message.
-        """
-        self.message("")
-
-
 def main():
     # create the root
     root = tk.Tk()
@@ -487,13 +486,13 @@ def main():
     }
 
     # create the main panels.
-    left_panel = LeftPanel(root, fin_vars)
-    right_panel = DetailPanel(root)
-    info_panel = InfoPanel(root)
+    app = App(root, fin_vars)
+    #right_panel = DetailPanel(root)
+    #info_panel = InfoPanel(root)
 
     #set panel relationships
-    left_panel.set_detail_panel(right_panel)
-    left_panel.set_info_panel(info_panel)
+    #left_panel.set_detail_panel(right_panel)
+    #left_panel.set_info_panel(info_panel)
 
     root.mainloop()
 

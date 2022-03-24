@@ -276,12 +276,12 @@ class Loan(FinanceObj):
         frame, index = super().get_editable(root, parent, name, desc)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_string_pair('origination', 'Loan Start (MM/DD/YYYY)', frame, parent, index)
-        index = self.tk_editable_int_pair('term', 'Loan Term (Months)', frame, parent, index)
+        index = self.tk_editable_entry('origination', 'Loan Start (MM/DD/YYYY)', frame, parent, index)
+        index = self.tk_editable_entry('term', 'Loan Term (Months)', frame, parent, index)
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_int_pair('total', 'Total Amount', frame, parent, index)
-        index = self.tk_editable_int_pair('down payment', 'Down Payment', frame, parent, index)
-        index = self.tk_editable_float_pair('rate', 'Rate', frame, parent, index)
+        index = self.tk_editable_entry('total', 'Total Amount', frame, parent, index)
+        index = self.tk_editable_entry('down payment', 'Down Payment', frame, parent, index)
+        index = self.tk_editable_entry('rate', 'Rate', frame, parent, index)
         index = self.tk_line_break(frame, index)
 
         return frame, index
@@ -296,14 +296,16 @@ class Mortgage(Loan):
         self._property_tax_required = True
         self._data.update({
             'pmi': 100,
-            'pmi rate': 0.005,
             'property tax': 1890,
-            'property tax rate': 1,
             'hoa': 0,
             'mortgage company': "Friendly Neighborhood Credit Union",
             'insurance premium': 550,
             'insurance company': "State Farm",
             'total monthly': 0
+        })
+        self._assumptions.update({
+            'pmi rate': 0.005,
+            'property tax rate': 1
         })
         self.calc_total_monthly()
 
@@ -343,7 +345,7 @@ class Mortgage(Loan):
         percent_down = round(1-(principal / self.data('total')), 2)
         #print(percent_down)
         if percent_down < 0.2 and self._pmi_required:
-            return round((principal * self.data('pmi rate'))/12, 2)
+            return round((principal * self.assume('pmi rate'))/12, 2)
         else:
             return 0
 
