@@ -10,18 +10,21 @@ from loans import Loan, Mortgage, Student, Auto, Personal
 from scenario import Scenario
 
 colors = {
-            "l_sel": "lightblue2",
-            "l_hover": "lightblue1",
-            'l_active_hover': 'lightblue3',
-            "b_reset": "SystemButtonFace",
-            "b_sel": 'medium turquoise',
-            'b_hover': 'turquoise',
-            'b_active_hover': 'dark turquoise',
-            'fin_type': 'red',
-            'save_button': 'green',
-            'save_button_hover': 'darkgreen'
-        }
+    "l_sel": "lightblue2",
+    "l_hover": "lightblue1",
+    'l_active_hover': 'lightblue3',
+    "b_reset": "SystemButtonFace",
+    "b_sel": 'medium turquoise',
+    'b_hover': 'turquoise',
+    'b_active_hover': 'dark turquoise',
+    'fin_type': 'red',
+    'save_button': 'green',
+    'save_button_hover': 'darkgreen'
+}
 
+info_panel_messages = {
+
+}
 
 class LeftPanel:
     def __init__(self, root: tk.Tk, fin_vars: dict):

@@ -12,7 +12,7 @@ from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from errors import ErrorBox
-from income import FinanceObj, colors
+from income import FinanceObj, colors, Window
 
 
 class ExtraPayment:
@@ -30,21 +30,24 @@ class ExtraPayment:
         self.amount = amount
 
 
-class ExtraPaymentWindow:
+class ExtraPaymentWindow(Window):
     """
     Class representing a window interface for adding new and removing existing ExtraPayments from a Loan.
     """
-    def __init__(self, root, loan):
+    def __init__(self, root, parent, loan):
+        super().__init__(root, parent, loan)
+        self._parent = parent
         self._loan = loan
 
         self._start = tk.IntVar()
         self._duration = tk.IntVar()
         self._amount = tk.IntVar()
 
-        window = tk.Toplevel(root)
-        window.title("Add Extra Payments")
-        window.grid_propagate(True)
-        self._frame = tk.Frame(window)
+        self._window = tk.Toplevel(root)
+        self._window.protocol("WM_DELETE_WINDOW", self.on_exit)
+        self._window.title("Add Extra Payments")
+        self._window.grid_propagate(True)
+        self._frame = tk.Frame(self._window)
         self._frame.grid(column=0, row=0)
         self.populate()
         self._root = root
@@ -98,15 +101,6 @@ class ExtraPaymentWindow:
             del_button.bind("<Button-1>", lambda e, p=extra_payments[i]: self.delete_extra_payment(p))
             del_button.grid(column=6, row=6+i, columnspan=2, sticky=W+E)
             last += 1
-
-        tk.Label(frame, text="").grid(column=0, row=last)
-
-        quit_button = tk.Button(frame, text='Close')
-        quit_button.grid(column=2, row=last+1, columnspan=2, sticky=W+E)
-        quit_button.bind("<Button-1>", lambda e: self.exit())
-
-    def exit(self):
-        self._frame.winfo_toplevel().destroy()
 
 
 class Loan(FinanceObj):
@@ -436,7 +430,7 @@ class Mortgage(Loan):
 
     def launch_extra_payment_editor(self, parent):
         root = parent.get_root()
-        ExtraPaymentWindow(root, self)
+        ExtraPaymentWindow(root, parent, self)
 
     def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent, "Street Address", "City, State ZIP")
