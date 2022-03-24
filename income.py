@@ -23,7 +23,7 @@ class Expense:
     """
     Class representing a monthly expense.
     """
-    def __init__(self, desc: str, amount: (int, float)):
+    def __init__(self, desc: str, amount: (int, float)) -> None:
         """
         Initializes the Expense object with a description and an amount
         :param desc:
@@ -44,18 +44,52 @@ class Expense:
         return jsonification
 
 
-class ExpenseWindow:
+class Bracket:
+    """
+    Class representing a single tax bracket.
+    """
+    def __init__(self, rate: float, upper: (float, int)) -> None:
+        """
+        Initializes The bracket with a rate and upper range.
+        :param rate: The tax rate for this range.
+        :param upper: The upper taxable limit for this range.
+        """
+        self.rate = rate
+        self.upper = upper
+
+    def get_jsonification(self) -> dict:
+        """
+        Returns a JSON-friendly version of this bracket.
+        :return: A dict object representing this object.
+        """
+        jsonification = {
+            'rate': self.rate,
+            'upper': self.upper
+        }
+        return jsonification
+
+
+class Asset:
+    pass
+
+
+class Window:
+    def on_exit(self):
+        pass
+
+
+class ExpenseWindow(Window):
     def __init__(self, root, expense):
         self._expense = expense
 
         self._desc = tk.StringVar()
-        #self._lower = tk.DoubleVar()
         self._amount = tk.DoubleVar()
 
-        window = tk.Toplevel(root)
-        window.title(f"Define Tax Bracket: {expense.data('name')}")
-        window.grid_propagate(True)
-        self._frame = tk.Frame(window)
+        self._window = tk.Toplevel(root)
+        self._window.protocol("WM_DELETE_WINDOW", self.on_exit)
+        self._window.title(f"Define Tax Bracket: {expense.data('name')}")
+        self._window.grid_propagate(True)
+        self._frame = tk.Frame(self._window)
         self._frame.grid(column=0, row=0)
         self.populate()
         self._root = root
@@ -105,37 +139,39 @@ class ExpenseWindow:
             del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
             last += 1
 
-
-class Bracket:
-    def __init__(self, rate, upper):
-        self.rate = rate
-        self.upper = upper
-
-    def get_jsonification(self) -> dict:
-        jsonification = {
-            'rate': self.rate,
-            'upper': self.upper
-        }
-        return jsonification
+    def on_exit(self):
+        print('exiting window')
+        self._window.destroy()
 
 
-class BracketWindow:
-    def __init__(self, root, tax_bracket):
+class BracketWindow(Window):
+    """
+    Class representing a window to add and delete brackets.
+    """
+    def __init__(self, root, tax_bracket) -> None:
+        """
+        Initializes the BracketWindow with tk root object and a tax bracket object.
+        :param root: The tk Root window.
+        :param tax_bracket: The calling tax bracket.
+        """
         self._bracket = tax_bracket
 
         self._rate = tk.DoubleVar()
-        #self._lower = tk.DoubleVar()
         self._upper = tk.DoubleVar()
 
-        window = tk.Toplevel(root)
-        window.title(f"Define Tax Bracket: {tax_bracket.data('name')}")
-        window.grid_propagate(True)
-        self._frame = tk.Frame(window)
+        self._window = tk.Toplevel(root)
+        self._window.protocol("WM_DELETE_WINDOW", self.on_exit)
+        self._window.title(f"Define Tax Bracket: {tax_bracket.data('name')}")
+        self._window.grid_propagate(True)
+        self._frame = tk.Frame(self._window)
         self._frame.grid(column=0, row=0)
         self.populate()
         self._root = root
 
-    def new_bracket(self):
+    def new_bracket(self) -> None:
+        """
+        Adds a new bracket to the Tax Bracket.
+        """
         # todo logic for a valid bracket--cannot overlap
         # todo blank out on click/focus to prevent weird errors with leading zeros
         new_bracket = Bracket(self._rate.get(), self._upper.get())
@@ -147,13 +183,13 @@ class BracketWindow:
         self._upper.set(0.0)
         self.populate()
 
-    def delete_bracket(self, bracket):
+    def delete_bracket(self, bracket) -> None:
         bracket_list = self._bracket.get_brackets()
         if bracket in bracket_list:
             bracket_list.remove(bracket)
         self.populate()
 
-    def populate(self):
+    def populate(self) -> None:
         for c in self._frame.winfo_children():
             c.destroy()
 
@@ -180,9 +216,13 @@ class BracketWindow:
             del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
             last += 1
 
-    def exit(self):
-        print('exit detected')
-        self._frame.winfo_toplevel().destroy()
+    def on_exit(self):
+        print('doors closing')
+        self._window.destroy()
+
+
+class AssetWindow(Window):
+    pass
 
 
 class FinanceObj:
@@ -476,10 +516,6 @@ class FinanceObj:
         return frame, information
 
 
-class InvalidExpenseType(Exception):
-    pass
-
-
 #TODO assert instead of if statements
 #TODO add support for yearly expenses
 class Expenses(FinanceObj):
@@ -707,10 +743,7 @@ class Job(FinanceObj):
     """Represents a job."""
     def __init__(self,
                  title: str,
-                 desc: str = "",
-                 income: (int, float) = 30000,
-                 rate_401k: float = 0,
-                 rate_roth: float = 0
+                 desc: str = ""
                  ) -> None:
         """
         Initializes the Job object with a title and description. Income and retirement contribution rates are optional.
@@ -723,25 +756,39 @@ class Job(FinanceObj):
         super().__init__(title, desc)
 
         self._data.update({
-            'income': income,
-            '401k rate': rate_401k,
-            'roth rate': rate_roth,
+            'income': 30000,
+            '401k rate': 4,
+            'roth rate': 4,
             'pay frequency': 'Weekly'
         })
-        self._income = income
-        self._401k_rate = rate_401k
-        self._roth_rate = rate_roth
 
         self._taxes = []
         self._pre_tax_deductions = Expenses('pre tax')
         self._post_tax_deductions = Expenses('post tax')
 
-        self._valid_pay_frequency = ['Hourly', 'Weekly', 'Bi-Weekly', 'Bi-Monthly', 'Monthly', 'Quarterly', 'Annually']
+        self._valid_pay_frequency = ['Weekly', 'Bi-Weekly', 'Bi-Monthly', 'Monthly', 'Quarterly', 'Annually']
+        self._num_pay_periods = {
+            'Weekly': 52,
+            'Bi-Weekly': 26,
+            'Bi-Monthly': 24,
+            'Monthly': 12,
+            'Quarterly': 4,
+            'Annually': 1
+        }
+
         self.button_hover_message = f"Click to populate a list of {self.__str__()}s."
 
     @staticmethod
     def __str__():
         return f'Jobs'
+
+    # TODO implement
+    def get_jsonification(self) -> dict:
+        pass
+
+    def get_pay_periods(self):
+        pay_freq = self.data('pay_frequency')
+        return self._num_pay_periods.get(pay_freq)
 
     def get_gross_income(self) -> (int, float):
         """
@@ -756,14 +803,12 @@ class Job(FinanceObj):
         :return: The pre tax annual income.
         """
         income = self._income
+        total_deduction = 0
+        retirement = self.data('401 rate') * income / 100
+        for deduction in self._pre_tax_deductions:
+            total_deduction += deduction.amount
 
-        if len(self._pre_tax_deductions) == 0:
-            return income
-
-        income = income * (1 - self._401k_rate)
-        income -= self._pre_tax_deductions.total()
-
-        return income
+        return income - total_deduction - retirement
 
     def get_posttax_income(self) -> (int, float):
         """
@@ -772,28 +817,23 @@ class Job(FinanceObj):
         """
         income = self.get_pretax_income()
         taxed_amount = 0
-        deducted_amount = 0
+        total_deduction = 0
 
         for tax in self._taxes:
             taxed_amount += tax.calculate_taxed_amount(income)
-        deducted_amount = self._post_tax_deductions.amount()
+        for deduction in self._post_tax_deductions:
+            total_deduction += deduction.amount
+        taxed_amount += self.get_social_security_taxed_amount()
+        taxed_amount += self.get_medicate_taxed_amount()
 
-        income = income * (1 - self._roth_rate)
-        income -= (taxed_amount + deducted_amount)
+        return income - taxed_amount - total_deduction
 
-        return income
+    def get_social_security_taxed_amount(self):
+        pass
 
-    def set_401k(self, rate):
-        self._401k_rate = rate
+    def get_medicate_taxed_amount(self):
+        pass
 
-    def set_roth(self, rate):
-        self._roth_rate = rate
-
-    def add_tax_bracket(self, tax: TaxBracket):
-        if tax not in self._tax_bracket:
-            self._taxes.append(tax)
-            return True
-        return False
 
     def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent, name="Title", desc="Company")
