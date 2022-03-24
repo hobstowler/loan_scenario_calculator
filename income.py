@@ -9,8 +9,8 @@ colors = {
             "l_sel": "lightblue2",
             "l_hover": "lightblue1",
             'l_active_hover': 'lightblue3',
-            "l_reset": "SystemButtonFace",
-            "b_reset": "SystemButtonFace",
+            "l_reset": "#fff",
+            "b_reset": "#fff",
             "b_sel": 'medium turquoise',
             'b_hover': 'turquoise',
             'b_active_hover': 'dark turquoise',
@@ -240,7 +240,7 @@ class AssumptionsWindow(Window):
         self._window.title(f"Define Assumptions for {self._fin_obj.data('name')}")
         self._window.grid_propagate(True)
         self._frame = tk.Frame(self._window)
-        self._frame.grid(column=0, row=0)
+        self._frame.grid(column=0, row=0, padx=15, pady=15)
         self.populate()
         self._root = root
 

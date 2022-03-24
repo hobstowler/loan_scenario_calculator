@@ -13,7 +13,7 @@ colors = {
     "l_sel": "lightblue2",
     "l_hover": "lightblue1",
     'l_active_hover': 'lightblue3',
-    "b_reset": "SystemButtonFace",
+    "b_reset": "#fff",
     "b_sel": 'medium turquoise',
     'b_hover': 'turquoise',
     'b_active_hover': 'dark turquoise',
@@ -37,7 +37,7 @@ class App:
         self._root = root
         self._fin_vars = fin_vars
 
-        self.frame = ttk.Frame(self._root, name="leftpanel")
+        self.frame = tk.Frame(self._root, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
         # drawer variables
@@ -471,6 +471,8 @@ class App:
 def main():
     # create the root
     root = tk.Tk()
+    #root.overrideredirect(True)
+    #title_bar = tk.Frame(root, bg='#2e2e2e', relief='raised', bd=2, highlightthickness=0)
     root.title("Loan Calculator")
     root.tk_setPalette(background='#fff')
 
