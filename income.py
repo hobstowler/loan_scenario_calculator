@@ -86,8 +86,6 @@ class Window:
 class ExpenseWindow(Window):
     def __init__(self, root, parent, expense):
         super().__init__(root, parent, expense)
-        self._parent = parent
-        self._expense = expense
 
         self._desc = tk.StringVar()
         self._amount = tk.DoubleVar()
@@ -103,7 +101,7 @@ class ExpenseWindow(Window):
 
     def new_expense(self):
         new_expense = Expense(self._desc.get(), self._amount.get())
-        expense_list = self._expense.get_expenses()
+        expense_list = self._fin_obj.get_expenses()
 
         if new_expense not in expense_list:
             expense_list.append(new_expense)
@@ -113,7 +111,7 @@ class ExpenseWindow(Window):
         self.populate()
 
     def delete_expense(self, expense):
-        expense_list = self._expense.get_expenses()
+        expense_list = self._fin_obj.get_expenses()
         if expense in expense_list:
             expense_list.remove(expense)
 
@@ -158,8 +156,6 @@ class BracketWindow(Window):
         :param tax_bracket: The calling tax bracket.
         """
         super().__init__(root, parent, tax_bracket)
-        self._parent = parent
-        self._bracket = tax_bracket
 
         self._rate = tk.DoubleVar()
         self._upper = tk.DoubleVar()
@@ -180,7 +176,7 @@ class BracketWindow(Window):
         # todo logic for a valid bracket--cannot overlap
         # todo blank out on click/focus to prevent weird errors with leading zeros
         new_bracket = Bracket(self._rate.get(), self._upper.get())
-        bracket_list = self._bracket.get_brackets()
+        bracket_list = self._fin_obj.get_brackets()
         if new_bracket not in bracket_list:
             bracket_list.append(new_bracket)
             bracket_list.sort(key=lambda x: x.upper)
@@ -189,7 +185,7 @@ class BracketWindow(Window):
         self.populate()
 
     def delete_bracket(self, bracket) -> None:
-        bracket_list = self._bracket.get_brackets()
+        bracket_list = self._fin_obj.get_brackets()
         if bracket in bracket_list:
             bracket_list.remove(bracket)
         self.populate()
@@ -199,9 +195,9 @@ class BracketWindow(Window):
             c.destroy()
 
         frame = self._frame
-        bracket_list = self._bracket.get_brackets()
+        bracket_list = self._fin_obj.get_brackets()
 
-        tk.Label(frame, text=self._bracket.name().title()).grid(column=0, row=0, columnspan=6)
+        tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
 
         tk.Label(frame, text='Tax Rate').grid(column=0, row=2, columnspan=2)
@@ -235,7 +231,50 @@ class AssetWindow(Window):
 
 
 class AssumptionsWindow(Window):
-    pass
+    def __init__(self, root, parent, fin_obj):
+        super().__init__(root, parent, fin_obj)
+        self._form_vars = {}
+
+        self._window = tk.Toplevel(root)
+        self._window.protocol("WM_DELETE_WINDOW", self.on_exit)
+        self._window.title(f"Define Assumptions for {self._fin_obj.data('name')}")
+        self._window.grid_propagate(True)
+        self._frame = tk.Frame(self._window)
+        self._frame.grid(column=0, row=0)
+        self.populate()
+        self._root = root
+
+    def save(self, key):
+        assumptions = self._fin_obj.get_assumptions()
+        assumptions.update({key: self._form_vars.get(key).get()})
+
+    def save_all(self):
+        assumptions = self._fin_obj.get_assumptions()
+        for key in assumptions.keys():
+            self.save(key)
+
+    def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        index = 0
+        frame = self._frame
+        assumptions = self._fin_obj.get_assumptions()
+        for key, value in assumptions.items():
+            if isinstance(value, str):
+                a_var = StringVar()
+            elif isinstance(value, float) or isinstance(value, int):
+                a_var = DoubleVar()
+            a_var.set(value)
+            self._form_vars.update({key: a_var})
+            tk.Label(frame, text=str(key), anchor='e').grid(column=0, row=index, columnspan=2, sticky=W+E)
+            entry = tk.Entry(frame, textvariable=a_var)
+            entry.grid(column=2, row=index, columnspan=2, sticky=W+E)
+            entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+
+    def on_exit(self):
+        self.save_all()
+        super().on_exit()
 
 
 class FinanceObj:
@@ -291,6 +330,12 @@ class FinanceObj:
         :return: The description.
         """
         return self._data.get('desc')
+
+    def get_data(self) -> dict:
+        return self._data
+
+    def get_assumptions(self) -> dict:
+        return self._assumptions
 
     def data(self, key: str):
         """
@@ -391,6 +436,10 @@ class FinanceObj:
 
         return index + 1
 
+    def launch_assumption_window(self, parent):
+        root = parent.get_root()
+        AssumptionsWindow(root, parent, self)
+
     def list_button_enter(self, parent, e):
         if e.widget.winfo_class() == 'Frame':
             widget = e.widget
@@ -489,6 +538,12 @@ class FinanceObj:
         cancel = tk.Button(frame, text='X', anchor='e')
         cancel.grid(column=4, row=index)
         cancel.bind('<Button-1>', lambda e, p=parent: self.cancel(p))
+        index += 1
+        assumptions_button = tk.Button(frame, text='Assumptions')
+        assumptions_button.grid(column=3, row=index, columnspan=2)
+        assumptions_button.bind('<Button-1>', lambda e, p=parent: self.launch_assumption_window(p))
+        if len(self._assumptions) < 1:
+            assumptions_button['state'] = 'disabled'
         index += 1
 
         index = self.tk_line_break(frame, index)
@@ -765,7 +820,7 @@ class Job(FinanceObj):
             'roth rate': 4,
             'pay frequency': 'Weekly'
         })
-        self._assumptions({
+        self._assumptions.update({
             'social security rate': 6.2,
             'social security cap': 147000,
             'medicate tax rate': 1.45
