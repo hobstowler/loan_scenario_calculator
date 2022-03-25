@@ -7,24 +7,8 @@ from tkinter import N, W, S, E, RIGHT, ttk
 
 from income import FinanceObj, Job, Assets, Expenses, TaxBracket
 from loans import Loan, Mortgage, Student, Auto, Personal
+from misc import Style
 from scenario import Scenario
-
-colors = {
-    "l_sel": "lightblue2",
-    "l_hover": "lightblue1",
-    'l_active_hover': 'lightblue3',
-    "b_reset": "#fff",
-    "b_sel": 'medium turquoise',
-    'b_hover': 'turquoise',
-    'b_active_hover': 'dark turquoise',
-    'fin_type': 'red',
-    'save_button': 'green',
-    'save_button_hover': 'darkgreen'
-}
-
-info_panel_messages = {
-
-}
 
 
 class App:
@@ -144,9 +128,9 @@ class App:
             """
             button = e.widget
             if self._active:
-                button['bg'] = colors.get('b_active_hover')
+                button['bg'] = Style.color('b_active_hover')
             else:
-                button['bg'] = colors.get('b_hover')
+                button['bg'] = Style.color('b_hover')
             self._parent.populate_info(self._fin_obj.button_hover_message())
 
         def leave(self, e):
@@ -157,9 +141,9 @@ class App:
             """
             button = e.widget
             if self._active:
-                button['bg'] = colors.get('b_sel')
+                button['bg'] = Style.color('b_sel')
             else:
-                button['bg'] = colors.get('b_reset')
+                button['bg'] = Style.color('b_reset')
             self._parent.populate_info("")
 
         def get_gui(self, root: tk.Frame) -> tk.Button:
@@ -173,9 +157,9 @@ class App:
             button.bind("<Enter>", self.enter)
             button.bind("<Leave>", self.leave)
             if self._active:
-                button['bg'] = colors.get('b_sel')
+                button['bg'] = Style.color('b_sel')
             else:
-                button['bg'] = colors.get('b_reset')
+                button['bg'] = Style.color('b_reset')
 
             return button
 
@@ -327,7 +311,7 @@ class App:
             """
             button = e.widget
             if button['state'] != 'disabled':
-                button['bg'] = colors.get('b_hover')
+                button['bg'] = Style.color('b_hover')
 
         @staticmethod
         def leave(e):
@@ -336,7 +320,7 @@ class App:
             :param e: The event.
             """
             button = e.widget
-            button['bg'] = colors.get('b_reset')
+            button['bg'] = Style.color('b_reset')
 
     #TODO implement saving and loading using JSONs
     def save_all(self):

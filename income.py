@@ -5,6 +5,8 @@ import json
 import tkinter as tk
 from tkinter import *
 
+from misc import Style
+
 colors = {
             "l_sel": "lightblue2",
             "l_hover": "lightblue1",
@@ -449,13 +451,13 @@ class FinanceObj:
             widget = e.widget._nametowidget(parent_name)
 
         if self._active:
-            widget['bg'] = colors.get('l_active_hover')
+            widget['bg'] = Style.color('l_active_hover')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('l_active_hover')
+                c['bg'] = Style.color('l_active_hover')
         else:
-            widget['bg'] = colors.get('l_hover')
+            widget['bg'] = Style.color('l_hover')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('l_hover')
+                c['bg'] = Style.color('l_hover')
         parent.populate_info(self.list_hover_message())
 
     def list_button_leave(self, parent, e):
@@ -466,13 +468,13 @@ class FinanceObj:
             widget = e.widget._nametowidget(parent_name)
 
         if self._active:
-            widget['bg'] = colors.get('l_sel')
+            widget['bg'] = Style.color('l_sel')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('l_sel')
+                c['bg'] = Style.color('l_sel')
         else:
-            widget['bg'] = colors.get('l_reset')
+            widget['bg'] = Style.color('l_reset')
             for c in widget.winfo_children():
-                c['bg'] = colors.get('l_reset')
+                c['bg'] = Style.color('l_reset')
         parent.populate_info("")
 
     def get_list_button(self, root, parent, name=None, desc=None):
@@ -487,9 +489,9 @@ class FinanceObj:
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=name, justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
+        name = tk.Label(frame, text=name, justify=LEFT, anchor="w", foreground=Style.color('fin_type'))
         name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
+        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=Style.color("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
         desc = tk.Label(frame, text=desc, justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
@@ -504,10 +506,10 @@ class FinanceObj:
             c.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
             #c.bind("<Leave>", self.list_leave)
             if self._active:
-                c['bg'] = colors.get("b_sel")
+                c['bg'] = Style.color("b_sel")
 
         if self._active:
-            frame['bg'] = colors.get("b_sel")
+            frame['bg'] = Style.color("b_sel")
 
     def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
         """
@@ -575,9 +577,9 @@ class FinanceObj:
         desc = tk.Label(information, text=self.desc())
         desc.grid(column=0, row=1, sticky=W)
 
-        information['bg'] = colors.get('bg_header')
+        information['bg'] = Style.color('bg_header')
         for c in information.winfo_children():
-            c['bg'] = colors.get('bg_header')
+            c['bg'] = Style.color('bg_header')
 
         return frame, information
 

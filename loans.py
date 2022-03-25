@@ -11,7 +11,7 @@ from tkinter import W, E, LEFT, RIGHT, N, S, X
 from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from errors import ErrorBox
+from misc import ErrorBox, Style
 from income import FinanceObj, colors, Window
 
 
@@ -458,7 +458,7 @@ class Mortgage(Loan):
 
         desc = tk.Label(information, text=self.data('mortgage company'))
         desc.grid(column=0, row=1, sticky=W)
-        desc['bg'] = colors.get('bg_header')
+        desc['bg'] = Style.color('bg_header')
 
         # BASE STATS WINDOW
         base_stats = tk.Frame(root, width=190, height=290)
@@ -566,14 +566,14 @@ class Mortgage(Loan):
         frame.bind("<Button-1>", lambda e: self.left_click())
         # TODO Move to JSON for data load to allow changes to main attributes
         # if self._active:
-        #    frame['bg'] = colors.get("b_sel")
+        #    frame['bg'] = Style.color("b_sel")
 
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=colors.get('fin_type'))
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=Style.color('fin_type'))
         name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=colors.get("t_type"))
+        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=Style.color("t_type"))
         f_type.grid(column=1, row=0, sticky=E)
         desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
         desc.grid(column=0, row=1, sticky=W, columnspan=2)
@@ -590,7 +590,7 @@ class Mortgage(Loan):
             c.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
             #c.bind("<Leave>", self.list_leave)
             if self._active:
-                c['bg'] = colors.get("b_sel")
+                c['bg'] = Style.color("b_sel")
 
 
 #TODO Implement
