@@ -227,7 +227,8 @@ class TaxSelector(Window):
 
 
 class AssetWindow(Window):
-    pass
+    def __init__(self):
+        pass
 
 
 class AssumptionsWindow(Window):
