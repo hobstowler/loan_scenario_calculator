@@ -202,6 +202,7 @@ class Loan(FinanceObj):
         extra_payments = tk.Button(frame, text='Extra Payments')
         extra_payments.grid(column=2, row=index, columnspan=2, sticky=W+E)
         extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payment_editor(p))
+        index += 1
 
         return frame, index
 
@@ -523,6 +524,9 @@ class Auto(Loan):
     def __str__():
         return f'Auto'
 
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, parent, 'Model', 'Make')
+
 
 class Student(Loan):
     def __init__(self, name: str, desc: str = ""):
@@ -532,6 +536,9 @@ class Student(Loan):
     def __str__():
         return f'Student'
 
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, parent, 'School', 'Degree')
+
 
 class Personal(Loan):
     def __init__(self, name: str, desc: str = ""):
@@ -540,6 +547,9 @@ class Personal(Loan):
     @staticmethod
     def __str__():
         return f'Personal'
+
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, parent, 'Item', 'Description')
 
 
 def main():

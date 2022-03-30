@@ -91,7 +91,7 @@ class ExtraPayment:
 
 
 class Window:
-    def __init__(self, root, parent, fin_obj, title):
+    def __init__(self, root, parent, fin_obj, title=None):
         self._fin_obj = fin_obj
         self._parent = parent
 
@@ -144,9 +144,9 @@ class ExpenseWindow(Window):
             c.destroy()
 
         frame = self._frame
-        expense_list = self._bracket.get_brackets()
+        expense_list = self._fin_obj.get_expenses()
 
-        tk.Label(frame, text=self._bracket.name().title()).grid(column=0, row=0, columnspan=6)
+        tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
 
         tk.Label(frame, text='Expense Description').grid(column=0, row=2, columnspan=4)
@@ -215,7 +215,7 @@ class BracketWindow(Window):
             c.destroy()
 
         frame = self._frame
-        bracket_list = self._fin_obj.get_brackets()
+        bracket_list = self._fin_obj.get_assets()
 
         tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
@@ -239,15 +239,19 @@ class BracketWindow(Window):
 
 
 class ExpenseSelector(Window):
-    pass
+    def __init__(self, root, parent, taxes):
+        pass
+
+    def on_exit(self):
+        pass
 
 
 class TaxSelector(Window):
-    pass
+    def __init__(self, root, parent, taxes):
+        print("taxes...")
+        pass
 
-
-class AssetWindow(Window):
-    def __init__(self):
+    def on_exit(self):
         pass
 
 

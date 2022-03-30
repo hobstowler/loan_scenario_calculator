@@ -372,6 +372,22 @@ class Expenses(FinanceObj):
             total += expense.amount
         return round(total, 2)
 
+    def launch_expense_window(self, parent):
+        root = parent.get_root()
+        ExpenseWindow(root, parent, self)
+
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        frame, index = super().get_editable(root, parent, name)
+
+        index = self.tk_line_break(frame, index)
+
+        expense_button = tk.Button(frame, text='Edit Expenses')
+        expense_button.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        expense_button.bind("<Button-1>", lambda e, p=parent: self.launch_expense_window(p))
+        index += 1
+
+        return frame, index
+
 
 class Income(FinanceObj):
     def __init__(self, name, desc=""):
@@ -524,7 +540,7 @@ class TaxBracket(FinanceObj):
         index = self.tk_editable_dropdown('filing status', 'Filing Status', self._valid_status, frame, parent, index)
 
         brackets = tk.Button(frame, text="Define Brackets")
-        brackets.grid(column=1, row=index)
+        brackets.grid(column=2, row=index, columnspan=2, sticky=W+E)
         brackets.bind("<Button-1>", lambda e, p=parent: self.launch_bracket_editor(p))
 
         return frame, index
@@ -704,9 +720,29 @@ class Job(FinanceObj):
 #TODO add support for assets like 401k, IRA, houses, bank accounts
 class Assets(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
+        self._assets = []
         super().__init__(name, desc)
 
     @staticmethod
     def __str__():
         return f'Assets'
+
+    def get_assets(self):
+        return self._assets
+
+    def launch_asset_window(self, parent):
+        root = parent.get_root()
+        AssetWindow(root, parent, self)
+
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        frame, index = super().get_editable(root, parent, name)
+
+        index = self.tk_line_break(frame, index)
+
+        expense_button = tk.Button(frame, text='Edit Assets')
+        expense_button.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        expense_button.bind("<Button-1>", lambda e, p=parent: self.launch_asset_window(p))
+        index += 1
+
+        return frame, index
 
