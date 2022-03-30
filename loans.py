@@ -11,103 +11,14 @@ from tkinter import W, E, LEFT, RIGHT, N, S, X
 from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from misc import ErrorBox, Style
-from income import FinanceObj, colors, Window
-
-
-class ExtraPayment:
-    """Class representing an extra payment on a loan. Has a defined start, length, and amount."""
-    def __init__(self, start_month, length, amount):
-        """
-        Initializes the extra payment with a start month, length, and amount.
-        :param start_month: The month that extra payments start occurring.
-        :param length: The number of months that extra payments will be made.
-        :param amount: The amount of extra money paid in each installment.
-        """
-        self.start = start_month
-        self.length = length
-        self.end = start_month + length
-        self.amount = amount
-
-
-class ExtraPaymentWindow(Window):
-    """
-    Class representing a window interface for adding new and removing existing ExtraPayments from a Loan.
-    """
-    def __init__(self, root, parent, loan):
-        super().__init__(root, parent, loan)
-        self._parent = parent
-        self._loan = loan
-
-        self._start = tk.IntVar()
-        self._duration = tk.IntVar()
-        self._amount = tk.IntVar()
-
-        self._window = tk.Toplevel(root)
-        self._window.protocol("WM_DELETE_WINDOW", self.on_exit)
-        self._window.title("Add Extra Payments")
-        self._window.grid_propagate(True)
-        self._frame = tk.Frame(self._window)
-        self._frame.grid(column=0, row=0)
-        self.populate()
-        self._root = root
-
-    def new_extra_payment(self):
-        try:
-            if self._start.get() == 0 or self._duration.get() == 0 or self._amount.get() == 0:
-                ErrorBox(self._root, "invalid inputs")
-            else:
-                new_extra_payment = ExtraPayment(self._start.get(), self._duration.get(), self._amount.get())
-                self._loan.add_extra_payment(new_extra_payment)
-            self.populate()
-        except tkinter.TclError:
-            ErrorBox(self._root, "invalid inputs")
-        self._start.set(0)
-        self._duration.set(0)
-        self._amount.set(0)
-
-    def delete_extra_payment(self, extra_payment):
-        extra_payments_list = self._loan.get_extra_payments()
-        if extra_payment in extra_payments_list:
-            extra_payments_list.remove(extra_payment)
-        self.populate()
-
-    def populate(self):
-        for c in self._frame.winfo_children():
-            c.destroy()
-
-        frame = self._frame
-        extra_payments = self._loan.get_extra_payments()
-
-        tk.Label(frame, text=self._loan.name().title()).grid(column=0, row=0, columnspan=6)
-        tk.Label(frame, text="").grid(column=0, row=1)
-
-        tk.Label(frame, text="Start Month").grid(column=0, row=2, columnspan=2)
-        tk.Entry(frame, textvariable=self._start).grid(column=0, row=3, columnspan=2)
-        tk.Label(frame, text="Duration").grid(column=2, row=2, columnspan=2)
-        tk.Entry(frame, textvariable=self._duration).grid(column=2, row=3, columnspan=2)
-        tk.Label(frame, text="Amount").grid(column=4, row=2, columnspan=2)
-        tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
-        add_button = tk.Button(frame, text='Add', width=6)
-        add_button.grid(column=6, row=3, sticky=W+E)
-        add_button.bind("<Button-1>", lambda e: self.new_extra_payment())
-
-        last = 6
-        for i in range(len(extra_payments)):
-            tk.Label(frame, text=extra_payments[i].start).grid(column=0, row=6+i, columnspan=2, sticky=W+E)
-            tk.Label(frame, text=extra_payments[i].length).grid(column=2, row=6+i, columnspan=2, sticky=W+E)
-            tk.Label(frame, text=extra_payments[i].amount).grid(column=4, row=6+i, columnspan=2, sticky=W+E)
-            del_button = tk.Button(frame, text="Delete", width=6)
-            del_button.bind("<Button-1>", lambda e, p=extra_payments[i]: self.delete_extra_payment(p))
-            del_button.grid(column=6, row=6+i, columnspan=2, sticky=W+E)
-            last += 1
+from misc import ErrorBox, Style, ExtraPaymentWindow, ExtraPayment
+from income import FinanceObj
 
 
 class Loan(FinanceObj):
     def __init__(self, name: str, desc: str = ""):
-        super(Loan, self).__init__(name, desc)
+        super().__init__(name, desc)
         self._type = "Loan"
-        #self._monthly_payment = 1200
         self._extra_payments = []
 
         self._data.update({
@@ -141,11 +52,12 @@ class Loan(FinanceObj):
         m_rate = float(self._data.get("rate")) / 100 / 12 # TODO make this work by month
         return round(amount * m_rate, 2)
 
-    def calc_principal(self):
+    def calc_principal(self) -> float:
         total = self.data('total')
         down = self.data('down payment')
         principal = total - down
         self._data.update({'principal': principal})
+        return principal
 
     def calc_monthly(self) -> None:
         """
@@ -276,13 +188,20 @@ class Loan(FinanceObj):
         frame, index = super().get_editable(root, parent, name, desc)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('origination', 'Loan Start (MM/DD/YYYY)', frame, parent, index)
-        index = self.tk_editable_entry('term', 'Loan Term (Months)', frame, parent, index)
+        index = self.tk_editable_entry('origination', 'Loan Start', frame, parent, index)
+        index = self.tk_editable_entry('term', 'Loan Term ', frame, parent, index, 'Months')
         index = self.tk_line_break(frame, index)
         index = self.tk_editable_entry('total', 'Total Amount', frame, parent, index)
-        index = self.tk_editable_entry('down payment', 'Down Payment', frame, parent, index)
+
+        principal = self.calc_principal()
+        index = self.tk_editable_entry('down payment', 'Down Payment', frame, parent, index, f" =${principal:,}")
+
         index = self.tk_editable_entry('rate', 'Rate', frame, parent, index)
         index = self.tk_line_break(frame, index)
+
+        extra_payments = tk.Button(frame, text='Extra Payments')
+        extra_payments.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payment_editor(p))
 
         return frame, index
 
@@ -437,11 +356,7 @@ class Mortgage(Loan):
     def get_editable(self, root, parent) -> tuple:
         frame, index = super().get_editable(root, parent, "Street Address", "City, State ZIP")
 
-        index = self.tk_line_break(frame, index)
-
-        extra_payments = tk.Button(frame, text='Extra Payments')
-        extra_payments.grid(column=1, row=index)
-        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payment_editor(p))
+        #index = self.tk_line_break(frame, index)
         index += 1
 
         return frame, index

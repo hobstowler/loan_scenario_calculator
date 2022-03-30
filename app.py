@@ -167,7 +167,6 @@ class App:
         """
         Class representing a panel to display detailed information about Financial Objects.
         """
-
         def __init__(self, root: tk.Tk):
             """
             Initializes the Detail Panel
