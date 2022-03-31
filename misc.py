@@ -155,7 +155,62 @@ class ExpenseWindow(Window):
         tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
         add_button = tk.Button(frame, text='Add', width=6)
         add_button.grid(column=6, row=3, sticky=W + E)
-        add_button.bind("<Button-1>", lambda e: self.new_bracket())
+        add_button.bind("<Button-1>", lambda e: self.new_expense())
+
+        last = 6
+        for i in range(len(expense_list)):
+            tk.Label(frame, text=expense_list[i].desc, anchor='w').grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
+            tk.Label(frame, text=expense_list[i].amount, anchor='w').grid(column=4, row=6 + i, columnspan=2, sticky=W + E)
+            del_button = tk.Button(frame, text="Delete", width=6)
+            del_button.bind("<Button-1>", lambda e, p=expense_list[i]: self.delete_expense(p))
+            del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
+            last += 1
+
+
+class AssetWindow(Window):
+    def __init__(self, root, parent, asset):
+        title = f"Define Tax Bracket: {asset.data('name')}"
+
+        self._desc = tk.StringVar()
+        self._amount = tk.DoubleVar()
+
+        super().__init__(root, parent, asset, title)
+
+    def new_expense(self):
+        new_expense = Expense(self._desc.get(), self._amount.get())
+        expense_list = self._fin_obj.get_expenses()
+
+        if new_expense not in expense_list:
+            expense_list.append(new_expense)
+        self._desc.set("")
+        self._amount.set(0)
+
+        self.populate()
+
+    def delete_expense(self, expense):
+        expense_list = self._fin_obj.get_expenses()
+        if expense in expense_list:
+            expense_list.remove(expense)
+
+        self.populate()
+
+    def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        frame = self._frame
+        expense_list = self._fin_obj.get_assets()
+
+        tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
+        tk.Label(frame, text="").grid(column=0, row=1)
+
+        tk.Label(frame, text='Expense Description').grid(column=0, row=2, columnspan=4)
+        tk.Entry(frame, textvariable=self._desc).grid(column=0, row=3, columnspan=4)
+        tk.Label(frame, text='Monthly Amount').grid(column=4, row=2, columnspan=2)
+        tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
+        add_button = tk.Button(frame, text='Add', width=6)
+        add_button.grid(column=6, row=3, sticky=W + E)
+        add_button.bind("<Button-1>", lambda e: self.new_expense())
 
         last = 6
         for i in range(len(expense_list)):
@@ -165,11 +220,6 @@ class ExpenseWindow(Window):
             del_button.bind("<Button-1>", lambda e, p=expense_list[i]: self.delete_expense(p))
             del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
             last += 1
-
-
-class AssetWindow(ExpenseWindow):
-    def __init__(self, root, parent, expense):
-        super().__init__(root, parent, expense)
 
 
 class BracketWindow(Window):
@@ -238,63 +288,6 @@ class BracketWindow(Window):
             last += 1
 
 
-class ExpenseSelector(Window):
-    def __init__(self, root, parent, taxes):
-        pass
-
-    def on_exit(self):
-        pass
-
-
-class TaxSelector(Window):
-    def __init__(self, root, parent, taxes):
-        print("taxes...")
-        pass
-
-    def on_exit(self):
-        pass
-
-
-class AssumptionsWindow(Window):
-    def __init__(self, root, parent, fin_obj):
-        title = f"Define Assumptions for {self._fin_obj.data('name')}"
-        self._form_vars = {}
-        super().__init__(root, parent, fin_obj, title)
-
-    def save(self, key):
-        assumptions = self._fin_obj.get_assumptions()
-        assumptions.update({key: self._form_vars.get(key).get()})
-
-    def save_all(self):
-        assumptions = self._fin_obj.get_assumptions()
-        for key in assumptions.keys():
-            self.save(key)
-
-    def populate(self):
-        for c in self._frame.winfo_children():
-            c.destroy()
-
-        index = 0
-        frame = self._frame
-        assumptions = self._fin_obj.get_assumptions()
-        for key, value in assumptions.items():
-            if isinstance(value, float) or isinstance(value, int):
-                a_var = tk.DoubleVar()
-            else:
-                a_var = tk.StringVar()
-            a_var.set(value)
-            self._form_vars.update({key: a_var})
-            tk.Label(frame, text=str(key).title(), anchor='e').grid(column=0, row=index, columnspan=2, sticky=W+E)
-            entry = tk.Entry(frame, textvariable=a_var)
-            entry.grid(column=2, row=index, columnspan=2, sticky=W+E)
-            entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
-            index += 1
-
-    def on_exit(self):
-        self.save_all()
-        super().on_exit()
-
-
 class ExtraPaymentWindow(Window):
     """
     Class representing a window interface for adding new and removing existing ExtraPayments from a Loan.
@@ -358,6 +351,125 @@ class ExtraPaymentWindow(Window):
             del_button.bind("<Button-1>", lambda e, p=extra_payments[i]: self.delete_extra_payment(p))
             del_button.grid(column=6, row=6+i, columnspan=2, sticky=W+E)
             last += 1
+
+
+class AssumptionsWindow(Window):
+    def __init__(self, root, parent, fin_obj):
+        title = f"Define Assumptions for {self._fin_obj.data('name')}"
+        self._form_vars = {}
+        super().__init__(root, parent, fin_obj, title)
+
+    def save(self, key):
+        assumptions = self._fin_obj.get_assumptions()
+        assumptions.update({key: self._form_vars.get(key).get()})
+
+    def save_all(self):
+        assumptions = self._fin_obj.get_assumptions()
+        for key in assumptions.keys():
+            self.save(key)
+
+    def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        index = 0
+        frame = self._frame
+        assumptions = self._fin_obj.get_assumptions()
+        for key, value in assumptions.items():
+            if isinstance(value, float) or isinstance(value, int):
+                a_var = tk.DoubleVar()
+            else:
+                a_var = tk.StringVar()
+            a_var.set(value)
+            self._form_vars.update({key: a_var})
+            tk.Label(frame, text=str(key).title(), anchor='e').grid(column=0, row=index, columnspan=2, sticky=W+E)
+            entry = tk.Entry(frame, textvariable=a_var)
+            entry.grid(column=2, row=index, columnspan=2, sticky=W+E)
+            entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+            index += 1
+
+    def on_exit(self):
+        self.save_all()
+        super().on_exit()
+
+
+class Selector(Window):
+    def __init__(self, root, parent, selection_list):
+        self._selection_list = selection_list
+        super().__init__(root, parent, None)
+
+    def on_exit(self):
+        self._window.destroy()
+
+
+class ExpenseSelector(Selector):
+    def __init__(self, root, parent, expenses):
+        self._all_expenses: list = parent.get_fin_vars('expenses')
+        self._expenses: list = expenses
+        super().__init__(root, parent, expenses)
+
+    def add_remove_expense(self, expense, check_var):
+        val = check_var.get()
+        if val == 1:
+            if expense not in self._expenses:
+                self._taxes.append(expense)
+        else:
+            if expense in self._expenses:
+                self._taxes.remove(expense)
+
+    def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        index = 0
+        frame = self._frame
+        for expense in self._all_expenses:
+            label = f"{expense.name()} | {expense.desc()}"
+            tk.Label(frame, text=label).grid(row=index, column=0, sticky=W+E)
+            check_var = tk.IntVar()
+            if expense in self._expenses:
+                check_var.set(1)
+            else:
+                check_var.set(0)
+            check = tk.Checkbutton(frame, variable=check_var,
+                                   command=lambda v=check_var, e=expense: self.add_remove_expense(e, v))
+            check.grid(row=index, column=1)
+            index += 1
+
+
+class TaxSelector(Selector):
+    def __init__(self, root, parent, taxes: list):
+        self._all_taxes: list = parent.get_fin_vars('taxes')
+        self._taxes: list = taxes
+        super().__init__(root, parent, taxes)
+
+    def add_remove_tax(self, tax, check_var):
+        val = check_var.get()
+        if val == 1:
+            if tax not in self._taxes:
+                self._taxes.append(tax)
+        else:
+            if tax in self._taxes:
+                self._taxes.remove(tax)
+
+    def populate(self):
+        for c in self._frame.winfo_children():
+            c.destroy()
+
+        index = 0
+        frame = self._frame
+        for tax in self._all_taxes:
+            label = f"{tax.name()} | {tax.desc()}"
+            tk.Label(frame, text=label).grid(row=index, column=0, sticky=W+E)
+            check_var = tk.IntVar()
+            if tax in self._taxes:
+                check_var.set(1)
+            else:
+                check_var.set(0)
+            check = tk.Checkbutton(frame, variable=check_var,
+                                   command=lambda v=check_var, t=tax: self.add_remove_tax(t, v))
+            check.grid(row=index, column=1)
+            index += 1
 
 
 class ErrorBox:

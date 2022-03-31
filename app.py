@@ -326,11 +326,25 @@ class App:
         pass
 
     def save_fin_obj(self, fin_obj):
+        """
+        Saves a new Finance Object when returning from the New dialogue evoked from the bottom menu button.
+        :param fin_obj: The new Finance Object.
+        """
         fin_list = self._nav_selection.get_fin_list()
-        print(fin_list)
         if fin_obj not in fin_list:
             fin_list.append(fin_obj)
         self.populate_list(refresh=True)
+
+    def get_fin_vars(self, key: str = None):
+
+        if key is None:
+            return self._fin_vars
+        else:
+            fin_vars = self._fin_vars.get(key)
+            if fin_vars is None:
+                fin_vars = []
+                self._fin_vars.update({key: fin_vars})
+            return fin_vars
 
     def load_all(self):
         pass

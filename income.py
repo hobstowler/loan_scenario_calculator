@@ -12,6 +12,9 @@ class FinanceObj:
     """
     A generic financial object. Can include expenses, loans, and jobs.
     """
+    category_list = ['utilities', 'subscriptions', 'groceries']
+    label_list = ['streaming', 'tv']
+
     def __init__(self, name: str, desc: str) -> None:
         """
         Initializes the financial object with a name and description.
@@ -95,7 +98,7 @@ class FinanceObj:
     def cancel(self, parent):
         parent.populate_list(refresh=True)
 
-    #TODO validate input is correct
+    # TODO validate input is correct
     def save(self, key, parent):
         f_var = self._form_vars.get(key)
         val = f_var.get()
@@ -149,7 +152,8 @@ class FinanceObj:
         col_span = 2
         if additional_info is not None:
             col_span = 1
-            tk.Label(root, text=additional_info, anchor='e').grid(column=3, row=index, columnspan=col_span, sticky=W + E)
+            tk.Label(root, text=additional_info, anchor='e').grid(column=3, row=index, columnspan=col_span,
+                                                                  sticky=W + E)
         entry.grid(column=2, row=index, columnspan=col_span, sticky=W + E)
         entry.bind("<FocusOut>", lambda e, k=key, p=parent: self.save(k, p))
 
@@ -232,12 +236,15 @@ class FinanceObj:
             c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
             c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
             c.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
-            #c.bind("<Leave>", self.list_leave)
+            # c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = Style.color("b_sel")
 
         if self._active:
             frame['bg'] = Style.color("b_sel")
+
+    def get_listable(self, root, parent):
+        pass
 
     def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
         """
@@ -297,7 +304,7 @@ class FinanceObj:
 
         # TOP INFORMATION BANNER
         information = tk.Frame(root, width=700, height=49)
-        information.grid(column=0, row=0, columnspan=7, sticky=W+E, pady=(0, 3))
+        information.grid(column=0, row=0, columnspan=7, sticky=W + E, pady=(0, 3))
         information.grid_propagate(False)
 
         name = tk.Label(information, text=self.name(), font=('bold', 13))
@@ -312,17 +319,96 @@ class FinanceObj:
         return frame, information
 
 
-#TODO assert instead of if statements
-#TODO add support for yearly expenses
+# TODO add support for different assets like 401k, IRA, houses, bank accounts
+class Assets(FinanceObj):
+    def __init__(self, name: str, desc: str = ""):
+        super().__init__(name, desc)
+        self._data.update({
+            'category': "",
+            'label': ""
+        })
+        self._assets = []
+
+    @staticmethod
+    def __str__():
+        return f'Assets'
+
+    def get_jsonification(self) -> dict:
+        """
+        Returns a dict representing the Assets object that can be easily jsonified.
+        :return: The dict representing the Assets.
+        """
+        jsonification = super().get_jsonification()
+
+        asset_list = []
+        for asset in self._assets:
+            asset_list.append(asset.get_jsonification())
+        jsonification.update({'expense list': asset_list})
+
+    def get_assets(self):
+        return self._assets
+
+    def get_total(self):
+        """
+        Returns the total of all assets.
+        :return: The total dollar value for assets.
+        """
+        total = 0
+        for asset in self._assets:
+            total += asset.amount
+        return round(total, 2)
+
+    def launch_asset_window(self, parent):
+        root = parent.get_root()
+        AssetWindow(root, parent, self)
+
+    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        """
+        Builds an editable view for a FinanceObj in the left drawer. Typically called when user clicks edit or right-
+        clicks an item in the drawer.
+        :param root: The root frame used to build the editable view.
+        :param parent: The parent LeftPanel. Used for callbacks and lambda functions.
+        :param name: Used in the header, can be changed from default by calling child class.
+        :param desc: Used in the header, can be changed from default by calling child class.
+        :return: Returns the frame and current index to be used in inherited calls.
+        """
+        frame, index = super().get_editable(root, parent, name)
+        index = self.tk_line_break(frame, index)
+
+        # Labels and Categories
+        cat_list = super().category_list
+        cat_list.sort()
+        index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, parent, index)
+        index = self.tk_editable_entry('label', 'Labels', frame, parent, index)
+        index = self.tk_line_break(frame, index)
+
+        # Individual Assets
+        total = self.get_total()
+        tk.Label(frame, text=f'${total:,}', anchor='e').grid(column=1, row=index, sticky=W+E)
+        asset_button = tk.Button(frame, text='Edit Assets')
+        asset_button.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        asset_button.bind("<Button-1>", lambda e, p=parent: self.launch_asset_window(p))
+        index += 1
+
+        return frame, index
+
+
+# TODO assert instead of if statements
+# TODO add support for yearly expenses
 class Expenses(FinanceObj):
     """
     An object that can keep track of monthly expenses and provide a total amount.
     """
+
     def __init__(self, name: str, desc: str = "") -> None:
         """
         Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
         super(Expenses, self).__init__(name, desc)
+        self._data.update({
+            'category': "",
+            'label': ""
+        })
         self._expenses = []
 
     @staticmethod
@@ -331,6 +417,10 @@ class Expenses(FinanceObj):
 
     # TODO implement
     def get_jsonification(self) -> dict:
+        """
+        Returns a dict representing the Assets object that can be easily jsonified.
+        :return: The dict representing the Assets.
+        """
         jsonification = super().get_jsonification()
 
         expense_list = []
@@ -340,20 +430,17 @@ class Expenses(FinanceObj):
 
         return jsonification
 
-    def add_expense(self, new_expense: Expense):
-        if new_expense not in self._expenses:
-            self._expenses.append(new_expense)
-
-    def remove_expense(self, expense):
-        if expense in self._expenses:
-            self._expenses.remove(expense)
-
-    def reset(self) -> None:
+    def get_labels(self) -> list:
         """
-        Clears all of the expenses.
-        :return: Nothing.
+        Returns all labels in list form that are associated with this instance of the expense object.
+        :return: Labels in list format.
         """
-        self._expenses.clear()
+        raw_labels = self.data('label')
+        labels = raw_labels.split(',')
+        for label in labels:
+            label = label.strip()
+
+        return labels
 
     def get_expenses(self) -> list:
         """
@@ -362,7 +449,7 @@ class Expenses(FinanceObj):
         """
         return self._expenses
 
-    def get_expense_total(self) -> float:
+    def get_total(self) -> float:
         """
         Returns the total of all expenses.
         :return: The total monthly expenditure.
@@ -377,12 +464,30 @@ class Expenses(FinanceObj):
         ExpenseWindow(root, parent, self)
 
     def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+        """
+        Builds an editable view for a FinanceObj in the left drawer. Typically called when user clicks edit or right-
+        clicks an item in the drawer.
+        :param root: The root frame used to build the editable view.
+        :param parent: The parent LeftPanel. Used for callbacks and lambda functions.
+        :param name: Used in the header, can be changed from default by calling child class.
+        :param desc: Used in the header, can be changed from default by calling child class.
+        :return: Returns the frame and current index to be used in inherited calls.
+        """
         frame, index = super().get_editable(root, parent, name)
-
         index = self.tk_line_break(frame, index)
 
+        # Labels and Categories
+        cat_list = super().category_list
+        cat_list.sort()
+        index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, parent, index)
+        index = self.tk_editable_entry('label', 'Labels', frame, parent, index)
+        index = self.tk_line_break(frame, index)
+
+        # Individual Expenses
+        total = self.get_total()
+        tk.Label(frame, text=f'${total:,}', anchor='e').grid(column=1, row=index, sticky=W+E)
         expense_button = tk.Button(frame, text='Edit Expenses')
-        expense_button.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        expense_button.grid(column=2, row=index, columnspan=2, sticky=W + E)
         expense_button.bind("<Button-1>", lambda e, p=parent: self.launch_expense_window(p))
         index += 1
 
@@ -402,7 +507,8 @@ class TaxBracket(FinanceObj):
     """
     Represents a tax bracket for income. Includes methods for getting the taxed amount and effective tax rate.
     """
-    def __init__(self, name: str, desc: str="") -> None:
+
+    def __init__(self, name: str, desc: str = "") -> None:
         super(TaxBracket, self).__init__(name, desc)
         self._brackets = []
         self._data.update({
@@ -429,7 +535,7 @@ class TaxBracket(FinanceObj):
         """
         if len(brackets) < 1:
             return
-        
+
         self._brackets = []
         for b in brackets:
             if len(b) == 2:
@@ -453,10 +559,10 @@ class TaxBracket(FinanceObj):
             return
         index = self._get_range(upper_range)
         if index is None:
-            self._brackets.append([upper_range, rate/100])
+            self._brackets.append([upper_range, rate / 100])
             self._brackets.sort()
         else:
-            self._brackets[index] = [upper_range, rate/100]
+            self._brackets[index] = [upper_range, rate / 100]
 
     def rem_range(self, upper_range: (int, float)):
         """
@@ -516,13 +622,13 @@ class TaxBracket(FinanceObj):
                 else:
                     taxed_amount += income * self._brackets[i][1]
             else:
-                lower_range = self._brackets[i-1][0]
+                lower_range = self._brackets[i - 1][0]
                 upper_range = self._brackets[i][0]
                 if income >= upper_range:
                     taxed_amount += (upper_range - lower_range) * self._brackets[i][1]
                 elif income < upper_range and income > lower_range:
                     taxed_amount += (income - lower_range) * self._brackets[i][1]
-        
+
         return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
 
     def launch_bracket_editor(self, parent):
@@ -530,6 +636,15 @@ class TaxBracket(FinanceObj):
         BracketWindow(root, parent, self)
 
     def get_editable(self, root, parent) -> tuple:
+        """
+        Builds an editable view for a FinanceObj in the left drawer. Typically called when user clicks edit or right-
+        clicks an item in the drawer.
+        :param root: The root frame used to build the editable view.
+        :param parent: The parent LeftPanel. Used for callbacks and lambda functions.
+        :param name: Used in the header, can be changed from default by calling child class.
+        :param desc: Used in the header, can be changed from default by calling child class.
+        :return: Returns the frame and current index to be used in inherited calls.
+        """
         frame, index = super().get_editable(root, parent)
 
         index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, parent, index)
@@ -540,7 +655,7 @@ class TaxBracket(FinanceObj):
         index = self.tk_editable_dropdown('filing status', 'Filing Status', self._valid_status, frame, parent, index)
 
         brackets = tk.Button(frame, text="Define Brackets")
-        brackets.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        brackets.grid(column=2, row=index, columnspan=2, sticky=W + E)
         brackets.bind("<Button-1>", lambda e, p=parent: self.launch_bracket_editor(p))
 
         return frame, index
@@ -553,6 +668,7 @@ class TaxBracket(FinanceObj):
 
 class Job(FinanceObj):
     """Represents a job."""
+
     def __init__(self, title: str, company: str = "") -> None:
         """
         Initializes the Job object with a title and description. Income and retirement contribution rates are optional.
@@ -670,43 +786,57 @@ class Job(FinanceObj):
         TaxSelector(root, parent, self._taxes)
 
     def get_editable(self, root, parent) -> tuple:
+        """
+        Builds an editable view for a FinanceObj in the left drawer. Typically called when user clicks edit or right-
+        clicks an item in the drawer.
+        :param root: The root frame used to build the editable view.
+        :param parent: The parent LeftPanel. Used for callbacks and lambda functions.
+        :param name: Used in the header, can be changed from default by calling child class.
+        :param desc: Used in the header, can be changed from default by calling child class.
+        :return: Returns the frame and current index to be used in inherited calls.
+        """
         frame, index = super().get_editable(root, parent, name="Title", desc="Company")
         index = self.tk_line_break(frame, index)
 
+        # Pay frequency and income section
         index = self.tk_editable_dropdown('pay frequency', 'Pay Frequency', self._valid_pay_frequency,
                                           frame, parent, index)
         pay_freq = self.data('pay frequency')
         pay_periods = 'x ' + str(self.get_pay_periods())
         index = self.tk_editable_entry('income', 'Income (' + pay_freq + ')',
                                        frame, parent, index, pay_periods)
-        tk.Label(frame, text=f'= ${round(self.data("income") * self.get_pay_periods(),2):,}', anchor='e')\
-            .grid(column=2, row=index, columnspan=2, sticky=W+E)
+        tk.Label(frame, text=f'= ${round(self.data("income") * self.get_pay_periods(), 2):,}', anchor='e') \
+            .grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1
         index = self.tk_line_break(frame, index)
 
+        # Retirement accounts section
         retirement = f'  ${self.get_401k_amount():,}'
         roth = f'  ${self.get_roth_amount():,}'
         index = self.tk_editable_entry('401k rate', '401k Contribution', frame, parent, index, retirement)
         index = self.tk_editable_entry('roth rate', 'Roth Contribution', frame, parent, index, roth)
-        tk.Label(frame, text=f'= ${round(self.get_401k_amount() + self.get_roth_amount(),2):,}', anchor='e')\
-            .grid(column=2, row=index, columnspan=2, sticky=W+E)
+        tk.Label(frame, text=f'= ${round(self.get_401k_amount() + self.get_roth_amount(), 2):,}', anchor='e') \
+            .grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1
         index = self.tk_line_break(frame, index)
 
+        # Tax brackets section
         bracket_button = tk.Button(frame, text="Tax Brackets")
         bracket_button.grid(column=2, row=index, columnspan=2, sticky=W + E)
         bracket_button.bind("<Button-1>", lambda e, p=parent: self.launch_tax_selector(p))
         index += 1
 
-        pre_tax_amount = self._pre_tax_deductions.get_expense_total()
-        tk.Label(frame, text=f"${pre_tax_amount:,}", anchor='e').grid(column=1, row=index, sticky=W+E)
+        # Pre tax deductions section
+        pre_tax_amount = self._pre_tax_deductions.get_total()
+        tk.Label(frame, text=f"${pre_tax_amount:,}", anchor='e').grid(column=1, row=index, sticky=W + E)
         pre_tax_button = tk.Button(frame, text="Pre Tax Deductions")
         pre_tax_button.grid(column=2, row=index, columnspan=2, sticky=W + E)
         pre_tax_button.bind("<Button-1>",
                             lambda e, p=parent, d=self._pre_tax_deductions: self.launch_deduction_selector(p, d))
         index += 1
 
-        post_tax_amount = self._post_tax_deductions.get_expense_total()
+        # Post tax deductions section
+        post_tax_amount = self._post_tax_deductions.get_total()
         tk.Label(frame, text=f"${post_tax_amount:,}", anchor='e').grid(column=1, row=index, sticky=W + E)
         post_tax_button = tk.Button(frame, text="Post Tax Deductions")
         post_tax_button.grid(column=2, row=index, columnspan=2, sticky=W + E)
@@ -715,34 +845,3 @@ class Job(FinanceObj):
         index += 1
 
         return frame, index
-
-
-#TODO add support for assets like 401k, IRA, houses, bank accounts
-class Assets(FinanceObj):
-    def __init__(self, name: str, desc: str = ""):
-        self._assets = []
-        super().__init__(name, desc)
-
-    @staticmethod
-    def __str__():
-        return f'Assets'
-
-    def get_assets(self):
-        return self._assets
-
-    def launch_asset_window(self, parent):
-        root = parent.get_root()
-        AssetWindow(root, parent, self)
-
-    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
-        frame, index = super().get_editable(root, parent, name)
-
-        index = self.tk_line_break(frame, index)
-
-        expense_button = tk.Button(frame, text='Edit Assets')
-        expense_button.grid(column=2, row=index, columnspan=2, sticky=W+E)
-        expense_button.bind("<Button-1>", lambda e, p=parent: self.launch_asset_window(p))
-        index += 1
-
-        return frame, index
-
