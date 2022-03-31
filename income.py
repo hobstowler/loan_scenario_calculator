@@ -303,13 +303,13 @@ class FinanceObj:
         frame.grid_propagate(False)
 
         # TOP INFORMATION BANNER
-        information = tk.Frame(root, width=700, height=49)
-        information.grid(column=0, row=0, columnspan=7, sticky=W + E, pady=(0, 3))
+        information = tk.Frame(root, width=680, height=49, padx=10, pady=15)
+        information.grid(column=0, row=0, columnspan=7, sticky=W + E)
         information.grid_propagate(False)
 
-        name = tk.Label(information, text=self.name(), font=('bold', 13))
+        name = tk.Label(information, text=self.name(), font=('bold', 14))
         name.grid(column=0, row=0, sticky=W)
-        desc = tk.Label(information, text=self.desc())
+        desc = tk.Label(information, text=self.desc(), font=('bold', 12))
         desc.grid(column=0, row=1, sticky=W)
 
         information['bg'] = Style.color('bg_header')
@@ -391,6 +391,26 @@ class Assets(FinanceObj):
         index += 1
 
         return frame, index
+
+    def get_detail(self, root, parent) -> tuple:
+        frame, information = super().get_detail(root, parent)
+
+        category = tk.Frame(root, width=680, height=51)
+        category.grid(column=0, row=2, columnspan=7, sticky=N+S+W+E, pady=10, padx=10)
+        tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12)).grid(column=0, row=0)
+        tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 12)).grid(column=0, row=1)
+
+        main = tk.Frame(root, width=680, height=480, padx=10)
+        main.grid(column=0, row=3, columnspan=7, sticky=N+S+W+E)
+        main.grid_propagate(False)
+        index = 0
+        for asset in self._assets:
+            print(index)
+            tk.Label(main, text=f'${asset.amount:,}').grid(column=0, row=index, sticky=W+E)
+            tk.Label(main, text=asset.desc).grid(column=1, row=index, sticky=W+E)
+            index += 1
+        tk.Label(main, text=f'${self.get_total():,}').grid(column=0, row=index, sticky=W+E)
+        tk.Label(main, text='Total').grid(column=1, row=index, sticky=W+E)
 
 
 # TODO assert instead of if statements
@@ -492,6 +512,27 @@ class Expenses(FinanceObj):
         index += 1
 
         return frame, index
+
+    def get_detail(self, root, parent) -> tuple:
+        frame, information = super().get_detail(root, parent)
+
+        category = tk.Frame(root, width=680, height=51)
+        category.grid(column=0, row=2, columnspan=7, sticky=N+S+W+E, pady=10, padx=10)
+        tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12)).grid(column=0, row=0)
+        tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 12)).grid(column=0, row=1)
+
+        main = tk.Frame(root, width=680, height=480, padx=10)
+        main.grid(column=0, row=3, columnspan=7, sticky=N+S+W+E)
+        main.grid_propagate(False)
+        index = 0
+        for expense in self._expenses:
+            print(index)
+            tk.Label(main, text=f'${expense.amount:,}').grid(column=0, row=index, sticky=W+E)
+            tk.Label(main, text=expense.desc).grid(column=1, row=index, sticky=W+E)
+            index += 1
+        tk.Label(main, text=f'${self.get_total():,}').grid(column=0, row=index, sticky=W+E)
+        tk.Label(main, text='Total').grid(column=1, row=index, sticky=W+E)
+
 
 
 class Income(FinanceObj):

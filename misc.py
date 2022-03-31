@@ -177,20 +177,20 @@ class AssetWindow(Window):
         super().__init__(root, parent, asset, title)
 
     def new_expense(self):
-        new_expense = Expense(self._desc.get(), self._amount.get())
-        expense_list = self._fin_obj.get_expenses()
+        new_asset = Asset(self._desc.get(), self._amount.get())
+        asset_list = self._fin_obj.get_assets()
 
-        if new_expense not in expense_list:
-            expense_list.append(new_expense)
+        if new_asset not in asset_list:
+            asset_list.append(new_asset)
         self._desc.set("")
         self._amount.set(0)
 
         self.populate()
 
-    def delete_expense(self, expense):
-        expense_list = self._fin_obj.get_expenses()
-        if expense in expense_list:
-            expense_list.remove(expense)
+    def delete_expense(self, asset):
+        asset_list = self._fin_obj.get_assets()
+        if asset in asset_list:
+            asset_list.remove(asset)
 
         self.populate()
 
@@ -199,7 +199,7 @@ class AssetWindow(Window):
             c.destroy()
 
         frame = self._frame
-        expense_list = self._fin_obj.get_assets()
+        asset_list = self._fin_obj.get_assets()
 
         tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
@@ -213,11 +213,11 @@ class AssetWindow(Window):
         add_button.bind("<Button-1>", lambda e: self.new_expense())
 
         last = 6
-        for i in range(len(expense_list)):
-            tk.Label(frame, text=expense_list[i].rate).grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
-            tk.Label(frame, text=expense_list[i].upper).grid(column=2, row=6 + i, columnspan=2, sticky=W + E)
+        for i in range(len(asset_list)):
+            tk.Label(frame, text=asset_list[i].desc, anchor='w').grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
+            tk.Label(frame, text=asset_list[i].amount, anchor='w').grid(column=4, row=6 + i, columnspan=2, sticky=W + E)
             del_button = tk.Button(frame, text="Delete", width=6)
-            del_button.bind("<Button-1>", lambda e, p=expense_list[i]: self.delete_expense(p))
+            del_button.bind("<Button-1>", lambda e, p=asset_list[i]: self.delete_expense(p))
             del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
             last += 1
 
