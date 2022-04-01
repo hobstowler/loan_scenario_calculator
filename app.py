@@ -245,7 +245,7 @@ class App:
             """
             Called when clicking new button. Passthrough to create a new Finance Object with parent LeftPanel.
             """
-            self._parent.populate_new()
+            self._parent.create_new_fin_object()
 
         def edit(self) -> None:
             """
@@ -335,8 +335,12 @@ class App:
             fin_list.append(fin_obj)
         self.populate_list(refresh=True)
 
-    def get_fin_vars(self, key: str = None):
-
+    def get_fin_vars(self, key: str = None) -> list:
+        """
+        Return the list finance objects of a given type based on key.
+        :param key: The key in the key value pair of finance objects in list.
+        :return: a list of finance object for given key.
+        """
         if key is None:
             return self._fin_vars
         else:
@@ -349,13 +353,11 @@ class App:
     def load_all(self):
         pass
 
-    #def set_detail_panel(self, panel) -> None:
-    #    self._detail_panel = panel
-
-    #def set_info_panel(self, panel) -> None:
-    #    self._info_panel = panel
-
     def get_root(self) -> tk.Tk:
+        """
+        Returns the root tk widget for the application.
+        :return: The root tk widget.
+        """
         return self._root
 
     # TODO streamline so that Navbutton holds the dict key instead of the list
@@ -408,8 +410,13 @@ class App:
         else:
             fin_list = self._nav_selection.get_fin_list()
 
-        for fin_obj in fin_list:
-            fin_obj.get_list_button(self._drawer, self)
+        if fin_list is None or len(fin_list) == 0:
+            self._nav_text.set("")
+            nothing = tk.Label(self._drawer, text="Nothing to see here... Try adding something new.")
+            nothing.pack(expand=True)
+        else:
+            for fin_obj in fin_list:
+                fin_obj.get_list_button(self._drawer, self)
 
     def populate_editable(self, fin_object: FinanceObj) -> None:
         """
@@ -437,30 +444,41 @@ class App:
         self._detail_panel.reset()
         fin_object.get_detail(self._detail_panel.get_frame(), self)
 
-    def populate_new(self):
+    def populate_info(self, message) -> None:
         """
-        Populated the editable with a new finance object of the type selected in the navigation bar.
+        Pushes a message to the information panel in the bottom right-hand corner.
+        :param message: The message being pushed.
+        """
+        if self._info_panel is None:
+            return
+        self._info_panel.message(message)
+
+    #   Bottom Menu Pass-through Functions
+    def create_new_fin_object(self):
+        """
+        Populated the editable with a new finance object of the type selected in the navigation bar. Called by the
+        bottom menu new button.
         """
         if self._fin_obj_selection is not None:
             self._fin_obj_selection.activate(False)
         new_obj = self._nav_selection._fin_obj('name', 'desc')      # gets the static class and creates a new instance.
         self.populate_editable(new_obj)
 
-    def populate_info(self, message):
-        if self._info_panel is None:
-            return
-        self._info_panel.message(message)
-
-    def delete_selected_fin_object(self):
+    def delete_selected_fin_object(self) -> None:
         """
-        Deletes the selected Finance Object in the list view.
+        Deletes the selected Finance Object in the list view. Called by bottom menu button.
         """
         if self._fin_obj_selection is not None:
             self._nav_selection.get_fin_list().remove(self._fin_obj_selection)
             self._fin_obj_selection = None
             self.populate_list(refresh=True)
 
-    def edit_selected_fin_object(self):
+    def edit_selected_fin_object(self) -> None:
+        """
+        Passthrough function to create the editable view for an existing, selected fin object. Called by bottom menu
+        button.
+        """
+        print('test')
         if self._fin_obj_selection is not None:
             self.populate_editable(self._fin_obj_selection)
 
