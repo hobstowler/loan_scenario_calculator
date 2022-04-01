@@ -220,6 +220,20 @@ class FinanceObj:
 
         return index + 1
 
+    def tk_checkbox(self, key, text, root, parent, index, additional_info: str = None) -> int:
+        """
+
+        :param key:
+        :param text:
+        :param root:
+        :param parent:
+        :param index:
+        :param additional_info:
+        :return:
+        """
+
+        return index + 1
+
     def tk_editable_entry(self, key, text, root, parent, index, additional_info: str = None) -> int:
         """
         Creates an editable tk Entry widget with label and supplemental information.

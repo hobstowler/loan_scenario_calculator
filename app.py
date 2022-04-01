@@ -325,6 +325,9 @@ class App:
     def save_all(self):
         pass
 
+    def load_all(self):
+        pass
+
     def save_fin_obj(self, fin_obj):
         """
         Saves a new Finance Object when returning from the New dialogue evoked from the bottom menu button.
@@ -350,9 +353,6 @@ class App:
                 self._fin_vars.update({key: fin_vars})
             return fin_vars
 
-    def load_all(self):
-        pass
-
     def get_root(self) -> tk.Tk:
         """
         Returns the root tk widget for the application.
@@ -360,6 +360,7 @@ class App:
         """
         return self._root
 
+    #   Methods for changing out views
     # TODO streamline so that Navbutton holds the dict key instead of the list
     def new_context(self, clicked: NavButton) -> None:
         """
@@ -478,7 +479,6 @@ class App:
         Passthrough function to create the editable view for an existing, selected fin object. Called by bottom menu
         button.
         """
-        print('test')
         if self._fin_obj_selection is not None:
             self.populate_editable(self._fin_obj_selection)
 

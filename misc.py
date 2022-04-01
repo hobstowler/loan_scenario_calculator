@@ -355,9 +355,9 @@ class ExtraPaymentWindow(Window):
 
 class AssumptionsWindow(Window):
     def __init__(self, root, parent, fin_obj):
-        title = f"Define Assumptions for {self._fin_obj.data('name')}"
         self._form_vars = {}
-        super().__init__(root, parent, fin_obj, title)
+        super().__init__(root, parent, fin_obj)
+        self._window.title(f"Define Assumptions for {self._fin_obj.data('name')}")
 
     def save(self, key):
         assumptions = self._fin_obj.get_assumptions()
