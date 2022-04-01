@@ -11,8 +11,8 @@ class AlreadyExists(Exception):
 
 
 class Scenario(FinanceObj):
-    def __init__(self, name, desc="") -> None:
-        super(Scenario, self).__init__(name, desc)
+    def __init__(self, app, name, desc="") -> None:
+        super().__init__(app, name, desc)
         self._jobs = []
         self._incomes = []
         self._expenses = []

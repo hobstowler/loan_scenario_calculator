@@ -24,6 +24,11 @@ class App:
         self.frame = tk.Frame(self._root, name="leftpanel")
         self.frame.grid(column=0, row=0)
 
+        #TODO implement scroll bar. may need to be part of the refresh
+
+    def launch(self):
+        fin_vars = self._fin_vars
+        root = self._root
         # drawer variables
         self._fin_obj_selection = None
 
@@ -65,8 +70,6 @@ class App:
         # Populates the drawer with the initial context
         self.populate_nav_menu()
         self._nav_selection.click()
-
-        #TODO implement scroll bar. may need to be part of the refresh
 
     class NavLabel:
         """Text label on the top-level navigation menu."""
@@ -417,7 +420,7 @@ class App:
             nothing.pack(expand=True)
         else:
             for fin_obj in fin_list:
-                fin_obj.get_list_button(self._drawer, self)
+                fin_obj.get_list_button(self._drawer)
 
     def populate_editable(self, fin_object: FinanceObj) -> None:
         """
@@ -429,7 +432,7 @@ class App:
             c.destroy()
         self._bottom_menu.reset()
 
-        fin_object.get_editable(self._drawer, self)
+        fin_object.get_editable(self._drawer)
 
     def populate_detail(self, fin_object: FinanceObj) -> None:
         """
@@ -443,7 +446,7 @@ class App:
         else:
             self._fin_obj_selection = fin_object
         self._detail_panel.reset()
-        fin_object.get_detail(self._detail_panel.get_frame(), self)
+        fin_object.get_detail(self._detail_panel.get_frame())
 
     def populate_info(self, message) -> None:
         """
@@ -462,7 +465,7 @@ class App:
         """
         if self._fin_obj_selection is not None:
             self._fin_obj_selection.activate(False)
-        new_obj = self._nav_selection._fin_obj('name', 'desc')      # gets the static class and creates a new instance.
+        new_obj = self._nav_selection._fin_obj(self, 'name', 'desc')      # gets the static class and creates a new instance.
         self.populate_editable(new_obj)
 
     def delete_selected_fin_object(self) -> None:
@@ -492,19 +495,21 @@ def main():
     root.tk_setPalette(background='#fff')
 
     # load the data
-    fin_vars = {
-        'scenarios': [Scenario('test scenario', 'scenario description')],
-        'jobs': [Job('Data Analyst II', 'Cerner Corporation'), Job('Data Analyst I', 'Cerner Corporation')],
-        'assets': [Assets('test', "A new Asset")],
-        'expenses': [Expenses('exp', 'Test Expense')],
-        'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
-        'student loans': [Student('Virginia Tech', 'BA in English Literature')],
-        'loans': [Loan('test loan', 'test description')],
-        'taxes': []
-    }
+    fin_vars = {}
 
     # create the main panels.
     app = App(root, fin_vars)
+    fin_vars.update({
+        'scenarios': [Scenario(app, 'test scenario', 'scenario description')],
+        'jobs': [Job(app, 'Data Analyst II', 'Cerner Corporation'), Job(app, 'Data Analyst I', 'Cerner Corporation')],
+        'assets': [Assets(app, 'test', "A new Asset")],
+        'expenses': [Expenses(app, 'exp', 'Test Expense')],
+        'mortgages': [Mortgage(app, '7129 Grand Ave', 'Kansas City, MO 64114')],
+        'student loans': [Student(app, 'Virginia Tech', 'BA in English Literature')],
+        'loans': [Loan(app, 'test loan', 'test description')],
+        'taxes': []
+    })
+    app.launch()
     #right_panel = DetailPanel(root)
     #info_panel = InfoPanel(root)
 

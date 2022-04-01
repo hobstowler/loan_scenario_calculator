@@ -16,8 +16,8 @@ from income import FinanceObj
 
 
 class Loan(FinanceObj):
-    def __init__(self, name: str, desc: str = ""):
-        super().__init__(name, desc)
+    def __init__(self, app, name: str, desc: str = ""):
+        super().__init__(app, name, desc)
         self._type = "Loan"
         self._extra_payments = []
 
@@ -185,37 +185,37 @@ class Loan(FinanceObj):
 
         return comparison
 
-    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
+    def get_editable(self, root, name: str = None, desc: str = None) -> tuple:
         monthly = self.calc_monthly()
 
-        frame, index = super().get_editable(root, parent, name, desc)
-        index = self.tk_editable_entry('loan company', 'Loan Company', frame, parent, index)
+        frame, index = super().get_editable(root, name, desc)
+        index = self.tk_editable_entry('loan company', 'Loan Company', frame, index)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('origination', 'Loan Start', frame, parent, index)
-        index = self.tk_editable_entry('term', 'Loan Term ', frame, parent, index, 'Months')
+        index = self.tk_editable_entry('origination', 'Loan Start', frame, index)
+        index = self.tk_editable_entry('term', 'Loan Term ', frame, index, 'Months')
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('total', 'Total Amount', frame, parent, index)
+        index = self.tk_editable_entry('total', 'Total Amount', frame, index)
 
         principal = self.calc_principal()
-        index = self.tk_editable_entry('down payment', 'Down Payment', frame, parent, index, f" =${principal:,}")
+        index = self.tk_editable_entry('down payment', 'Down Payment', frame, index, f" =${principal:,}")
 
-        index = self.tk_editable_entry('rate', 'Rate', frame, parent, index)
+        index = self.tk_editable_entry('rate', 'Rate', frame, index)
         tk.Label(frame, text=f'= ${monthly:,}', anchor='e').grid(column=3, row=index, columnspan=1, sticky=W+E)
         index += 1
         index = self.tk_line_break(frame, index)
 
         extra_payments = tk.Button(frame, text='Extra Payments')
         extra_payments.grid(column=2, row=index, columnspan=2, sticky=W+E)
-        extra_payments.bind("<Button-1>", lambda e, p=parent: self.launch_extra_payment_editor(p))
+        extra_payments.bind("<Button-1>", lambda e: self.launch_extra_payment_editor())
         index += 1
 
         return frame, index
 
 
 class Mortgage(Loan):
-    def __init__(self, name: str, desc: str = "") -> None:
-        super(Mortgage, self).__init__(name, desc)
+    def __init__(self, app, name: str, desc: str = "") -> None:
+        super().__init__(app, name, desc)
         self._type = "Mortgage"
 
         self._pmi_required = True
@@ -355,19 +355,19 @@ class Mortgage(Loan):
         self._data.update({'total monthly': monthly})
         return monthly
 
-    def launch_extra_payment_editor(self, parent):
-        root = parent.get_root()
-        ExtraPaymentWindow(root, parent, self)
+    def launch_extra_payment_editor(self):
+        root = self._app.get_root()
+        ExtraPaymentWindow(root, self._app, self)
 
-    def get_editable(self, root, parent) -> tuple:
-        frame, index = super().get_editable(root, parent, "Street Address", "City, State ZIP")
+    def get_editable(self, root) -> tuple:
+        frame, index = super().get_editable(root, "Street Address", "City, State ZIP")
 
         self._form_vars
         index += 1
 
         return frame, index
 
-    def get_detail(self, root, parent):
+    def get_detail(self, root):
         self.calc_total_monthly()
         comparison = self.compare_schedules()
         differences = comparison.get('difference')
@@ -375,7 +375,7 @@ class Mortgage(Loan):
         years_saved = differences.get('years saved')
         interest_saved = differences.get('interest saved')
 
-        super().get_detail(root, parent, desc=self.data('mortgage company'))
+        super().get_detail(root, desc=self.data('mortgage company'))
 
         # BASE STATS WINDOW
         stats = tk.Frame(root, height=290)
@@ -420,8 +420,8 @@ class Mortgage(Loan):
         graph.pack(side=RIGHT, fill=BOTH)
         graph.pack_propagate(False)
 
-        s1 = [sched[1] for sched in comparison.get('no extra').get('schedule')]
-        s2 = [sched[1] for sched in comparison.get('extra').get('schedule')]
+        s1 = [schedule[1] for schedule in comparison.get('no extra').get('schedule')]
+        s2 = [schedule[1] for schedule in comparison.get('extra').get('schedule')]
         schedules = [s1, s2]
         self.create_graph(graph, schedules, title="Loan Comparison")
 
@@ -469,7 +469,7 @@ class Mortgage(Loan):
         canvas = FigureCanvasTkAgg(fig, root)
         canvas.get_tk_widget().pack()
 
-    def get_list_button(self, root, parent):
+    def get_list_button(self, root):
         #super().get_list_button(root, parent)
         frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
         frame.pack(fill="x", ipady=2)
@@ -490,14 +490,14 @@ class Mortgage(Loan):
         amount_string = str(self._data.get('total')) + " | " + str(self._data.get('principal')) + " | "+ str(self._data.get('rate'))
         tk.Label(frame, text=amount_string).grid(column=0, row=2, sticky=W, columnspan=3)
 
-        frame.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
-        frame.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-        frame.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
-        frame.bind("<Leave>", lambda e, p=parent: self.list_button_leave(p, e))
+        frame.bind("<Button-1>", lambda e: self.left_click())
+        frame.bind("<Button-3>", lambda e: self.right_click())
+        frame.bind("<Enter>", lambda e: self.list_button_enter(e))
+        frame.bind("<Leave>", lambda e: self.list_button_leave(e))
         for c in frame.winfo_children():
-            c.bind("<Button-1>", lambda e, p=parent: self.left_click(p))
-            c.bind("<Button-3>", lambda e, p=parent: self.right_click(p))
-            c.bind("<Enter>", lambda e, p=parent: self.list_button_enter(p, e))
+            c.bind("<Button-1>", lambda e: self.left_click())
+            c.bind("<Button-3>", lambda e: self.right_click())
+            c.bind("<Enter>", lambda e: self.list_button_enter(e))
             #c.bind("<Leave>", self.list_leave)
             if self._active:
                 c['bg'] = Style.color("b_sel")
@@ -511,39 +511,39 @@ class VariableRateMortgage(Mortgage):
 
 #TODO Implement
 class Auto(Loan):
-    def __init__(self, name: str, desc: str = ""):
-        super().__init__(name, desc)
+    def __init__(self, app, name: str, desc: str = ""):
+        super().__init__(app, name, desc)
 
     @staticmethod
     def __str__():
         return f'Auto'
 
-    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
-        super().get_editable(root, parent, 'Model', 'Make')
+    def get_editable(self, root, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, 'Model', 'Make')
 
 
 class Student(Loan):
-    def __init__(self, name: str, desc: str = ""):
-        super().__init__(name, desc)
+    def __init__(self, app, name: str, desc: str = ""):
+        super().__init__(app, name, desc)
 
     @staticmethod
     def __str__():
         return f'Student'
 
-    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
-        super().get_editable(root, parent, 'School', 'Degree')
+    def get_editable(self, root, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, 'School', 'Degree')
 
 
 class Personal(Loan):
-    def __init__(self, name: str, desc: str = ""):
-        super().__init__(name, desc)
+    def __init__(self, app, name: str, desc: str = ""):
+        super().__init__(app, name, desc)
 
     @staticmethod
     def __str__():
         return f'Personal'
 
-    def get_editable(self, root, parent, name: str = None, desc: str = None) -> tuple:
-        super().get_editable(root, parent, 'Item', 'Description')
+    def get_editable(self, root, name: str = None, desc: str = None) -> tuple:
+        super().get_editable(root, 'Item', 'Description')
 
 
 def main():
