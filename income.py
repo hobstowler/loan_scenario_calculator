@@ -12,7 +12,8 @@ class FinanceObj:
     """
     A generic financial object. Can include expenses, loans, and jobs.
     """
-    category_list = ['utilities', 'subscriptions', 'groceries']
+    asset_category_list = ['stocks', 'property', 'misc']
+    expense_category_list = ['utilities', 'subscriptions', 'groceries']
     label_list = ['streaming', 'tv']
 
     def __init__(self, name: str, desc: str) -> None:
@@ -31,18 +32,34 @@ class FinanceObj:
         self.button_hover_message = f"Click to populate a list of {self.__str__()}s."
 
     @staticmethod
-    def __str__():
+    def __str__() -> str:
+        """
+        Returns a string representation of the class.
+        :return: The string representation.
+        """
         return f'Finance Object'
 
     @classmethod
-    def button_hover_message(cls):
+    def button_hover_message(cls) -> str:
+        """
+        Returns a message when the navigation button object is hovered over.
+        :return: The hover message.
+        """
         return f"Click to populate a list of {cls.__str__()}."
 
     @classmethod
-    def list_hover_message(cls):
+    def list_hover_message(cls) -> str:
+        """
+        Returns a message when the list button object is hovered over.
+        :return: The hover message.
+        """
         return f"Left click to see more detail. Right click to edit."
 
     def get_jsonification(self) -> dict:
+        """
+        Returns a dict representing the object that can be easily jsonified.
+        :return: The dict representing the object.
+        """
         jsonification = {
             'name': self._data.get('name'),
             'desc': self._data.get('desc'),
@@ -66,40 +83,79 @@ class FinanceObj:
         return self._data.get('desc')
 
     def get_data(self) -> dict:
+        """
+        Returns the data dictionary associated with this object.
+        :return: The data dict.
+        """
         return self._data
 
     def get_assumptions(self) -> dict:
+        """
+        Returns the dict of underlying assumptions associated with this object.
+        :return: The underlying assumptions dict.
+        """
         return self._assumptions
 
-    def data(self, key: str):
+    def data(self, key: str) -> (float, int, str):
         """
         Gets the value from the data dict.
+        :param key: the key value for the data.
         :return: The value for the given key.
         """
         return self._data.get(key)
 
-    def assume(self, key: str):
+    def assume(self, key: str) -> (float, int, str):
+        """
+        Gets the value from the assumptions dict.
+        :param key: the key value for the assumption.
+        :return: The value of the assumption for given key.
+        """
         return self._assumptions.get(key)
 
     def type(self) -> str:
+        """
+        Returns the type of Finance Object.
+        :return: The object type as string.
+        """
         return type(self).__name__
 
-    def activate(self, active=True):
+    def activate(self, active=True) -> None:
+        """
+        Activate the Finance Object.
+        :param active: sets the active indicator. True by default.
+        """
         self._active = active
 
-    def left_click(self, parent):
+    def left_click(self, parent) -> None:
+        """
+        Passthrough method for a left click on the list button. Populates the detail panel with additional information.
+        :param parent: The App object.
+        """
         parent.populate_detail(self)
         self._active = True
         parent.populate_list(refresh=True)
 
-    def right_click(self, parent):
+    def right_click(self, parent) -> None:
+        """
+        Passthrough method for a right click on the list button. Populates the editable view for the object.
+        :param parent: The App object.
+        """
         parent.populate_editable(self)
 
     def cancel(self, parent):
+        """
+        Method for a cancel of the Bottom Menu. Repopulates the list with the current context.
+        :param parent: The App object.
+        """
         parent.populate_list(refresh=True)
 
     # TODO validate input is correct
     def save(self, key, parent):
+        """
+        Saves a given key/value pair in the data dict. Called when changing focus in an editable view.
+        :param key: The key value in the data dict.
+        :param parent: The App object.
+        """
         f_var = self._form_vars.get(key)
         val = f_var.get()
         if isinstance(f_var, StringVar):
@@ -110,12 +166,17 @@ class FinanceObj:
         parent.populate_editable(self)
 
     def save_all(self, parent):
+        """
+        Save all key value pairs based on the current form_vars values.
+        :param parent: The App object.
+        """
         for key in self._form_vars:
             print('saving:', key)
             self._data.update({key: self._form_vars.get(key).get()})
         parent.save_fin_obj(self)
 
         parent.populate_list(refresh=True)
+        parent.populate_detail(self)
 
     # TODO implement
     @staticmethod
@@ -132,11 +193,44 @@ class FinanceObj:
 
     # TODO make standalone methods in app?
     def tk_line_break(self, root, index) -> int:
+        """
+        Creates a blank Label to serve as a space between rows.
+        :param root: The tk root object.
+        :param index: The current row index.
+        :return: The incremented index.
+        """
         tk.Label(root, text="").grid(column=0, row=index)
 
         return index + 1
 
-    def tk_editable_entry(self, key, text, root, parent, index, additional_info: str = None):
+    def tk_line(self, root, index, colspan=1, thickness=2, padding=5, color='black') -> int:
+        """
+        Creates a line using a colored tk Frame widget.
+        :param root: The tk root widget.
+        :param index: The current row index.
+        :param colspan: The column span for tk grid.
+        :param thickness: The thickness/height of the line.
+        :param padding: horizontal padding/margin for the line.
+        :param color: The color of the line.
+        :return: The incremented index.
+        """
+        line = tk.Frame(root, height=thickness)
+        line.grid(column=0, row=index, columnspan=colspan, padx=padding, sticky=W+E)
+        line['bg'] = color
+
+        return index + 1
+
+    def tk_editable_entry(self, key, text, root, parent, index, additional_info: str = None) -> int:
+        """
+        Creates an editable tk Entry widget with label and supplemental information.
+        :param key: The key for the data dict.
+        :param text: The label text.
+        :param root: The tk root.
+        :param parent: The App object.
+        :param index: The current row index.
+        :param additional_info: Supplemental label information.
+        :return: The incremented index.
+        """
         val = self.data(key)
         if val is None:
             raise ValueError
@@ -160,6 +254,16 @@ class FinanceObj:
         return index + 1
 
     def tk_editable_dropdown(self, key, text, values, root, parent, index) -> int:
+        """
+        Creates an editable tk dropdown widget with label.
+        :param key: The key for the data dict.
+        :param text: Text for the label.
+        :param values: Values for the dropdown list.
+        :param root: The tk root object.
+        :param parent: The App object.
+        :param index: The current row index.
+        :return: Returns the incremented row index.
+        """
         s_var = StringVar()
         s_var.set(self.data(key))
         self._form_vars.update({key: s_var})
@@ -171,11 +275,20 @@ class FinanceObj:
 
         return index + 1
 
-    def launch_assumption_window(self, parent):
+    def launch_assumption_window(self, parent) -> None:
+        """
+        Launches a new window to allow editing of underlying assumptions for the Finance Object.
+        :param parent: The App object.
+        """
         root = parent.get_root()
         AssumptionsWindow(root, parent, self)
 
-    def list_button_enter(self, parent, e):
+    def list_button_enter(self, parent, e) -> None:
+        """
+        Called when cursor enters the list button widget. Changes styling of the widget.
+        :param parent: The App object.
+        :param e: The cursor event.
+        """
         if e.widget.winfo_class() == 'Frame':
             widget = e.widget
         else:
@@ -192,7 +305,12 @@ class FinanceObj:
                 c['bg'] = Style.color('l_hover')
         parent.populate_info(self.list_hover_message())
 
-    def list_button_leave(self, parent, e):
+    def list_button_leave(self, parent, e) -> None:
+        """
+        Called when cursor leaves the list button. Changes styling of widget.
+        :param parent: The App object.
+        :param e: The cursor event.
+        """
         if e.widget.winfo_class() == 'Frame':
             widget = e.widget
         else:
@@ -209,7 +327,14 @@ class FinanceObj:
                 c['bg'] = Style.color('l_reset')
         parent.populate_info("")
 
-    def get_list_button(self, root, parent, name=None, desc=None):
+    def get_list_button(self, root, parent, name=None, desc=None) -> None:
+        """
+        Builds and returns a list button representation of this object using tkinter widgets.
+        :param root: The root frame used to build the editable view.
+        :param parent: The parent LeftPanel. Used for callbacks and lambda functions.
+        :param name: Used in the header, can be changed from default by calling child class.
+        :param desc: Used in the header, can be changed from default by calling child class.
+        """
         if name is None:
             name = self.data('name')
         if desc is None:
@@ -290,33 +415,37 @@ class FinanceObj:
 
         return frame, index
 
-    def get_detail(self, root, parent) -> tuple:
+    def get_detail(self, root, parent, name: str = None, desc: str = None) -> tuple:
         """
         Builds the tk Frame layout for the detailed panel. Typically called when a user left clicks from the list.
+        :param desc:
+        :param name:
         :param root: The root Tk Frame of the detail panel.
         :param parent: The LeftPanel object. Used for callbacks and lambda functions
         :return: Returns the frame and information panels to be used for inherited calls.
         """
+        index = 0
+        if name is None:
+            name = self.name()
+        if desc is None:
+            desc = self.desc()
+
         frame = tk.Frame(root)
-        frame.pack(fill='both')
-        frame.pack_propagate(False)
-        frame.grid_propagate(False)
+        frame.pack(fill=BOTH)
+        frame.pack_propagate(True)
+        frame.grid_propagate(True)
 
-        # TOP INFORMATION BANNER
-        information = tk.Frame(root, width=680, height=49, padx=10, pady=15)
-        information.grid(column=0, row=0, columnspan=7, sticky=W + E)
-        information.grid_propagate(False)
+        # Top title banner
+        title = tk.Frame(frame)
+        title.pack(fill=X, padx=10, pady=(15, 0))
+        title.grid_propagate(True)
+        title.pack_propagate(False)
 
-        name = tk.Label(information, text=self.name(), font=('bold', 14))
-        name.grid(column=0, row=0, sticky=W)
-        desc = tk.Label(information, text=self.desc(), font=('bold', 12))
-        desc.grid(column=0, row=1, sticky=W)
+        tk.Label(title, text=name, font=('bold', 14)).grid(column=0, row=0, sticky=W)
+        tk.Label(title, text=desc, font=('bold', 12)).grid(column=0, row=1, sticky=W)
+        self.tk_line(title, 2)
 
-        information['bg'] = Style.color('bg_header')
-        for c in information.winfo_children():
-            c['bg'] = Style.color('bg_header')
-
-        return frame, information
+        return frame
 
 
 # TODO add support for different assets like 401k, IRA, houses, bank accounts
@@ -376,7 +505,7 @@ class Assets(FinanceObj):
         index = self.tk_line_break(frame, index)
 
         # Labels and Categories
-        cat_list = super().category_list
+        cat_list = super().asset_category_list
         cat_list.sort()
         index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, parent, index)
         index = self.tk_editable_entry('label', 'Labels', frame, parent, index)
@@ -393,24 +522,37 @@ class Assets(FinanceObj):
         return frame, index
 
     def get_detail(self, root, parent) -> tuple:
-        frame, information = super().get_detail(root, parent)
+        frame = super().get_detail(root, parent)
 
-        category = tk.Frame(root, width=680, height=51)
-        category.grid(column=0, row=2, columnspan=7, sticky=N+S+W+E, pady=10, padx=10)
-        tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12)).grid(column=0, row=0)
-        tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 12)).grid(column=0, row=1)
+        category = tk.Frame(frame)
+        category.pack(fill=X, padx=10, pady=(15, 15))
+        category.pack_propagate(False)
+        category.grid_propagate(True)
 
-        main = tk.Frame(root, width=680, height=480, padx=10)
-        main.grid(column=0, row=3, columnspan=7, sticky=N+S+W+E)
-        main.grid_propagate(False)
-        index = 0
+        cat = tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12), anchor='w')
+        cat.grid(column=0, row=0, sticky=W+E)
+        labels = tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 10), anchor='w')
+        labels.grid(column=0, row=1, sticky=W+E)
+
+        main = tk.Frame(frame)
+        main.pack(fill=BOTH, padx=10)
+        main.pack_propagate(False)
+        main.grid_propagate(True)
+
+        tk.Label(main, text='Description').grid(column=0, row=0, sticky=W+E)
+        tk.Label(main, text='Value').grid(column=1, row=0, sticky=W+E)
+
+        index = 1
         for asset in self._assets:
-            print(index)
-            tk.Label(main, text=f'${asset.amount:,}').grid(column=0, row=index, sticky=W+E)
-            tk.Label(main, text=asset.desc).grid(column=1, row=index, sticky=W+E)
+            tk.Label(main, text=asset.desc).grid(column=0, row=index, sticky=W+E)
+            tk.Label(main, text=f'${asset.amount:,}').grid(column=1, row=index, sticky=W+E)
             index += 1
-        tk.Label(main, text=f'${self.get_total():,}').grid(column=0, row=index, sticky=W+E)
-        tk.Label(main, text='Total').grid(column=1, row=index, sticky=W+E)
+
+        index = self.tk_line(main, index, colspan=2)
+        tk.Label(main, text='Total').grid(column=0, row=index, sticky=W+E, pady=(10, 0))
+        tk.Label(main, text=f'${self.get_total():,}').grid(column=1, row=index, sticky=W+E, pady=(10, 0))
+
+        return frame
 
 
 # TODO assert instead of if statements
@@ -497,7 +639,7 @@ class Expenses(FinanceObj):
         index = self.tk_line_break(frame, index)
 
         # Labels and Categories
-        cat_list = super().category_list
+        cat_list = super().expense_category_list
         cat_list.sort()
         index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, parent, index)
         index = self.tk_editable_entry('label', 'Labels', frame, parent, index)
@@ -514,25 +656,37 @@ class Expenses(FinanceObj):
         return frame, index
 
     def get_detail(self, root, parent) -> tuple:
-        frame, information = super().get_detail(root, parent)
+        frame = super().get_detail(root, parent)
 
-        category = tk.Frame(root, width=680, height=51)
-        category.grid(column=0, row=2, columnspan=7, sticky=N+S+W+E, pady=10, padx=10)
-        tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12)).grid(column=0, row=0)
-        tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 12)).grid(column=0, row=1)
+        category = tk.Frame(frame)
+        category.pack(fill=X, padx=10, pady=(15, 15))
+        category.pack_propagate(False)
+        category.grid_propagate(True)
 
-        main = tk.Frame(root, width=680, height=480, padx=10)
-        main.grid(column=0, row=3, columnspan=7, sticky=N+S+W+E)
-        main.grid_propagate(False)
-        index = 0
+        cat = tk.Label(category, text=f'Category: {self.data("category")}', font=('bold', 12), anchor='w')
+        cat.grid(column=0, row=0, sticky=W+E)
+        labels = tk.Label(category, text=f'Labels: {self.data("label")}', font=('bold', 10), anchor='w')
+        labels.grid(column=0, row=1, sticky=W+E)
+
+        main = tk.Frame(frame)
+        main.pack(fill=BOTH, padx=10)
+        main.pack_propagate(False)
+        main.grid_propagate(True)
+
+        tk.Label(main, text='Description').grid(column=0, row=0, sticky=W+E)
+        tk.Label(main, text='Amount').grid(column=1, row=0, sticky=W+E)
+
+        index = 1
         for expense in self._expenses:
-            print(index)
-            tk.Label(main, text=f'${expense.amount:,}').grid(column=0, row=index, sticky=W+E)
-            tk.Label(main, text=expense.desc).grid(column=1, row=index, sticky=W+E)
+            tk.Label(main, text=expense.desc).grid(column=0, row=index, sticky=W+E)
+            tk.Label(main, text=f'${expense.amount:,}').grid(column=1, row=index, sticky=W+E)
             index += 1
-        tk.Label(main, text=f'${self.get_total():,}').grid(column=0, row=index, sticky=W+E)
-        tk.Label(main, text='Total').grid(column=1, row=index, sticky=W+E)
 
+        index = self.tk_line(main, index, colspan=2)
+        tk.Label(main, text='Total').grid(column=0, row=index, sticky=W+E, pady=(10, 0))
+        tk.Label(main, text=f'${self.get_total():,}').grid(column=1, row=index, sticky=W+E, pady=(10, 0))
+
+        return frame
 
 
 class Income(FinanceObj):
@@ -752,6 +906,10 @@ class Job(FinanceObj):
 
     # TODO implement
     def get_jsonification(self) -> dict:
+        """
+        Returns a dict representing the object that can be easily jsonified.
+        :return: The dict representing the object.
+        """
         pass
 
     def get_annual_income(self) -> (int, float):

@@ -477,7 +477,8 @@ def main():
     fin_vars = {
         'scenarios': [Scenario('test scenario', 'scenario description')],
         'jobs': [Job('Data Analyst II', 'Cerner Corporation'), Job('Data Analyst I', 'Cerner Corporation')],
-        'assets': [],
+        'assets': [Assets('test', "A new Asset")],
+        'expenses': [Expenses('exp', 'Test Expense')],
         'mortgages': [Mortgage('7129 Grand Ave', 'Kansas City, MO 64114')],
         'student loans': [Student('Virginia Tech', 'BA in English Literature')],
         'loans': [Loan('test loan', 'test description')],

@@ -204,9 +204,9 @@ class AssetWindow(Window):
         tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
 
-        tk.Label(frame, text='Expense Description').grid(column=0, row=2, columnspan=4)
+        tk.Label(frame, text='Description').grid(column=0, row=2, columnspan=4)
         tk.Entry(frame, textvariable=self._desc).grid(column=0, row=3, columnspan=4)
-        tk.Label(frame, text='Monthly Amount').grid(column=4, row=2, columnspan=2)
+        tk.Label(frame, text='Asset Value').grid(column=4, row=2, columnspan=2)
         tk.Entry(frame, textvariable=self._amount).grid(column=4, row=3, columnspan=2)
         add_button = tk.Button(frame, text='Add', width=6)
         add_button.grid(column=6, row=3, sticky=W + E)
