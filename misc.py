@@ -222,6 +222,7 @@ class AssetWindow(Window):
             last += 1
 
 
+# TODO support for infinite upper range
 class BracketWindow(Window):
     """
     Class representing a window to add and delete brackets.
@@ -265,7 +266,7 @@ class BracketWindow(Window):
             c.destroy()
 
         frame = self._frame
-        bracket_list = self._fin_obj.get_assets()
+        bracket_list = self._fin_obj.get_brackets()
 
         tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
         tk.Label(frame, text="").grid(column=0, row=1)
@@ -280,8 +281,14 @@ class BracketWindow(Window):
 
         last = 6
         for i in range(len(bracket_list)):
-            tk.Label(frame, text=bracket_list[i].rate).grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
-            tk.Label(frame, text=bracket_list[i].upper).grid(column=2, row=6 + i, columnspan=2, sticky=W + E)
+            if i == 0:
+                lower = 0
+            else:
+                lower = bracket_list[i-1].upper + 1
+            upper = f'${lower:,} to ${bracket_list[i].upper:,}'
+
+            tk.Label(frame, text=f'{bracket_list[i].rate}%').grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
+            tk.Label(frame, text=upper).grid(column=2, row=6 + i, columnspan=2, sticky=W + E)
             del_button = tk.Button(frame, text="Delete", width=6)
             del_button.bind("<Button-1>", lambda e, p=bracket_list[i]: self.delete_extra_payment(p))
             del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)

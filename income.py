@@ -166,6 +166,12 @@ class FinanceObj:
         self._data.update({key: val})
         self._app.populate_editable(self)
 
+    def copy(self):
+        new_fin_obj = self.__class__(self._app, '', '')
+        new_fin_obj.get_data().update(self.get_data().copy())
+        new_fin_obj.get_data().update({'name': f'Copy of {self.data("name")}'})
+        self._app.copy_existing_fin_object(new_fin_obj)
+
     def save_all(self):
         """
         Save all key value pairs based on the current form_vars values.
@@ -409,6 +415,9 @@ class FinanceObj:
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(4, weight=0)
 
+        copy = tk.Button(frame, text='Copy')
+        copy.grid(column=2, row=index)
+        copy.bind('<Button-1>', lambda e: self.copy())
         save = tk.Button(frame, text='Save')
         save.grid(column=3, row=index)
         save.bind('<Button-1>', lambda e: self.save_all())
@@ -578,7 +587,7 @@ class Expenses(FinanceObj):
         """
         Initializes the Expenses object with a name, description, and dictionary of expenses.
         """
-        super(Expenses, self).__init__(app, name, desc)
+        super().__init__(app, name, desc)
         self._data.update({
             'category': "",
             'label': ""
@@ -715,7 +724,7 @@ class TaxBracket(FinanceObj):
     """
 
     def __init__(self, app, name: str, desc: str = "") -> None:
-        super(TaxBracket, self).__init__(app, name, desc)
+        super().__init__(app, name, desc)
         self._brackets = []
         self._data.update({
             'state': '',
@@ -852,13 +861,16 @@ class TaxBracket(FinanceObj):
         :return: Returns the frame and current index to be used in inherited calls.
         """
         frame, index = super().get_editable(root)
+        index = self.tk_line_break(frame, index)
 
         index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, index)
+        index = self.tk_editable_dropdown('status', 'Filing Status:', self._valid_status, frame, index)
+        index = self.tk_line_break(frame, index)
+
         if self.data('type').capitalize() == 'State':
             index = self.tk_editable_entry('state', "State", frame, index)
         elif self.data('type').capitalize() == 'Local':
             index = self.tk_editable_entry('locality', "Locality", frame, index)
-        index = self.tk_editable_dropdown('filing status', 'Filing Status', self._valid_status, frame, index)
 
         brackets = tk.Button(frame, text="Define Brackets")
         brackets.grid(column=2, row=index, columnspan=2, sticky=W + E)
