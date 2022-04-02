@@ -310,12 +310,13 @@ class ExtraPaymentWindow(Window):
         super().__init__(root, parent, loan, title)
 
     def new_extra_payment(self):
+        extra_payments = self._fin_obj.get_extra_payments()
         try:
             if self._start.get() == 0 or self._duration.get() == 0 or self._amount.get() == 0:
                 ErrorBox(self._root, "invalid inputs")
             else:
                 new_extra_payment = ExtraPayment(self._start.get(), self._duration.get(), self._amount.get())
-                self._loan.add_extra_payment(new_extra_payment)
+                extra_payments.append(new_extra_payment)
             self.populate()
         except tkinter.TclError:
             ErrorBox(self._root, "invalid inputs")
@@ -324,9 +325,9 @@ class ExtraPaymentWindow(Window):
         self._amount.set(0)
 
     def delete_extra_payment(self, extra_payment):
-        extra_payments_list = self._loan.get_extra_payments()
-        if extra_payment in extra_payments_list:
-            extra_payments_list.remove(extra_payment)
+        extra_payments = self._fin_obj.get_extra_payments()
+        if extra_payment in extra_payments:
+            extra_payments.remove(extra_payment)
         self.populate()
 
     def populate(self):
@@ -501,7 +502,9 @@ class Style:
         'b_active_hover': 'dark turquoise',
         'fin_type': 'red',
         'save_button': 'green',
-        'save_button_hover': 'darkgreen'
+        'save_button_hover': 'darkgreen',
+        'detail title': 'darkblue',
+        'detail subtitle': 'blue'
     }
 
     @classmethod

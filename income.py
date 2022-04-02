@@ -171,6 +171,7 @@ class FinanceObj:
         new_fin_obj.get_data().update(self.get_data().copy())
         new_fin_obj.get_data().update({'name': f'Copy of {self.data("name")}'})
         self._app.copy_existing_fin_object(new_fin_obj)
+        self._app.populate_info(f'Successfully copied "{self.data("name")}"!')
 
     def save_all(self):
         """
@@ -178,12 +179,12 @@ class FinanceObj:
         :param parent: The App object.
         """
         for key in self._form_vars:
-            print('saving:', key)
             self._data.update({key: self._form_vars.get(key).get()})
         self._app.save_fin_obj(self)
 
         self._app.populate_list(refresh=True)
         self._app.populate_detail(self)
+        self._app.populate_info(f'Successfully saved "{self.data("name")}"!')
 
     # TODO implement
     @staticmethod
@@ -262,14 +263,14 @@ class FinanceObj:
         s_var.set(val)
         self._form_vars.update({key: s_var})
 
-        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
+        tk.Label(root, text=text, anchor='e').grid(column=0, row=index, sticky=W + E, padx=(0, 2))
         entry = tk.Entry(root, name=key, textvariable=s_var)
         col_span = 2
         if additional_info is not None:
             col_span = 1
-            tk.Label(root, text=additional_info, anchor='e').grid(column=3, row=index, columnspan=col_span,
+            tk.Label(root, text=additional_info, anchor='e').grid(column=2, row=index, columnspan=col_span,
                                                                   sticky=W + E)
-        entry.grid(column=2, row=index, columnspan=col_span, sticky=W + E)
+        entry.grid(column=1, row=index, columnspan=col_span, sticky=W + E)
         entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
 
         return index + 1
@@ -290,8 +291,8 @@ class FinanceObj:
         self._form_vars.update({key: s_var})
 
         dropdown = tk.OptionMenu(root, s_var, *values)
-        tk.Label(root, text=text, anchor='e').grid(column=1, row=index, sticky=W + E, padx=(0, 2))
-        dropdown.grid(column=2, row=index, columnspan=2, sticky=W + E)
+        tk.Label(root, text=text, anchor='e').grid(column=0, row=index, sticky=W + E, padx=(0, 2))
+        dropdown.grid(column=1, row=index, columnspan=2, sticky=W + E)
         s_var.trace('w', lambda e, f, g, k=key: self.save(k))
 
         return index + 1
@@ -408,25 +409,29 @@ class FinanceObj:
             desc = "Description"
 
         frame = tk.Frame(root)
-        frame.pack(fill='both')
+        frame.pack(fill='both', padx=10, pady=10)
         frame.columnconfigure(0, weight=0)
         frame.columnconfigure(1, weight=2)
         frame.columnconfigure(2, weight=2)
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(4, weight=0)
 
-        copy = tk.Button(frame, text='Copy')
-        copy.grid(column=2, row=index)
+        top_buttons = tk.Frame(frame)
+        top_buttons.grid(column=0, row=index, columnspan=3, sticky=E)
+
+        copy = tk.Label(top_buttons, text='Copy')
+        copy.grid(column=0, row=0)
         copy.bind('<Button-1>', lambda e: self.copy())
-        save = tk.Button(frame, text='Save')
-        save.grid(column=3, row=index)
+        save = tk.Button(top_buttons, text='Save')
+        save.grid(column=1, row=0)
         save.bind('<Button-1>', lambda e: self.save_all())
-        cancel = tk.Button(frame, text='X', anchor='e')
-        cancel.grid(column=4, row=index)
+        cancel = tk.Button(top_buttons, text='X ', anchor='e')
+        cancel.grid(column=2, row=0)
         cancel.bind('<Button-1>', lambda e: self.cancel())
         index += 1
+
         assumptions_button = tk.Button(frame, text='Assumptions')
-        assumptions_button.grid(column=3, row=index, columnspan=2)
+        assumptions_button.grid(column=2, row=index)
         assumptions_button.bind('<Button-1>', lambda e: self.launch_assumption_window())
         if len(self._assumptions) < 1:
             assumptions_button['state'] = 'disabled'
@@ -457,14 +462,19 @@ class FinanceObj:
         frame.grid_propagate(True)
 
         # Top title banner
-        title = tk.Frame(frame)
-        title.pack(fill=X, padx=10, pady=(15, 0))
+        title = tk.Frame(frame, width=700)
+        title.pack(fill=X, expand=True, padx=10, pady=(15, 0))
         title.grid_propagate(True)
         title.pack_propagate(False)
+        title.columnconfigure(0, weight=1)
 
-        tk.Label(title, text=name, font=('bold', 14)).grid(column=0, row=0, sticky=W)
-        tk.Label(title, text=desc, font=('bold', 12)).grid(column=0, row=1, sticky=W)
-        self.tk_line(title, 2)
+        t1 = tk.Label(title, text=name, font=('bold', 14), anchor='w')
+        t1.grid(column=0, row=0, sticky=W+E)
+        t1['fg'] = Style.color('detail title')
+        t2 = tk.Label(title, text=desc, font=('bold', 12), anchor='w')
+        t2.grid(column=0, row=1, sticky=W+E)
+        t2['fg'] = Style.color('detail subtitle')
+        self.tk_line(title, 2, padding=0)
 
         return frame
 
