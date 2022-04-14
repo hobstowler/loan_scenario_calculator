@@ -211,7 +211,7 @@ class FinanceObj:
 
         return index + 1
 
-    def tk_line(self, root, index, colspan=1, thickness=2, padding=5, color='black') -> int:
+    def tk_line(self, root, index, column=0, colspan=1, thickness=2, padding=0, color='black') -> int:
         """
         Creates a line using a colored tk Frame widget.
         :param root: The tk root widget.
@@ -223,9 +223,14 @@ class FinanceObj:
         :return: The incremented index.
         """
         line = tk.Frame(root, height=thickness)
-        line.grid(column=0, row=index, columnspan=colspan, padx=padding, sticky=W+E)
+        line.grid(column=column, row=index, columnspan=colspan, padx=padding, sticky=W+E)
         line['bg'] = color
 
+        return index + 1
+
+    def tk_list_pair(self, text_1, text_2, root, index):
+        tk.Label(root, text=text_1, anchor='e').grid(column=0, row=index, sticky=W + E)
+        tk.Label(root, text=text_2, anchor='e').grid(column=1, row=index, sticky=W + E)
         return index + 1
 
     def tk_checkbox(self, key, text, root, index, additional_info: str = None) -> int:
@@ -258,6 +263,7 @@ class FinanceObj:
             raise ValueError
         elif isinstance(val, int) or isinstance(val, float):
             s_var = tk.DoubleVar()
+            # TODO format numbers
         else:
             s_var = tk.StringVar()
         s_var.set(val)
@@ -451,6 +457,7 @@ class FinanceObj:
         :param root: The root Tk Frame of the detail panel.
         :return: Returns the frame and information panels to be used for inherited calls.
         """
+        print(root.winfo_name())
         if name is None:
             name = self.name()
         if desc is None:
@@ -815,31 +822,16 @@ class TaxBracket(FinanceObj):
                 return self._brackets.index(r)
         return None
 
-    def calculate_taxed_amount(self, income):
+    def calculate_taxed_amount(self, income) -> tuple:
         """
         Calculates the total taxed amount and the effective tax rate for a given income.
         :param income: The yearly income to be taxed
         :return: A list of the taxed amount and the effective rate.
         """
         if len(self._brackets) == 0:
-            return None
+            return 0
 
         taxed_amount = 0
-        if self._tax_type.capitalize() == "Federal":
-            income -= self._standard_deduction
-
-            # Social Security Amount
-            if income < 147000:
-                taxed_amount += income * 0.062
-            else:
-                taxed_amount += 147000 * 0.062
-
-            # Medicare Amount
-            if income < 200000:
-                taxed_amount += income * 0.0145
-            else:
-                taxed_amount += ((200000 * 0.0145) + ((income - 200000) * 0.0235))
-
         for i in range(0, len(self._brackets)):
             if i == 0:
                 if income >= self._brackets[i][0]:
@@ -854,7 +846,10 @@ class TaxBracket(FinanceObj):
                 elif income < upper_range and income > lower_range:
                     taxed_amount += (income - lower_range) * self._brackets[i][1]
 
-        return [round(taxed_amount, 2), round(100 * taxed_amount / income, 4)]
+        taxed_amount = round(taxed_amount, 2)
+        effective_rate = round(100 * taxed_amount / income, 4)
+
+        return taxed_amount, effective_rate
 
     def launch_bracket_editor(self):
         root = self._app.get_root()
@@ -874,13 +869,14 @@ class TaxBracket(FinanceObj):
         index = self.tk_line_break(frame, index)
 
         index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, index)
-        index = self.tk_editable_dropdown('status', 'Filing Status:', self._valid_status, frame, index)
-        index = self.tk_line_break(frame, index)
 
         if self.data('type').capitalize() == 'State':
             index = self.tk_editable_entry('state', "State", frame, index)
         elif self.data('type').capitalize() == 'Local':
             index = self.tk_editable_entry('locality', "Locality", frame, index)
+
+        index = self.tk_editable_dropdown('status', 'Filing Status:', self._valid_status, frame, index)
+        index = self.tk_line_break(frame, index)
 
         brackets = tk.Button(frame, text="Define Brackets")
         brackets.grid(column=2, row=index, columnspan=2, sticky=W + E)
@@ -892,6 +888,38 @@ class TaxBracket(FinanceObj):
         name = self.data('type')
         desc = self.data('status')
         super().get_list_button(root, name, desc)
+
+    def get_detail(self, root):
+        frame = super().get_detail(root)
+
+        summary_panel = tk.Frame(frame, width=700)
+        summary_panel.pack(fill=X, expand=True, padx=10, pady=(15, 0))
+        summary_panel.columnconfigure(0, weight=1)
+
+        type_text = f'{self.data("type")}, {self.data("status")}'
+        type_status = tk.Label(summary_panel, text=type_text, anchor='w', font=11)
+        type_status.grid(column=0, row=0, sticky=W+E)
+        if self.data('type').capitalize() == 'State':
+            state = tk.Label(summary_panel, text=f'State: {self.data("state")}', anchor='w', font=10)
+            state.grid(row=1, column=0, sticky=W+E)
+        elif self.data('type').capitalize() == 'Local':
+            local = tk.Label(summary_panel, text=f'Locality: {self.data("locality")}', anchor='w', font=10)
+            local.grid(row=1, column=0, sticky=W+E)
+        self.tk_line(summary_panel, 2, padding=0, thickness=1)
+
+        bracket_panel = tk.Frame(frame)
+        bracket_panel.pack(fill=BOTH, padx=10, pady=15)
+        index = 0
+        index = self.tk_list_pair('Rate', "Taxable Range", bracket_panel, index)
+        index = self.tk_line(bracket_panel, index, colspan=2, padding=0)
+        for i in range(len(self._brackets)):
+            if i != 0:
+                prev_bracket = self._brackets[i-1]
+            else:
+                prev_bracket = Bracket(0, -0.01)
+            bracket = self._brackets[i]
+            bounds = f'${prev_bracket.upper + 0.01:,} to {bracket.upper:,}'
+            index = self.tk_list_pair(f'{bracket.rate}%', bounds, bracket_panel, index)
 
 
 class Job(FinanceObj):
@@ -914,7 +942,9 @@ class Job(FinanceObj):
         self._assumptions.update({
             'social security rate': 6.2,
             'social security cap': 147000,
-            'medicate tax rate': 1.45
+            'medicare tax rate': 1.45,
+            'employer match': 6,
+            'employer match rate': 50
         })
 
         self._taxes = []
@@ -930,6 +960,9 @@ class Job(FinanceObj):
             'Quarterly': 4,
             'Annually': 1
         }
+        self._breakdowns = ['Annual', 'Monthly']
+        self._breakdown = StringVar()
+        self._breakdown.set("Annual")
 
         self.button_hover_message = f"Click to populate a list of {self.__str__()}s."
 
@@ -973,8 +1006,7 @@ class Job(FinanceObj):
         income = self.data('income')
         total_deduction = 0
         total_deduction += self.get_401k_amount()
-        for deduction in self._pre_tax_deductions:
-            total_deduction += deduction.amount
+        total_deduction += self._pre_tax_deductions.get_total()
 
         return round(income - total_deduction, 2)
 
@@ -989,8 +1021,8 @@ class Job(FinanceObj):
 
         for tax in self._taxes:
             taxed_amount += tax.calculate_taxed_amount(income)
-        for deduction in self._post_tax_deductions:
-            total_deduction += deduction.amount
+        total_deduction += self._post_tax_deductions.get_total()
+
         taxed_amount += self.get_social_security_taxed_amount()
         taxed_amount += self.get_medicare_taxed_amount()
         taxed_amount += self.get_roth_amount()
@@ -1000,18 +1032,19 @@ class Job(FinanceObj):
     # TODO calculate employer responsibility
     def get_social_security_taxed_amount(self):
         cap = self.assume('social security cap')
-        rate = self.assume('social security rate')
+        rate = self.assume('social security rate') / 100
         income = self.get_annual_income()
+        pay_periods = self.get_pay_periods()
         if income <= cap:
-            return rate * income / 100
+            return round((rate * income) / pay_periods, 2)
         else:
-            return rate * cap / 100
+            return round((rate * cap) / pay_periods, 2)
 
     # TODO calculate employer responsibility
     def get_medicare_taxed_amount(self):
-        rate = self.assume('medicare tax rate')
+        rate = self.assume('medicare tax rate') / 100
         income = self.data('income')
-        return rate * income / 100
+        return round(rate * income, 2)
 
     def launch_deduction_selector(self, expense):
         root = self._app.get_root()
@@ -1081,3 +1114,101 @@ class Job(FinanceObj):
         index += 1
 
         return frame, index
+
+    def get_detail(self, root, name: str = None, desc: str = None) -> tuple:
+        frame = super().get_detail(root)
+
+        pay_periods = self.get_pay_periods()
+
+        breakdown = tk.Frame(frame)
+        breakdown.pack(fill=X, padx=10, pady=15)
+        breakdown.columnconfigure(0, weight=1)
+        breakdown.columnconfigure(1, weight=1)
+
+        income = tk.Frame(breakdown, height=200)
+        income.grid(column=0, row=0, sticky=W+E)
+
+        index = 0
+        tk.Label(income, text="Income Breakdown", anchor='w')\
+            .grid(column=0, row=index, columnspan=2, sticky=W+E)
+        tk.OptionMenu(income, self._breakdown, *self._breakdowns).grid(column=2, row=index, columnspan=2, sticky=W+E)
+        index += 1
+        index = self.tk_line(income, index, colspan=4)
+        index = self.tk_line_break(income, index)
+
+        # Gross Income
+        tk.Label(income, text="Income per pay period:", anchor='e')\
+            .grid(column=0, row=index, columnspan=3, sticky=W+E)
+        tk.Label(income, text=f"{self.data('income'):,}", anchor='e').grid(column=3, row=index, sticky=W+E)
+        index += 1
+
+        tk.Label(income, text=f"Pay periods ({self.data('pay frequency')}):", anchor='e')\
+            .grid(column=0, row=index, columnspan=3, sticky=W+E)
+        tk.Label(income, text=f"{pay_periods}", anchor='e').grid(column=3, row=index, sticky=W+E)
+        index += 1
+
+        index = self.tk_line(income, index, column=3)
+
+        tk.Label(income, text="Annual Gross Income:", anchor='e')\
+            .grid(column=0, row=index, columnspan=3, sticky=W+E)
+        tk.Label(income, text=f"{self.get_annual_income():,}", anchor='e').grid(column=3, row=index, sticky=W+E)
+        index += 1
+
+        index = self.tk_line_break(income, index)
+
+        # Pre Tax Net Income
+        tk.Label(income, text="Pre-Tax Deductions:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        pre_tax_amount = self._pre_tax_deductions.get_total() * pay_periods
+        tk.Label(income, text=f"{pre_tax_amount:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        tk.Label(income, text="401k Contributions:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        pre_tax_retirement = self.get_401k_amount() * pay_periods
+        tk.Label(income, text=f"{pre_tax_retirement:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        index = self.tk_line(income, index, column=3)
+        pre_tax_income = self.get_pretax_income() * pay_periods
+        tk.Label(income, text=f"{pre_tax_income:,}").grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        index = self.tk_line_break(income, index)
+
+        # Post Tax Net Income
+        tk.Label(income, text="Post-Tax Deductions:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        post_tax_amount = self._post_tax_deductions.get_total() * pay_periods
+        tk.Label(income, text=f"{post_tax_amount:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        tk.Label(income, text="Roth Contributions:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        post_tax_retirement = self.get_roth_amount() * pay_periods
+        tk.Label(income, text=f"{post_tax_retirement:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        tk.Label(income, text="Social Security Tax:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        social_security = self.get_social_security_taxed_amount() * pay_periods
+        tk.Label(income, text=f"{social_security:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        tk.Label(income, text="Medicare Tax:", anchor='e') \
+            .grid(column=0, row=index, columnspan=3, sticky=W + E)
+        medicare = self.get_medicare_taxed_amount() * pay_periods
+        tk.Label(income, text=f"{medicare:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        index = self.tk_line(income, index, column=3)
+        post_tax_income = self.get_posttax_income() * pay_periods
+        tk.Label(income, text=f"{post_tax_income:,}", anchor='e').grid(column=3, row=index, sticky=W + E)
+        index += 1
+
+        index = self.tk_line_break(income, index)
+
+        retirement = tk.Frame(breakdown, height=200)
+        retirement.grid(column=1, row=0, sticky=W+E)
+
+        return frame

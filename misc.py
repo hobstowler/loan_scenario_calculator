@@ -413,7 +413,7 @@ class Selector(Window):
 class ExpenseSelector(Selector):
     def __init__(self, root, parent, expenses):
         self._all_expenses: list = parent.get_fin_vars('expenses')
-        self._expenses: list = expenses
+        self._expenses: list = expenses.get_expenses()
         super().__init__(root, parent, expenses)
 
     def add_remove_expense(self, expense, check_var):

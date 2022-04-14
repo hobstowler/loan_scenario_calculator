@@ -80,6 +80,10 @@ class Loan(FinanceObj):
     def get_extra_payments(self) -> list:
         return self._extra_payments
 
+    def launch_extra_payment_editor(self):
+        root = self._app.get_root()
+        ExtraPaymentWindow(root, self._app, self)
+
     # TODO support for insurance and property tax escrow
     def amortization_schedule(self, extra_payments=False) -> dict:
         """
@@ -272,10 +276,6 @@ class Mortgage(Loan):
         total = round(monthly + escrow, 2)
         self._data.update({'total monthly': total})
         return total
-
-    def launch_extra_payment_editor(self):
-        root = self._app.get_root()
-        ExtraPaymentWindow(root, self._app, self)
 
     def get_editable(self, root) -> tuple:
         frame, index = super().get_editable(root, "Street Address", "City, State ZIP")
