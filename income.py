@@ -248,7 +248,7 @@ class FinanceObj:
         :param additional_info:
         :return:
         """
-
+        # TODO implement
         return index + 1
 
     def tk_editable_entry(self, key, text, root, index, additional_info: str = None) -> int:
@@ -257,7 +257,6 @@ class FinanceObj:
         :param key: The key for the data dict.
         :param text: The label text.
         :param root: The tk root.
-        :param parent: The App object.
         :param index: The current row index.
         :param additional_info: Supplemental label information.
         :return: The incremented index.
@@ -857,6 +856,7 @@ class TaxBracket(FinanceObj):
                     taxed_amount += amount
                 elif income < upper_range and income > lower_range:
                     amount = (income - lower_range) * self._brackets[i].rate / 100
+                    print('upper:', upper_range, 'lower:', lower_range)
                     print(amount)
                     taxed_amount += amount
 
@@ -1009,12 +1009,12 @@ class Job(FinanceObj):
         return self._num_pay_periods.get(self.data('pay frequency'))
 
     def get_401k_amount(self) -> (int, float):
-        return round(self.data('401k rate') * self.data('income') / 100, 2)
+        return self.data('401k rate') * self.data('income') / 100
 
     def get_roth_amount(self):
-        return round(self.data('roth rate') * self.data('income') / 100, 2)
+        return self.data('roth rate') * self.data('income') / 100
 
-    def get_pretax_income(self) -> (int, float):
+    def get_pretax_income(self, pay_periods=1) -> (int, float):
         """
         Returns the net amount before taxes and post tax deductions are applied.
         :return: The pre tax annual income.
@@ -1027,7 +1027,7 @@ class Job(FinanceObj):
         return round(income - total_deduction, 2)
 
     def get_taxed_amounts(self):
-        income = self.get_annual_income() * self.get_pay_periods()
+        income = self.get_annual_income()
         federal = 0
         state = 0
         local = 0
@@ -1231,6 +1231,10 @@ class Job(FinanceObj):
         post_tax_amount = locale.currency(self._post_tax_deductions.get_total() * pay_periods, grouping=True)
         post_tax_retirement = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
         federal, state, local = self.get_taxed_amounts()
+        if self._breakdown.get() == "Monthly":
+            federal /= 12
+            state /= 12
+            local /= 12
         federal = locale.currency(federal, grouping=True)
         state = locale.currency(state, grouping=True)
         local = locale.currency(local, grouping=True) if local != 0 else 0
