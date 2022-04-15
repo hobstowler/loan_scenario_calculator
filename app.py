@@ -2,6 +2,7 @@
 # Date: 12/1/2021
 # Description:
 
+import locale
 import tkinter as tk
 from tkinter import N, W, S, E, RIGHT, ttk
 
@@ -205,7 +206,6 @@ class App:
         """
         Class representing an informational panel in the bottom right of the screen.
         """
-
         def __init__(self, root: tk.Tk) -> None:
             """
             Initializes the information panel.
@@ -492,6 +492,8 @@ class App:
 
 
 def main():
+    locale.setlocale(locale.LC_ALL, '')
+
     # create the root
     root = tk.Tk()
     #root.overrideredirect(True)
