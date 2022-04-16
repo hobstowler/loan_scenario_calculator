@@ -389,7 +389,6 @@ class Mortgage(Loan):
         tree.heading('accelerated interest', text='Interest')
         tree.column('extra payment', width=50)
         tree.heading('extra payment', text='Extra Payment')
-        tree.insert('', 'end', 'schedule', text='test')
 
         s1 = comparison.get('no extra').get('schedule')
         s2 = comparison.get('extra').get('schedule')

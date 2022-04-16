@@ -1009,25 +1009,25 @@ class Job(FinanceObj):
         return self._num_pay_periods.get(self.data('pay frequency'))
 
     def get_401k_amount(self) -> (int, float):
-        return round(self.data('401k rate') * self.data('income') / 100, 2)
+        return round(self.data('401k rate') * self.get_annual_income() / 100, 2)
 
     def get_roth_amount(self):
-        return round(self.data('roth rate') * self.data('income') / 100, 2)
+        return round(self.data('roth rate') * self.get_annual_income() / 100, 2)
 
     def get_pretax_income(self) -> (int, float):
         """
         Returns the net amount before taxes and post tax deductions are applied.
         :return: The pre tax annual income.
         """
-        income = self.data('income')
+        income = self.get_annual_income()
         total_deduction = 0
         total_deduction += self.get_401k_amount()
-        total_deduction += self._pre_tax_deductions.get_total()
+        total_deduction += self._pre_tax_deductions.get_total() * self.get_pay_periods()
 
-        return round(income - total_deduction, 2)
+        return income - total_deduction
 
     def get_taxed_amounts(self):
-        income = self.get_annual_income() * self.get_pay_periods()
+        income = self.get_annual_income()
         federal = 0
         state = 0
         local = 0
@@ -1057,7 +1057,7 @@ class Job(FinanceObj):
         taxed_amount += federal
         taxed_amount += state
         taxed_amount += local
-        total_deduction += self._post_tax_deductions.get_total()
+        total_deduction += self._post_tax_deductions.get_total() * self.get_pay_periods()
 
         taxed_amount += self.get_social_security_taxed_amount()
         taxed_amount += self.get_medicare_taxed_amount()
@@ -1070,17 +1070,17 @@ class Job(FinanceObj):
         cap = self.assume('social security cap')
         rate = self.assume('social security rate') / 100
         income = self.get_annual_income()
-        pay_periods = self.get_pay_periods()
+
         if income <= cap:
-            return round((rate * income) / pay_periods, 2)
+            return rate * income
         else:
-            return round((rate * cap) / pay_periods, 2)
+            return rate * cap
 
     # TODO calculate employer responsibility
     def get_medicare_taxed_amount(self):
         rate = self.assume('medicare tax rate') / 100
-        income = self.data('income')
-        return round(rate * income, 2)
+        income = self.get_annual_income()
+        return rate * income
 
     def launch_deduction_selector(self, expense):
         root = self._app.get_root()
@@ -1154,7 +1154,7 @@ class Job(FinanceObj):
     def get_detail(self, root, name: str = None, desc: str = None) -> tuple:
         frame = super().get_detail(root)
 
-        pay_periods = self.get_pay_periods()
+        monthly_factor = 1
 
         breakdown = tk.Frame(frame)
         breakdown.pack(fill=X, padx=10, pady=15)
@@ -1184,7 +1184,7 @@ class Job(FinanceObj):
 
         tk.Label(income, text=f"Pay periods ({self.data('pay frequency')}):", anchor='e')\
             .grid(column=0, row=index, columnspan=3, sticky=W+E)
-        tk.Label(income, text=f"x {pay_periods}", anchor='e').grid(column=3, row=index, sticky=W+E)
+        tk.Label(income, text=f"x {monthly_factor}", anchor='e').grid(column=3, row=index, sticky=W+E)
         index += 1
 
         index = self.tk_line(income, index, column=3)
@@ -1204,11 +1204,11 @@ class Job(FinanceObj):
 
         # Pre Tax Net Income
         if self._breakdown.get() == "Monthly":
-            pay_periods = pay_periods / 12
+            monthly_factor = monthly_factor / 12
 
-        pre_tax_amount = locale.currency(self._pre_tax_deductions.get_total() * pay_periods, grouping=True)
-        pre_tax_retirement = locale.currency(self.get_401k_amount() * pay_periods, grouping=True)
-        pre_tax_income = locale.currency(self.get_pretax_income() * pay_periods, grouping=True)
+        pre_tax_amount = locale.currency(self._pre_tax_deductions.get_total() * monthly_factor, grouping=True)
+        pre_tax_retirement = locale.currency(self.get_401k_amount() * monthly_factor, grouping=True)
+        pre_tax_income = locale.currency(self.get_pretax_income() * monthly_factor, grouping=True)
 
         tk.Label(income, text="Pre-Tax Deductions:", anchor='e') \
             .grid(column=0, row=index, columnspan=3, sticky=W + E)
@@ -1228,15 +1228,15 @@ class Job(FinanceObj):
 
         # Post Tax Net Income
 
-        post_tax_amount = locale.currency(self._post_tax_deductions.get_total() * pay_periods, grouping=True)
-        post_tax_retirement = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
+        post_tax_amount = locale.currency(self._post_tax_deductions.get_total() * monthly_factor, grouping=True)
+        post_tax_retirement = locale.currency(self.get_roth_amount() * monthly_factor, grouping=True)
         federal, state, local = self.get_taxed_amounts()
-        federal = locale.currency(federal, grouping=True)
-        state = locale.currency(state, grouping=True)
-        local = locale.currency(local, grouping=True) if local != 0 else 0
-        social_security = locale.currency(self.get_social_security_taxed_amount() * pay_periods, grouping=True)
-        medicare = locale.currency(self.get_medicare_taxed_amount() * pay_periods, grouping=True)
-        post_tax_income = locale.currency(self.get_posttax_income() * pay_periods, grouping=True)
+        federal = locale.currency(federal * monthly_factor, grouping=True)
+        state = locale.currency(state * monthly_factor, grouping=True)
+        local = locale.currency(local * monthly_factor, grouping=True) if local != 0 else 0
+        social_security = locale.currency(self.get_social_security_taxed_amount() * monthly_factor, grouping=True)
+        medicare = locale.currency(self.get_medicare_taxed_amount() * monthly_factor, grouping=True)
+        post_tax_income = locale.currency(self.get_posttax_income() * monthly_factor, grouping=True)
 
         tk.Label(income, text="Post-Tax Deductions:", anchor='e') \
             .grid(column=0, row=index, columnspan=3, sticky=W + E)
