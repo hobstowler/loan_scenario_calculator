@@ -30,6 +30,7 @@ class App:
     def launch(self):
         fin_vars = self._fin_vars
         root = self._root
+
         # drawer variables
         self._fin_obj_selection = None
 

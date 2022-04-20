@@ -232,9 +232,11 @@ class FinanceObj:
 
         return index + 1
 
-    def tk_list_pair(self, text_1, text_2, root, index):
-        tk.Label(root, text=text_1, anchor='e').grid(column=0, row=index, sticky=W + E)
-        tk.Label(root, text=text_2, anchor='e').grid(column=1, row=index, sticky=W + E)
+    def tk_list_pair(self, text_1, text_2, root, index, col_span=0):
+        tk.Label(root, text=text_1, anchor='e')\
+            .grid(column=0, columnspan=col_span, row=index, sticky=W + E)
+        tk.Label(root, text=text_2, anchor='e')\
+            .grid(column=col_span, row=index, sticky=W + E)
         return index + 1
 
     def tk_checkbox(self, key, text, root, index, additional_info: str = None) -> int:
@@ -1154,7 +1156,6 @@ class Job(FinanceObj):
     def get_detail(self, root, name: str = None, desc: str = None) -> tuple:
         frame = super().get_detail(root)
 
-        pay_periods = self.get_pay_periods()
 
         breakdown = tk.Frame(frame)
         breakdown.pack(fill=X, padx=10, pady=15)
@@ -1164,43 +1165,39 @@ class Job(FinanceObj):
         income = tk.Frame(breakdown, height=200)
         income.grid(column=0, row=0, sticky=W+E)
 
+        self.get_detailed_income(income)
+
+        retirement = tk.Frame(breakdown, height=200)
+        retirement.grid(column=1, row=0, sticky=W+E)
+
+        self.get_detailed_retirement(retirement)
+
+        return frame
+
+    def get_detailed_income(self, root):
+        pay_periods = self.get_pay_periods()
         index = 0
-        tk.Label(income, text="Income Breakdown", anchor='w')\
-            .grid(column=0, row=index, columnspan=2, sticky=W+E)
-        time_period = tk.OptionMenu(income, self._breakdown, *self._breakdowns)
-        time_period.grid(column=2, row=index, columnspan=2, sticky=W+E)
+        tk.Label(root, text="Income Breakdown", anchor='w') \
+            .grid(column=0, row=index, columnspan=2, sticky=W + E)
+        time_period = tk.OptionMenu(root, self._breakdown, *self._breakdowns)
+        time_period.grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1
-        index = self.tk_line(income, index, colspan=4)
-        index = self.tk_line_break(income, index)
+        index = self.tk_line(root, index, colspan=4)
+        index = self.tk_line_break(root, index)
 
         # Gross Income
         income_per = locale.currency(self.data('income'), grouping=True)
         annual_income = locale.currency(self.get_annual_income(), grouping=True)
 
-        tk.Label(income, text="Income per pay period:", anchor='e')\
-            .grid(column=0, row=index, columnspan=3, sticky=W+E)
-        tk.Label(income, text=f"{income_per}", anchor='e').grid(column=3, row=index, sticky=W+E)
-        index += 1
-
-        tk.Label(income, text=f"Pay periods ({self.data('pay frequency')}):", anchor='e')\
-            .grid(column=0, row=index, columnspan=3, sticky=W+E)
-        tk.Label(income, text=f"x {pay_periods}", anchor='e').grid(column=3, row=index, sticky=W+E)
-        index += 1
-
-        index = self.tk_line(income, index, column=3)
-
+        index = self.tk_list_pair("Income per pay period:", f"{income_per}", root, index, 3)
+        index = self.tk_list_pair(f"Pay periods ({self.data('pay frequency')}):", f"x {pay_periods}", root, index, 3)
+        index = self.tk_line(root, index, column=3)
         if self._breakdown.get() == "Monthly":
             annual_income = locale.currency(self.get_annual_income() / 12, grouping=True)
-            tk.Label(income, text="Average Monthly Income:", anchor='e')\
-                .grid(column=0, row=index, columnspan=3, sticky=W+E)
-            tk.Label(income, text=f"{annual_income}", anchor='e').grid(column=3, row=index, sticky=W+E)
+            index = self.tk_list_pair("Average Monthly Income:", f"{annual_income}", root, index, 3)
         else:
-            tk.Label(income, text="Annual Gross Income:", anchor='e')\
-                .grid(column=0, row=index, columnspan=3, sticky=W+E)
-            tk.Label(income, text=f"{annual_income}", anchor='e').grid(column=3, row=index, sticky=W+E)
-        index += 1
-
-        index = self.tk_line_break(income, index)
+            index = self.tk_list_pair("Annual Gross Income:", f"{annual_income}", root, index, 3)
+        index = self.tk_line_break(root, index)
 
         # Pre Tax Net Income
         if self._breakdown.get() == "Monthly":
@@ -1210,24 +1207,14 @@ class Job(FinanceObj):
         pre_tax_retirement = locale.currency(self.get_401k_amount() * pay_periods, grouping=True)
         pre_tax_income = locale.currency(self.get_pretax_income() * pay_periods, grouping=True)
 
-        tk.Label(income, text="Pre-Tax Deductions:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {pre_tax_amount}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
+        index = self.tk_list_pair("Pre-Tax Deductions:", f"- {pre_tax_amount}", root, index, 3)
+        index = self.tk_list_pair("401k Contributions:", f"- {pre_tax_retirement}", root, index, 3)
+        index = self.tk_line(root, index, column=3)
+        index = self.tk_list_pair("", f"{pre_tax_income}", root, index, 3)
 
-        tk.Label(income, text="401k Contributions:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {pre_tax_retirement}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        index = self.tk_line(income, index, column=3)
-        tk.Label(income, text=f"{pre_tax_income}").grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        index = self.tk_line_break(income, index)
+        index = self.tk_line_break(root, index)
 
         # Post Tax Net Income
-
         post_tax_amount = locale.currency(self._post_tax_deductions.get_total() * pay_periods, grouping=True)
         post_tax_retirement = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
         federal, state, local = self.get_taxed_amounts()
@@ -1242,49 +1229,20 @@ class Job(FinanceObj):
         medicare = locale.currency(self.get_medicare_taxed_amount() * pay_periods, grouping=True)
         post_tax_income = locale.currency(self.get_posttax_income() * pay_periods, grouping=True)
 
-        tk.Label(income, text="Post-Tax Deductions:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {post_tax_amount}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        tk.Label(income, text="Roth Contributions:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {post_tax_retirement}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        tk.Label(income, text="Federal Withholding:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {federal}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        tk.Label(income, text="State Withholding:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {state}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
+        index = self.tk_list_pair("Post-Tax Deductions:", f"- {post_tax_amount}", root, index, 3)
+        index = self.tk_list_pair("Roth Contributions:", f"- {post_tax_retirement}", root, index, 3)
+        index = self.tk_list_pair("Federal Withholding:", f"- {federal}", root, index, 3)
+        index = self.tk_list_pair("State Withholding:", f"- {state}", root, index, 3)
 
         if local != 0:
-            tk.Label(income, text="Local Withholding:", anchor='e') \
-                .grid(column=0, row=index, columnspan=3, sticky=W + E)
-            tk.Label(income, text=f"- {local}", anchor='e').grid(column=3, row=index, sticky=W + E)
-            index += 1
+            index = self.tk_list_pair("Local Withholding:", f"- {local}", root, index, 3)
 
-        tk.Label(income, text="Social Security Tax:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {social_security}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
+        index = self.tk_list_pair("Social Security Tax:", f"- {social_security}", root, index, 3)
+        index = self.tk_list_pair("Medicare Tax:", f"- {medicare}", root, index, 3)
+        index = self.tk_line(root, index, column=3)
+        index = self.tk_list_pair("", f"{post_tax_income}", root, index, 3)
 
-        tk.Label(income, text="Medicare Tax:", anchor='e') \
-            .grid(column=0, row=index, columnspan=3, sticky=W + E)
-        tk.Label(income, text=f"- {medicare}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
+        index = self.tk_line_break(root, index)
 
-        index = self.tk_line(income, index, column=3)
-        tk.Label(income, text=f"{post_tax_income}", anchor='e').grid(column=3, row=index, sticky=W + E)
-        index += 1
-
-        index = self.tk_line_break(income, index)
-
-        retirement = tk.Frame(breakdown, height=200)
-        retirement.grid(column=1, row=0, sticky=W+E)
-
-        return frame
+    def get_detailed_retirement(self, root):
+        pass
