@@ -1245,4 +1245,36 @@ class Job(FinanceObj):
         index = self.tk_line_break(root, index)
 
     def get_detailed_retirement(self, root):
-        pass
+        employer_match = self.assume('employer match')
+        employer_total = self.get_annual_income() * employer_match / 100 / self.get_pay_periods()
+        employer_total = locale.currency(employer_total, grouping=True)
+        employer_match_rate = self.assume('employer match rate')
+        total_contribution = self.data('401k rate') + self.data('roth rate')
+        contribution_intro = f'Your employer matches {employer_match_rate}% on {employer_match}% of your ' \
+                             f'contributions. This works out to an extra {employer_total} per paycheck.'
+        contribution_message = ""
+
+        if total_contribution < employer_match:
+            contribution_message = f'Your total contributions are less than what your employer matches on. Raise your' \
+                                   f' total contribution rate to {employer_match}% to avoid losing out on your ' \
+                                   f'employer\'s matching contributions to your retirement account.'
+        elif total_contribution >= employer_match:
+            contribution_message = f'You\'re getting the full benefit of your employer\'s matching contribution. ' \
+                                   f'Excellent! Contributions above your current rate won\'t be matched by your ' \
+                                   f'employer, but you might consider contributing more anyways.'
+
+        index = 0
+        tk.Label(root, text="Retirement Summary Breakdown", anchor='w') \
+            .grid(column=0, row=index, columnspan=2, sticky=W + E)
+        index += 1
+        index = self.tk_line(root, index, colspan=4)
+        index = self.tk_line_break(root, index)
+
+        cont_intro = tk.Label(root, text=contribution_intro, anchor='w', wraplength=400, justify=LEFT)
+        cont_intro.grid(column=0, row=index, columnspan=4, sticky=W+E)
+        index += 1
+
+        index = self.tk_line_break(root, index)
+
+        cont_mess = tk.Label(root, text=contribution_message, anchor='w', wraplength=400, justify=LEFT)
+        cont_mess.grid(column=0, row=index, columnspan=4, sticky=W+E)
