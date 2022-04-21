@@ -39,18 +39,18 @@ class App:
         self._nav_menu.grid(column=0, row=0, sticky=N + W + S + E, rowspan=2, pady=(25, 0))
         self._nav_menu_elements = [
             self.NavLabel("scenarios"),
-            self.NavButton(Scenario, "Select a Scenario.", self, fin_vars.get("scenarios")),
+            self.NavButton(Scenario, "Select a Scenario.", self, "scenarios"),
             self.NavLabel("income"),
-            self.NavButton(Job, "Select a Job.", self, fin_vars.get("jobs")),
+            self.NavButton(Job, "Select a Job.", self, "jobs"),
             self.NavLabel("loans"),
-            self.NavButton(Mortgage, "Select a Mortgage.", self, fin_vars.get("mortgages")),
-            self.NavButton(Student, "Select a Student Loan.", self, fin_vars.get("student loans")),
-            self.NavButton(Auto, "Select an Auto Loan.", self, fin_vars.get("auto loans")),
-            self.NavButton(Personal, "Select a Personal Loan.", self, fin_vars.get("loans")),
+            self.NavButton(Mortgage, "Select a Mortgage.", self, "mortgages"),
+            self.NavButton(Student, "Select a Student Loan.", self, "student loans"),
+            self.NavButton(Auto, "Select an Auto Loan.", self, "auto loans"),
+            self.NavButton(Personal, "Select a Personal Loan.", self, "loans"),
             self.NavLabel("misc"),
-            self.NavButton(Assets, "Select an Asset.", self, fin_vars.get("assets")),
-            self.NavButton(Expenses, "Select an Expense.", self, fin_vars.get("expenses")),
-            self.NavButton(TaxBracket, "Select a Tax Bracket.", self, fin_vars.get("taxes"))
+            self.NavButton(Assets, "Select an Asset.", self, "assets"),
+            self.NavButton(Expenses, "Select an Expense.", self, "expenses"),
+            self.NavButton(TaxBracket, "Select a Tax Bracket.", self, "taxes")
         ]
         self._nav_selection = self._nav_menu_elements[3]
 
@@ -94,13 +94,11 @@ class App:
 
     class NavButton(NavLabel):
         """Button on the top-level navigation menu."""
-        def __init__(self, label, detail: str, parent, fin_objects: list):
+        def __init__(self, label, detail: str, parent, fin_object_key: str):
             super().__init__(label.__str__())
-            if fin_objects is None:
-                fin_objects = []
             self._fin_obj = label
             self.detail = detail
-            self._fin_list = fin_objects
+            self._fin_key = fin_object_key
             self._parent = parent
             self._active = False
 
@@ -118,13 +116,12 @@ class App:
             self.activate()
             self._parent.new_context(self)
 
-        # TODO move into LeftPanel and pass key as string instead?
-        def get_fin_list(self) -> list:
+        def get_fin_key(self) -> list:
             """
             Gets the list of financial objects associates with this Nav Button.
             :return:
             """
-            return self._fin_list
+            return self._fin_key
 
         def enter(self, e):
             """
@@ -337,7 +334,7 @@ class App:
         Saves a new Finance Object when returning from the New dialogue evoked from the bottom menu button.
         :param fin_obj: The new Finance Object.
         """
-        fin_list = self._nav_selection.get_fin_list()
+        fin_list = self._fin_vars.get(self._nav_selection.get_fin_key())
         if fin_obj not in fin_list:
             fin_list.append(fin_obj)
         self.populate_list(refresh=True)
@@ -365,7 +362,6 @@ class App:
         return self._root
 
     #   Methods for changing out views
-    # TODO streamline so that Navbutton holds the dict key instead of the list
     def new_context(self, clicked: NavButton) -> None:
         """
         Called when a Navigation button is clicked. Loads the list of FinanceObjs in the drawer and activates
@@ -385,7 +381,7 @@ class App:
         # refresh to update gui with any active elements
         self._bottom_menu.reset()
         self.populate_nav_menu()
-        self.populate_list(clicked.get_fin_list())
+        self.populate_list(self._fin_vars.get(clicked.get_fin_key()))
 
     def populate_nav_menu(self) -> None:
         """
@@ -413,7 +409,7 @@ class App:
             if fin_list is None:
                 return
         else:
-            fin_list = self._nav_selection.get_fin_list()
+            fin_list = self._fin_vars.get(self._nav_selection.get_fin_key())
 
         if fin_list is None or len(fin_list) == 0:
             self._nav_text.set("")
@@ -479,7 +475,7 @@ class App:
         Deletes the selected Finance Object in the list view. Called by bottom menu button.
         """
         if self._fin_obj_selection is not None:
-            self._nav_selection.get_fin_list().remove(self._fin_obj_selection)
+            self._fin_vars.get(self._nav_selection.get_fin_key()).remove(self._fin_obj_selection)
             self._fin_obj_selection = None
             self.populate_list(refresh=True)
 
