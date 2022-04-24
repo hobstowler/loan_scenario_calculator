@@ -232,11 +232,19 @@ class FinanceObj:
 
         return index + 1
 
-    def tk_list_pair(self, text_1, text_2, root, index, col_span=0):
-        tk.Label(root, text=text_1, anchor='e')\
-            .grid(column=0, columnspan=col_span, row=index, sticky=W + E)
-        tk.Label(root, text=text_2, anchor='e')\
-            .grid(column=col_span, row=index, sticky=W + E)
+    def tk_list_pair(self, text_1,
+                     text_2,
+                     root,
+                     index,
+                     col_span=0,
+                     highlight_color=None):
+        first = tk.Label(root, text=text_1, anchor='e')
+        first.grid(column=0, columnspan=col_span, row=index, sticky=W + E)
+        second = tk.Label(root, text=text_2, anchor='e')
+        second.grid(column=col_span, row=index, sticky=W + E)
+        if highlight_color:
+            second['fg'] = highlight_color
+
         return index + 1
 
     def tk_checkbox(self, key, text, root, index, additional_info: str = None) -> int:
@@ -977,7 +985,7 @@ class Job(FinanceObj):
             'Quarterly': 4,
             'Annually': 1
         }
-        self._breakdowns = ['Annual', 'Monthly']
+        self._breakdowns = ['Annual', 'Monthly', 'Per Pay Period']
         self._breakdown = StringVar()
         self._breakdown.set("Annual")
         self._breakdown.trace('w', self.refresh_detail)
@@ -1250,8 +1258,7 @@ class Job(FinanceObj):
         annual_income = self.get_annual_income()
         roth_rate = self.data('roth rate')
         rate = self.data('401k rate')
-        if self._breakdown.get() == "Monthly":
-            pay_periods = pay_periods / 12
+        breakdown = self._breakdown.get()
 
         employer_match = self.assume('employer match')
         employer_per_check = annual_income * employer_match / 100 / self.get_pay_periods()
@@ -1260,14 +1267,38 @@ class Job(FinanceObj):
         total_contribution_percent = rate + roth_rate
         contribution_intro = f'Your employer matches {employer_match_rate}% on {employer_match}% of your ' \
                              f'contributions. This works out to an extra {employer_per_check} per paycheck.'
-        contribution_message = ""
+        cont_mess_body = ""
 
+        # Set pay period modifier and labels for breakdown based on current breakdown variable value
+        if breakdown == "Per Pay Period":
+            pay_periods /= pay_periods
+            cont_label = f"Your 401k Contributions ({rate}%):"
+            cont_roth_label = f"Your Roth Contributions ({roth_rate}%):"
+            cont_employer_label = f"Your Employer's Contribution " \
+                                  f"({int(employer_match_rate * employer_match / 100)}%):"
+        elif breakdown == "Monthly":
+            pay_periods = pay_periods / 12
+            cont_label = f"Your Average Monthly 401k Contributions ({rate}%):"
+            cont_roth_label = f"Your Average Monthly Roth Contributions ({roth_rate}%):"
+            cont_employer_label = f"Your Employer's Average Monthly Contribution " \
+                                  f"({employer_match_rate}% on {employer_match}%):"
+        else:
+            cont_label = f"Your Annual 401k Contributions ({rate}%):"
+            cont_roth_label = f"Your Annual Roth Contributions ({roth_rate}%):"
+            cont_employer_label = f"Your Employer's Annual Contribution " \
+                                  f"({int(employer_match_rate * employer_match / 100)}%):"
+
+        cont_diff = None
         if total_contribution_percent < employer_match:
-            contribution_message = f'Your total contributions are less than what your employer matches on. Raise your' \
+            cont_employer_amount = self.data('income') * total_contribution_percent * employer_match_rate * pay_periods / 10000
+            cont_max_employer = self.data('income') * employer_match * employer_match_rate * pay_periods / 10000
+            cont_diff = cont_max_employer - cont_employer_amount
+            cont_mess_body = f'Your total contributions are less than what your employer matches on. Raise your' \
                                    f' total contribution rate to {employer_match}% to avoid losing out on your ' \
                                    f'employer\'s matching contributions to your retirement account.'
         elif total_contribution_percent >= employer_match:
-            contribution_message = f'You\'re getting the full benefit of your employer\'s matching contribution. ' \
+            cont_employer_amount = self.data('income') * employer_match * employer_match_rate * pay_periods / 10000
+            cont_mess_body = f'You\'re getting the full benefit of your employer\'s matching contribution. ' \
                                    f'Excellent! Contributions above your current rate won\'t be matched by your ' \
                                    f'employer, but you might consider contributing more anyways.'
 
@@ -1284,7 +1315,7 @@ class Job(FinanceObj):
 
         index = self.tk_line_break(root, index)
 
-        cont_mess = tk.Label(root, text=contribution_message, anchor='w', wraplength=400, justify=LEFT)
+        cont_mess = tk.Label(root, text=cont_mess_body, anchor='w', wraplength=400, justify=LEFT)
         cont_mess.grid(column=0, row=index, columnspan=4, sticky=W+E)
         index += 1
 
@@ -1292,29 +1323,24 @@ class Job(FinanceObj):
 
         contribution_401k = self.get_401k_amount() * pay_periods
         contribution_roth = self.get_roth_amount() * pay_periods
-        if total_contribution_percent > employer_match:
-            contribution_employer_amount = self.data('income') * employer_match * employer_match_rate * pay_periods / 10000
-        else:
-            contribution_employer_amount = self.data('income') * total_contribution_percent * employer_match_rate * pay_periods / 10000
-        total = contribution_employer_amount + contribution_roth + contribution_401k
+        total = cont_employer_amount + contribution_roth + contribution_401k
+        if cont_diff:
+            diff_total = total + cont_diff
+            cont_diff = locale.currency(cont_diff, grouping=True)
+            diff_total = locale.currency(diff_total, grouping=True)
 
         contribution_401k = locale.currency(contribution_401k, grouping=True)
         contribution_roth = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
-        contribution_employer_amount = locale.currency(contribution_employer_amount, grouping=True)
+        cont_employer_amount = locale.currency(cont_employer_amount, grouping=True)
         total = locale.currency(total, grouping=True)
 
-        if self._breakdown.get() == "Monthly":
-            contribution_self = f"Your Average Monthly 401k Contributions ({rate}%):"
-            contribution_roth_self = f"Your Average Monthly Roth Contributions ({roth_rate}%):"
-            contribution_employer = f"Your Employer's Average Monthly Contribution ({employer_match_rate}% on {employer_match}%):"
-        else:
-            contribution_self = f"Your Annual 401k Contributions ({rate}%):"
-            contribution_roth_self = f"Your Annual Roth Contributions ({roth_rate}%):"
-            contribution_employer = f"Your Employer's Annual Contribution " \
-                                    f"({int(employer_match_rate * employer_match / 100)}%):"
-
-        index = self.tk_list_pair(contribution_self, f'{contribution_401k}', root, index, 3)
-        index = self.tk_list_pair(contribution_roth_self, f'{contribution_roth}', root, index, 3)
-        index = self.tk_list_pair(contribution_employer, f'{contribution_employer_amount}', root, index, 3)
+        index = self.tk_list_pair(cont_label, f'{contribution_401k}', root, index, 3)
+        index = self.tk_list_pair(cont_roth_label, f'{contribution_roth}', root, index, 3)
+        index = self.tk_list_pair(cont_employer_label, f'{cont_employer_amount}', root, index, 3)
         index = self.tk_line(root, index, column=3)
-        index = self.tk_list_pair('', f'{total}', root, index, 3)
+        index = self.tk_list_pair('', f'{total}', root, index, 3, highlight_color='green')
+
+        if cont_diff:
+            index = self.tk_list_pair('Potential Employer Contribution:', f'{cont_diff}', root, index, 3, highlight_color='red')
+            index = self.tk_list_pair('Additional Personal Contribution:', '$0', root, index, 3, highlight_color='red')
+            index = self.tk_list_pair('Potential Total:', f'{diff_total}', root, index, 3, highlight_color='red')
