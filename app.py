@@ -75,7 +75,7 @@ class App:
 
     class NavLabel:
         """Text label on the top-level navigation menu."""
-        def __init__(self, label: str):
+        def __init__(self, label: str) -> None:
             """
             Initializes the label object.
             :param label: Label string.
@@ -94,7 +94,7 @@ class App:
 
     class NavButton(NavLabel):
         """Button on the top-level navigation menu."""
-        def __init__(self, label, detail: str, parent, fin_object_key: str):
+        def __init__(self, label, detail: str, parent, fin_object_key: str) -> None:
             super().__init__(label.__str__())
             self._fin_obj = label
             self.detail = detail
@@ -123,7 +123,7 @@ class App:
             """
             return self._fin_key
 
-        def enter(self, e):
+        def enter(self, e) -> None:
             """
             Called when cursor moves over button. Changes background to hover color.
             :param e: The event.
@@ -135,7 +135,7 @@ class App:
                 button['bg'] = Style.color('b_hover')
             self._parent.populate_info(self._fin_obj.button_hover_message())
 
-        def leave(self, e):
+        def leave(self, e) -> None:
             """
             Called when cursor leaves button. Changes background back to normal colors.
             :param e: The event.
@@ -169,7 +169,7 @@ class App:
         """
         Class representing a panel to display detailed information about Financial Objects.
         """
-        def __init__(self, root: tk.Tk):
+        def __init__(self, root: tk.Tk) -> None:
             """
             Initializes the Detail Panel
             :param root: Root window tk object.
@@ -233,7 +233,7 @@ class App:
 
     class BottomMenu:
         """Class representing the bottom menu with controls for editing, deleting, and creating new items."""
-        def __init__(self, parent):
+        def __init__(self, parent) -> None:
             """
             Initializes the bottom menu.
             :param parent: The parent LeftPanel object.
@@ -304,7 +304,7 @@ class App:
                     c.bind("<Leave>", self.leave)
 
         @staticmethod
-        def enter(e):
+        def enter(e) -> None:
             """
             Called when cursor moves over button. Changes background to hover color.
             :param e: The event.
@@ -314,7 +314,7 @@ class App:
                 button['bg'] = Style.color('b_hover')
 
         @staticmethod
-        def leave(e):
+        def leave(e) -> None:
             """
             Called when cursor leaves button. Changes background back to normal colors.
             :param e: The event.

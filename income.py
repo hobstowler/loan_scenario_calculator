@@ -237,11 +237,15 @@ class FinanceObj:
                      root,
                      index,
                      col_span=0,
+                     anchor='e',
+                     color=None,
                      highlight_color=None):
-        first = tk.Label(root, text=text_1, anchor='e')
+        first = tk.Label(root, text=text_1, anchor=anchor)
         first.grid(column=0, columnspan=col_span, row=index, sticky=W + E)
         second = tk.Label(root, text=text_2, anchor='e')
         second.grid(column=col_span, row=index, sticky=W + E)
+        if color:
+            first['fg'] = color
         if highlight_color:
             second['fg'] = highlight_color
 
@@ -1019,22 +1023,22 @@ class Job(FinanceObj):
         return self._num_pay_periods.get(self.data('pay frequency'))
 
     def get_401k_amount(self) -> (int, float):
-        return self.data('401k rate') * self.data('income') / 100
+        return self.data('401k rate') * self.get_annual_income() / 100
 
     def get_roth_amount(self):
-        return self.data('roth rate') * self.data('income') / 100
+        return self.data('roth rate') * self.get_annual_income() / 100
 
     def get_pretax_income(self, pay_periods=1) -> (int, float):
         """
         Returns the net amount before taxes and post tax deductions are applied.
         :return: The pre tax annual income.
         """
-        income = self.data('income')
+        income = self.get_annual_income()
         total_deduction = 0
         total_deduction += self.get_401k_amount()
         total_deduction += self._pre_tax_deductions.get_total()
 
-        return round(income - total_deduction, 2)
+        return income - total_deduction
 
     def get_taxed_amounts(self):
         income = self.get_annual_income()
@@ -1184,6 +1188,9 @@ class Job(FinanceObj):
 
     def get_detailed_income(self, root):
         pay_periods = self.get_pay_periods()
+        breakdown = self._breakdown.get()
+
+        # Header and dropdown
         index = 0
         tk.Label(root, text="Income Breakdown", anchor='w', font=('bold', 11)) \
             .grid(column=0, row=index, columnspan=2, sticky=W + E)
@@ -1194,7 +1201,7 @@ class Job(FinanceObj):
         index += 1
         index = self.tk_line_break(root, index)
 
-        # Gross Income
+        # Gross Income Section
         income_per = locale.currency(self.data('income'), grouping=True)
         annual_income = locale.currency(self.get_annual_income(), grouping=True)
 
@@ -1208,10 +1215,12 @@ class Job(FinanceObj):
             index = self.tk_list_pair("Annual Gross Income:", f"{annual_income}", root, index, 3)
         index = self.tk_line_break(root, index)
 
-        # Pre Tax Net Income
-        if self._breakdown.get() == "Monthly":
+        if breakdown == "Monthly":
             pay_periods = pay_periods / 12
+        if breakdown == "Per Pay Period":
+            pay_periods /= pay_periods
 
+        # Pre Tax Net Income
         pre_tax_amount = locale.currency(self._pre_tax_deductions.get_total() * pay_periods, grouping=True)
         pre_tax_retirement = locale.currency(self.get_401k_amount() * pay_periods, grouping=True)
         pre_tax_income = locale.currency(self.get_pretax_income() * pay_periods, grouping=True)
@@ -1220,20 +1229,19 @@ class Job(FinanceObj):
         index = self.tk_list_pair("401k Contributions:", f"- {pre_tax_retirement}", root, index, 3)
         index = self.tk_line(root, index, column=3)
         index = self.tk_list_pair("", f"{pre_tax_income}", root, index, 3)
-
         index = self.tk_line_break(root, index)
 
         # Post Tax Net Income
         post_tax_amount = locale.currency(self._post_tax_deductions.get_total() * pay_periods, grouping=True)
         post_tax_retirement = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
         federal, state, local = self.get_taxed_amounts()
-        if self._breakdown.get() == "Monthly":
-            federal /= 12
-            state /= 12
-            local /= 12
+        federal *= pay_periods
+        state *= pay_periods
+        local *= pay_periods
+
         federal = locale.currency(federal, grouping=True)
         state = locale.currency(state, grouping=True)
-        local = locale.currency(local, grouping=True) if local != 0 else 0
+        local = locale.currency(local, grouping=True) if local != 0 else None
         social_security = locale.currency(self.get_social_security_taxed_amount() * pay_periods, grouping=True)
         medicare = locale.currency(self.get_medicare_taxed_amount() * pay_periods, grouping=True)
         post_tax_income = locale.currency(self.get_posttax_income() * pay_periods, grouping=True)
@@ -1243,7 +1251,7 @@ class Job(FinanceObj):
         index = self.tk_list_pair("Federal Withholding:", f"- {federal}", root, index, 3)
         index = self.tk_list_pair("State Withholding:", f"- {state}", root, index, 3)
 
-        if local != 0:
+        if local:
             index = self.tk_list_pair("Local Withholding:", f"- {local}", root, index, 3)
 
         index = self.tk_list_pair("Social Security Tax:", f"- {social_security}", root, index, 3)
@@ -1289,10 +1297,12 @@ class Job(FinanceObj):
                                   f"({int(employer_match_rate * employer_match / 100)}%):"
 
         cont_diff = None
+        cont_additional = None
         if total_contribution_percent < employer_match:
             cont_employer_amount = self.data('income') * total_contribution_percent * employer_match_rate * pay_periods / 10000
             cont_max_employer = self.data('income') * employer_match * employer_match_rate * pay_periods / 10000
             cont_diff = cont_max_employer - cont_employer_amount
+            cont_additional = (employer_match - total_contribution_percent) / 100 * self.data('income') * pay_periods
             cont_mess_body = f'Your total contributions are less than what your employer matches on. Raise your' \
                                    f' total contribution rate to {employer_match}% to avoid losing out on your ' \
                                    f'employer\'s matching contributions to your retirement account.'
@@ -1324,23 +1334,36 @@ class Job(FinanceObj):
         contribution_401k = self.get_401k_amount() * pay_periods
         contribution_roth = self.get_roth_amount() * pay_periods
         total = cont_employer_amount + contribution_roth + contribution_401k
-        if cont_diff:
-            diff_total = total + cont_diff
-            cont_diff = locale.currency(cont_diff, grouping=True)
-            diff_total = locale.currency(diff_total, grouping=True)
 
         contribution_401k = locale.currency(contribution_401k, grouping=True)
         contribution_roth = locale.currency(self.get_roth_amount() * pay_periods, grouping=True)
         cont_employer_amount = locale.currency(cont_employer_amount, grouping=True)
         total = locale.currency(total, grouping=True)
 
-        index = self.tk_list_pair(cont_label, f'{contribution_401k}', root, index, 3)
-        index = self.tk_list_pair(cont_roth_label, f'{contribution_roth}', root, index, 3)
-        index = self.tk_list_pair(cont_employer_label, f'{cont_employer_amount}', root, index, 3)
+        index = self.tk_list_pair('Retirement Contributions:', '', root, index, 3, anchor='w', color='green')
+        index = self.tk_line(root, index, colspan=4, padding=0)
+        index = self.tk_list_pair(cont_label, f'{contribution_401k}',
+                                  root, index, 3, highlight_color='blue')
+        index = self.tk_list_pair(cont_roth_label, f'{contribution_roth}',
+                                  root, index, 3, highlight_color='blue')
+        index = self.tk_list_pair(cont_employer_label, f'{cont_employer_amount}',
+                                  root, index, 3, highlight_color='blue')
         index = self.tk_line(root, index, column=3)
         index = self.tk_list_pair('', f'{total}', root, index, 3, highlight_color='green')
 
         if cont_diff:
-            index = self.tk_list_pair('Potential Employer Contribution:', f'{cont_diff}', root, index, 3, highlight_color='red')
-            index = self.tk_list_pair('Additional Personal Contribution:', '$0', root, index, 3, highlight_color='red')
-            index = self.tk_list_pair('Potential Total:', f'{diff_total}', root, index, 3, highlight_color='red')
+            diff_total = total + cont_diff + cont_additional
+            cont_diff = locale.currency(cont_diff, grouping=True)
+            cont_additional = locale.currency(cont_additional, grouping=True)
+            diff_total = locale.currency(diff_total, grouping=True)
+
+            index = self.tk_line_break(root, index)
+            index = self.tk_list_pair('Lost Potential Contributions:', '', root, index, 3, anchor='w', color='red')
+            index = self.tk_line(root, index, colspan=4, padding=0)
+            index = self.tk_list_pair('Additional Employer Contribution:', f'{cont_diff}',
+                                      root, index, 3, highlight_color='red')
+            index = self.tk_list_pair('Additional Personal Contribution:', f'{cont_additional}',
+                                      root, index, 3, highlight_color='red')
+            index = self.tk_list_pair('Total:', f'{diff_total}',
+                                      root, index, 3, highlight_color='red')
+
