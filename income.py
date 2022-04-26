@@ -25,7 +25,7 @@ class FinanceObj:
         """
         self._app = app
         self._data = {
-            'name': name,
+            'name': 3,
             'desc': desc
         }
         self._assumptions = {}
@@ -159,12 +159,7 @@ class FinanceObj:
         :param parent: The App object.
         """
         f_var = self._form_vars.get(key)
-        val = f_var.get()
-        if isinstance(f_var, StringVar):
-            print("it's a string")
-        elif isinstance(f_var, DoubleVar):
-            print("it's a float")
-        self._data.update({key: val})
+        self._data.update({key: f_var.get()})
         self._app.populate_editable(self)
 
     def copy(self):
@@ -251,25 +246,45 @@ class FinanceObj:
 
         return index + 1
 
-    def tk_editable_entry(self, key, text, root, index, additional_info: str = None) -> int:
+    def tk_float_entry(self, key, text, root, index, additional_info: str = None) -> int:
         """
         Creates an editable tk Entry widget with label and supplemental information.
         :param key: The key for the data dict.
         :param text: The label text.
         :param root: The tk root.
-        :param parent: The App object.
         :param index: The current row index.
         :param additional_info: Supplemental label information.
         :return: The incremented index.
         """
         val = self.data(key)
-        if val is None:
-            raise ValueError
-        elif isinstance(val, int) or isinstance(val, float):
-            s_var = tk.DoubleVar()
-            # TODO format numbers
-        else:
-            s_var = tk.StringVar()
+        s_var = tk.DoubleVar()
+        s_var.set(val)
+        self._form_vars.update({key: s_var})
+
+        tk.Label(root, text=text, anchor='e').grid(column=0, row=index, sticky=W + E, padx=(0, 2))
+        entry = tk.Entry(root, name=key, textvariable=s_var)
+        col_span = 2
+        if additional_info is not None:
+            col_span = 1
+            tk.Label(root, text=additional_info, anchor='e').grid(column=2, row=index, columnspan=col_span,
+                                                                  sticky=W + E)
+        entry.grid(column=1, row=index, columnspan=col_span, sticky=W + E)
+        entry.bind("<FocusOut>", lambda e, k=key: self.save(k))
+
+        return index + 1
+
+    def tk_string_entry(self, key, text, root, index, additional_info: str = None) -> int:
+        """
+        Creates an editable tk Entry widget with label and supplemental information.
+        :param key: The key for the data dict.
+        :param text: The label text.
+        :param root: The tk root.
+        :param index: The current row index.
+        :param additional_info: Supplemental label information.
+        :return: The incremented index.
+        """
+        val = self.data(key)
+        s_var = tk.StringVar()
         s_var.set(val)
         self._form_vars.update({key: s_var})
 
@@ -448,8 +463,8 @@ class FinanceObj:
         index += 1
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('name', name, frame, index)
-        index = self.tk_editable_entry('desc', desc, frame, index)
+        index = self.tk_string_entry('name', name, frame, index)
+        index = self.tk_string_entry('desc', desc, frame, index)
 
         return frame, index
 
@@ -549,7 +564,7 @@ class Assets(FinanceObj):
         cat_list = super().asset_category_list
         cat_list.sort()
         index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, index)
-        index = self.tk_editable_entry('label', 'Labels', frame, index)
+        index = self.tk_float_entry('label', 'Labels', frame, index)
         index = self.tk_line_break(frame, index)
 
         # Individual Assets
@@ -682,7 +697,7 @@ class Expenses(FinanceObj):
         cat_list = super().expense_category_list
         cat_list.sort()
         index = self.tk_editable_dropdown('category', 'Category', cat_list, frame, index)
-        index = self.tk_editable_entry('label', 'Labels', frame, index)
+        index = self.tk_float_entry('label', 'Labels', frame, index)
         index = self.tk_line_break(frame, index)
 
         # Individual Expenses
@@ -831,37 +846,29 @@ class TaxBracket(FinanceObj):
         :param income: The yearly income to be taxed
         :return: A list of the taxed amount and the effective rate.
         """
-        print('income', income)
         if len(self._brackets) == 0:
             return 0
 
         taxed_amount = 0
         for i in range(0, len(self._brackets)):
-            print("rate:", self._brackets[i].rate)
-            print("upper:", self._brackets[i].upper)
             if i == 0:
                 if income >= self._brackets[i].upper:
                     amount = (self._brackets[i].upper * self._brackets[i].rate / 100)
-                    print(amount)
                     taxed_amount += amount
                 else:
                     amount = income * self._brackets[i].rate / 100
-                    print(amount)
                     taxed_amount += amount
             else:
                 lower_range = self._brackets[i - 1].upper + 0.01
                 upper_range = self._brackets[i].upper
                 if income >= upper_range:
                     amount = (upper_range - lower_range) * self._brackets[i].rate / 100
-                    print(amount)
                     taxed_amount += amount
                 elif income < upper_range and income > lower_range:
                     amount = (income - lower_range) * self._brackets[i].rate / 100
-                    print(amount)
                     taxed_amount += amount
 
-        taxed_amount = round(taxed_amount, 2)
-        print(taxed_amount)
+        taxed_amount = taxed_amount
         effective_rate = round(100 * taxed_amount / income, 4)
 
         return taxed_amount, effective_rate
@@ -886,9 +893,9 @@ class TaxBracket(FinanceObj):
         index = self.tk_editable_dropdown('type', 'Type', self._valid_types, frame, index)
 
         if self.data('type').capitalize() == 'State':
-            index = self.tk_editable_entry('state', "State", frame, index)
+            index = self.tk_float_entry('state', "State", frame, index)
         elif self.data('type').capitalize() == 'Local':
-            index = self.tk_editable_entry('locality', "Locality", frame, index)
+            index = self.tk_float_entry('locality', "Locality", frame, index)
 
         index = self.tk_editable_dropdown('status', 'Filing Status:', self._valid_status, frame, index)
         index = self.tk_line_break(frame, index)
@@ -1108,8 +1115,8 @@ class Job(FinanceObj):
                                           frame, index)
         pay_freq = self.data('pay frequency')
         pay_periods = 'x ' + str(self.get_pay_periods())
-        index = self.tk_editable_entry('income', 'Income (' + pay_freq + ')',
-                                       frame, index, pay_periods)
+        index = self.tk_float_entry('income', 'Income (' + pay_freq + ')',
+                                    frame, index, pay_periods)
         tk.Label(frame, text=f'= ${round(self.data("income") * self.get_pay_periods(), 2):,}', anchor='e') \
             .grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1
@@ -1118,8 +1125,8 @@ class Job(FinanceObj):
         # Retirement accounts section
         retirement = f'  ${self.get_401k_amount():,}'
         roth = f'  ${self.get_roth_amount():,}'
-        index = self.tk_editable_entry('401k rate', '401k Contribution', frame, index, retirement)
-        index = self.tk_editable_entry('roth rate', 'Roth Contribution', frame, index, roth)
+        index = self.tk_float_entry('401k rate', '401k Contribution', frame, index, retirement)
+        index = self.tk_float_entry('roth rate', 'Roth Contribution', frame, index, roth)
         tk.Label(frame, text=f'= ${round(self.get_401k_amount() + self.get_roth_amount(), 2):,}', anchor='e') \
             .grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1

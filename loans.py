@@ -176,18 +176,18 @@ class Loan(FinanceObj):
         monthly = self.calc_monthly()
 
         frame, index = super().get_editable(root, name, desc)
-        index = self.tk_editable_entry('loan company', 'Loan Company', frame, index)
+        index = self.tk_float_entry('loan company', 'Loan Company', frame, index)
 
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('origination', 'Loan Start', frame, index)
-        index = self.tk_editable_entry('term', 'Loan Term ', frame, index, 'Months')
+        index = self.tk_float_entry('origination', 'Loan Start', frame, index)
+        index = self.tk_float_entry('term', 'Loan Term ', frame, index, 'Months')
         index = self.tk_line_break(frame, index)
-        index = self.tk_editable_entry('total', 'Total Amount', frame, index)
+        index = self.tk_float_entry('total', 'Total Amount', frame, index)
 
         principal = self.calc_principal()
-        index = self.tk_editable_entry('down payment', 'Down Payment', frame, index, f" =${principal:,}")
+        index = self.tk_float_entry('down payment', 'Down Payment', frame, index, f" =${principal:,}")
 
-        index = self.tk_editable_entry('rate', 'Rate', frame, index)
+        index = self.tk_float_entry('rate', 'Rate', frame, index)
         tk.Label(frame, text=f'= ${monthly:,}', anchor='e').grid(column=2, row=index, columnspan=1, sticky=W+E)
         index += 1
         index = self.tk_line_break(frame, index)
