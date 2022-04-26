@@ -1,12 +1,12 @@
 # Author: Hobs Towler
 # Date: 12/1/2021
 # Description:
-
+import locale
 import math
 import tkinter
 import tkinter as tk
 from datetime import date
-from tkinter import W, E, LEFT, RIGHT, N, S, X, Y, BOTH
+from tkinter import W, E, LEFT, RIGHT, N, S, X, Y, BOTH, ttk, BOTTOM
 
 from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -116,7 +116,7 @@ class Loan(FinanceObj):
                             extra += e.amount
                     principal -= extra
                 if principal < 0:
-                    print("last month:", i)
+                    #print("last month:", i)
                     extra -= principal
                     principal = 0
                     last_month = i
@@ -124,7 +124,7 @@ class Loan(FinanceObj):
                 total_interest += interest
                 total += extra + interest + principal
             else:
-                schedule.append([0, 0, 0])
+                schedule.append([0, 0, 0, 0])
 
         amortization.update({'total': round(total, 2)})
         amortization.update({'total interest': round(total_interest, 2)})
@@ -285,6 +285,39 @@ class Mortgage(Loan):
 
         return frame, index
 
+    def get_list_button(self, root):
+        #super().get_list_button(root, parent)
+        frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
+        frame.pack(fill="x", ipady=2)
+        frame.bind("<Button-1>", lambda e: self.left_click())
+        # TODO Move to JSON for data load to allow changes to main attributes
+        # if self._active:
+        #    frame['bg'] = Style.color("b_sel")
+
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=Style.color('fin_type'))
+        name.grid(column=0, row=0, sticky=W)
+        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=Style.color("t_type"))
+        f_type.grid(column=1, row=0, sticky=E)
+        desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
+        desc.grid(column=0, row=1, sticky=W, columnspan=2)
+        amount_string = str(self._data.get('total')) + " | " + str(self._data.get('principal')) + " | "+ str(self._data.get('rate'))
+        tk.Label(frame, text=amount_string).grid(column=0, row=2, sticky=W, columnspan=3)
+
+        frame.bind("<Button-1>", lambda e: self.left_click())
+        frame.bind("<Button-3>", lambda e: self.right_click())
+        frame.bind("<Enter>", lambda e: self.list_button_enter(e))
+        frame.bind("<Leave>", lambda e: self.list_button_leave(e))
+        for c in frame.winfo_children():
+            c.bind("<Button-1>", lambda e: self.left_click())
+            c.bind("<Button-3>", lambda e: self.right_click())
+            c.bind("<Enter>", lambda e: self.list_button_enter(e))
+            #c.bind("<Leave>", self.list_leave)
+            if self._active:
+                c['bg'] = Style.color("b_sel")
+
     def get_detail(self, root):
         self.calc_total_monthly()
         comparison = self.compare_schedules()
@@ -299,7 +332,7 @@ class Mortgage(Loan):
         stats = tk.Frame(root, height=290)
         stats.pack(fill=X, padx=10, pady=15)
         stats.pack_propagate(False)
-        self.stat_detail(stats)
+        self.get_detail_stat(stats)
 
         # MAIN GRAPH
         graph = tk.Frame(stats)
@@ -333,17 +366,45 @@ class Mortgage(Loan):
         detail.pack(fill=BOTH, expand=True, padx=10, pady=15)
         detail.pack_propagate(False)
 
-        loan_detail = tk.Frame(detail, width=300)
-        loan_detail.pack(side=LEFT, expand=True, fill=Y, padx=15)
-        tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 12))\
-            .grid(column=0, row=0, columnspan=2)
+        #loan_detail = tk.Frame(detail, width=300)
+        #loan_detail.pack(side=LEFT, expand=True, fill=Y, padx=15)
+        #tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 12))\
+        #    .grid(column=0, row=0, columnspan=2)
 
-        extra_detail = tk.Frame(detail, width=300)
-        extra_detail.pack(side=RIGHT, expand=True, fill=Y, padx=15)
-        tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 12))\
-            .grid(column=0, row=0, columnspan=2)
+        #extra_detail = tk.Frame(detail, width=300)
+        #extra_detail.pack(side=RIGHT, expand=True, fill=Y, padx=15)
+        #tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 12))\
+        #    .grid(column=0, row=0, columnspan=2)
 
-    def stat_detail(self, root):
+        tree = ttk.Treeview(detail)
+        tree.pack(side=BOTTOM, expand=True, fill=BOTH)
+        tree['columns'] = ('normal', 'normal interest', 'accelerated', 'accelerated interest', 'extra payment')
+        tree.column('normal', width=50)
+        tree.heading('normal', text='Principal')
+        tree.column('normal interest', width=50)
+        tree.heading('normal interest', text='Interest')
+        tree.column('accelerated', width=50)
+        tree.heading('accelerated', text='Accelerated')
+        tree.column('accelerated interest', width=50)
+        tree.heading('accelerated interest', text='Interest')
+        tree.column('extra payment', width=50)
+        tree.heading('extra payment', text='Extra Payment')
+
+        s1 = comparison.get('no extra').get('schedule')
+        s2 = comparison.get('extra').get('schedule')
+        for i in range(len(s1)):
+            tree.insert('', 'end', f'{i}', text=f'Month: {i}')
+            tree.set(f'{i}', 'normal', f'{locale.currency(s1[i][1], grouping=True)}')
+            tree.set(f'{i}', 'normal interest', f'{locale.currency(s1[i][2], grouping=True)}')
+            if i < len(s2):
+                #print(i)
+                tree.set(f'{i}', 'accelerated', f'{locale.currency(s2[i][1], grouping=True)}')
+                tree.set(f'{i}', 'accelerated interest', f'{locale.currency(s2[i][2], grouping=True)}')
+                tree.set(f'{i}', 'extra payment', f'{locale.currency(s2[i][3], grouping=True)}')
+            elif i == len(s2):
+                tree.set(f'{i}', 'accelerated', f'$0.00')
+
+    def get_detail_stat(self, root):
         stat_detail = tk.Frame(root, width=200)
         stat_detail.pack(side=LEFT, fill=Y, padx=(0, 10), pady=(15, 0))
         stat_detail.columnconfigure(0, weight=1)
@@ -416,39 +477,6 @@ class Mortgage(Loan):
 
         canvas = FigureCanvasTkAgg(fig, root)
         canvas.get_tk_widget().grid(row=0, column=0)
-
-    def get_list_button(self, root):
-        #super().get_list_button(root, parent)
-        frame = tk.Frame(root, borderwidth=2, relief='groove', height=40)
-        frame.pack(fill="x", ipady=2)
-        frame.bind("<Button-1>", lambda e: self.left_click())
-        # TODO Move to JSON for data load to allow changes to main attributes
-        # if self._active:
-        #    frame['bg'] = Style.color("b_sel")
-
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-
-        name = tk.Label(frame, text=self._data.get('name'), justify=LEFT, anchor="w", foreground=Style.color('fin_type'))
-        name.grid(column=0, row=0, sticky=W)
-        f_type = tk.Label(frame, text=self.type(), justify=RIGHT, anchor="e", foreground=Style.color("t_type"))
-        f_type.grid(column=1, row=0, sticky=E)
-        desc = tk.Label(frame, text=self._data.get('desc'), justify=LEFT, anchor="w")
-        desc.grid(column=0, row=1, sticky=W, columnspan=2)
-        amount_string = str(self._data.get('total')) + " | " + str(self._data.get('principal')) + " | "+ str(self._data.get('rate'))
-        tk.Label(frame, text=amount_string).grid(column=0, row=2, sticky=W, columnspan=3)
-
-        frame.bind("<Button-1>", lambda e: self.left_click())
-        frame.bind("<Button-3>", lambda e: self.right_click())
-        frame.bind("<Enter>", lambda e: self.list_button_enter(e))
-        frame.bind("<Leave>", lambda e: self.list_button_leave(e))
-        for c in frame.winfo_children():
-            c.bind("<Button-1>", lambda e: self.left_click())
-            c.bind("<Button-3>", lambda e: self.right_click())
-            c.bind("<Enter>", lambda e: self.list_button_enter(e))
-            #c.bind("<Leave>", self.list_leave)
-            if self._active:
-                c['bg'] = Style.color("b_sel")
 
 
 #TODO Implement
