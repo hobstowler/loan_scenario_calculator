@@ -474,10 +474,8 @@ class FinanceObj:
         :param root: The root Tk Frame of the detail panel.
         :return: Returns the frame and information panels to be used for inherited calls.
         """
-        if name is None:
-            name = self.name()
-        if desc is None:
-            desc = self.desc()
+        name = self.name() if name is None else name
+        desc = self.desc() if desc is None else desc
 
         frame = tk.Frame(root)
         frame.pack(fill=BOTH)
@@ -673,7 +671,7 @@ class Expenses(FinanceObj):
         total = 0
         for expense in self._expenses:
             total += expense.amount
-        return round(total, 2)
+        return total
 
     def launch_expense_window(self):
         root = self._app.get_root()
@@ -1022,25 +1020,48 @@ class Job(FinanceObj):
         """
         return self._num_pay_periods.get(self.data('pay frequency'))
 
-    def get_401k_amount(self) -> (int, float):
-        return self.data('401k rate') * self.get_annual_income() / 100
+    def get_annual_401k_amount(self, annual: bool = True) -> float:
+        income = self.get_annual_income() if annual else self.data('income')
+        return self.data('401k rate') * income / 100
 
-    def get_roth_amount(self):
-        return self.data('roth rate') * self.get_annual_income() / 100
+    def get_annual_roth_amount(self, annual: bool = True):
+        income = self.get_annual_income() if annual else self.data('income')
+        return self.data('roth rate') * income / 100
 
-    def get_pretax_income(self, pay_periods=1) -> (int, float):
+    def get_pretax_income(self, annual: bool = True) -> float:
         """
         Returns the net amount before taxes and post tax deductions are applied.
         :return: The pre tax annual income.
         """
         income = self.get_annual_income()
         total_deduction = 0
-        total_deduction += self.get_401k_amount()
+        total_deduction += self.get_annual_401k_amount()
         total_deduction += self._pre_tax_deductions.get_total()
 
         return income - total_deduction
 
-    def get_taxed_amounts(self):
+    def get_annual_post_tax_income(self) -> (int, float):
+        """
+        Returns the net annual amount after taxes and deductions.
+        :return: The net annual income.
+        """
+        income = self.get_pretax_income()
+        taxed_amount = 0
+        total_deduction = 0
+
+        federal, state, local = self.get_annual_taxed_amounts()
+        taxed_amount += federal
+        taxed_amount += state
+        taxed_amount += local
+        total_deduction += self._post_tax_deductions.get_total()
+
+        taxed_amount += self.get_annual_social_security()
+        taxed_amount += self.get_annual_medicare()
+        taxed_amount += self.get_annual_roth_amount()
+
+        return income - taxed_amount - total_deduction
+
+    def get_annual_taxed_amounts(self):
         income = self.get_annual_income()
         federal = 0
         state = 0
@@ -1058,29 +1079,8 @@ class Job(FinanceObj):
 
         return federal, state, local
 
-    def get_posttax_income(self) -> (int, float):
-        """
-        Returns the net annual amount after taxes and deductions.
-        :return: The net annual income.
-        """
-        income = self.get_pretax_income()
-        taxed_amount = 0
-        total_deduction = 0
-
-        federal, state, local = self.get_taxed_amounts()
-        taxed_amount += federal
-        taxed_amount += state
-        taxed_amount += local
-        total_deduction += self._post_tax_deductions.get_total()
-
-        taxed_amount += self.get_social_security_taxed_amount()
-        taxed_amount += self.get_medicare_taxed_amount()
-        taxed_amount += self.get_roth_amount()
-
-        return round(income - taxed_amount - total_deduction, 2)
-
     # TODO calculate employer responsibility
-    def get_social_security_taxed_amount(self):
+    def get_annual_social_security(self):
         cap = self.assume('social security cap')
         rate = self.assume('social security rate') / 100
         income = self.get_annual_income()
@@ -1091,7 +1091,7 @@ class Job(FinanceObj):
             return round((rate * cap) / pay_periods, 2)
 
     # TODO calculate employer responsibility
-    def get_medicare_taxed_amount(self):
+    def get_annual_medicare(self):
         rate = self.assume('medicare tax rate') / 100
         income = self.data('income')
         return round(rate * income, 2)
@@ -1130,11 +1130,11 @@ class Job(FinanceObj):
         index = self.tk_line_break(frame, index)
 
         # Retirement accounts section
-        retirement = f'  ${self.get_401k_amount():,}'
-        roth = f'  ${self.get_roth_amount():,}'
+        retirement = f'  ${self.get_annual_401k_amount():,}'
+        roth = f'  ${self.get_annual_roth_amount():,}'
         index = self.tk_editable_entry('401k rate', '401k Contribution', frame, index, retirement)
         index = self.tk_editable_entry('roth rate', 'Roth Contribution', frame, index, roth)
-        tk.Label(frame, text=f'= ${round(self.get_401k_amount() + self.get_roth_amount(), 2):,}', anchor='e') \
+        tk.Label(frame, text=f'= ${round(self.get_annual_401k_amount() + self.get_annual_roth_amount(), 2):,}', anchor='e') \
             .grid(column=2, row=index, columnspan=2, sticky=W + E)
         index += 1
         index = self.tk_line_break(frame, index)
@@ -1222,7 +1222,7 @@ class Job(FinanceObj):
 
         # Pre Tax Net Income
         pre_tax_amount = locale.currency(self._pre_tax_deductions.get_total() / pay_periods, grouping=True)
-        pre_tax_retirement = locale.currency(self.get_401k_amount() / pay_periods, grouping=True)
+        pre_tax_retirement = locale.currency(self.get_annual_401k_amount() / pay_periods, grouping=True)
         pre_tax_income = locale.currency(self.get_pretax_income() / pay_periods, grouping=True)
 
         index = self.tk_list_pair("Pre-Tax Deductions:", f"- {pre_tax_amount}", root, index, 3)
@@ -1233,8 +1233,8 @@ class Job(FinanceObj):
 
         # Post Tax Net Income
         post_tax_amount = locale.currency(self._post_tax_deductions.get_total() / pay_periods, grouping=True)
-        post_tax_retirement = locale.currency(self.get_roth_amount() / pay_periods, grouping=True)
-        federal, state, local = self.get_taxed_amounts()
+        post_tax_retirement = locale.currency(self.get_annual_roth_amount() / pay_periods, grouping=True)
+        federal, state, local = self.get_annual_taxed_amounts()
         federal /= pay_periods
         state /= pay_periods
         local /= pay_periods
@@ -1242,9 +1242,9 @@ class Job(FinanceObj):
         federal = locale.currency(federal, grouping=True)
         state = locale.currency(state, grouping=True)
         local = locale.currency(local, grouping=True) if local != 0 else None
-        social_security = locale.currency(self.get_social_security_taxed_amount() / pay_periods, grouping=True)
-        medicare = locale.currency(self.get_medicare_taxed_amount() / pay_periods, grouping=True)
-        post_tax_income = locale.currency(self.get_posttax_income() / pay_periods, grouping=True)
+        social_security = locale.currency(self.get_annual_social_security() / pay_periods, grouping=True)
+        medicare = locale.currency(self.get_annual_medicare() / pay_periods, grouping=True)
+        post_tax_income = locale.currency(self.get_annual_post_tax_income() / pay_periods, grouping=True)
 
         index = self.tk_list_pair("Post-Tax Deductions:", f"- {post_tax_amount}", root, index, 3)
         index = self.tk_list_pair("Roth Contributions:", f"- {post_tax_retirement}", root, index, 3)
@@ -1299,15 +1299,15 @@ class Job(FinanceObj):
         cont_diff = None
         cont_additional = None
         if total_contribution_percent < employer_match:
-            cont_employer_amount = self.data('income') * total_contribution_percent * employer_match_rate / pay_periods / 10000
-            cont_max_employer = self.data('income') * employer_match * employer_match_rate / pay_periods / 10000
+            cont_employer_amount = annual_income * total_contribution_percent * employer_match_rate / pay_periods / 10000
+            cont_max_employer = annual_income * employer_match * employer_match_rate / pay_periods / 10000
             cont_diff = cont_max_employer - cont_employer_amount
             cont_additional = (employer_match - total_contribution_percent) / 100 * self.data('income') / pay_periods
             cont_mess_body = f'Your total contributions are less than what your employer matches on. Raise your' \
                                    f' total contribution rate to {employer_match}% to avoid losing out on your ' \
                                    f'employer\'s matching contributions to your retirement account.'
         elif total_contribution_percent >= employer_match:
-            cont_employer_amount = self.data('income') * employer_match * employer_match_rate / pay_periods / 10000
+            cont_employer_amount = annual_income * employer_match * employer_match_rate / pay_periods / 10000
             cont_mess_body = f'You\'re getting the full benefit of your employer\'s matching contribution. ' \
                                    f'Excellent! Contributions above your current rate won\'t be matched by your ' \
                                    f'employer, but you might consider contributing more anyways.'
@@ -1331,12 +1331,12 @@ class Job(FinanceObj):
 
         index = self.tk_line_break(root, index)
 
-        contribution_401k = self.get_401k_amount() / pay_periods
-        contribution_roth = self.get_roth_amount() / pay_periods
+        contribution_401k = self.get_annual_401k_amount() / pay_periods
+        contribution_roth = self.get_annual_roth_amount() / pay_periods
         total = cont_employer_amount + contribution_roth + contribution_401k
 
         contribution_401k = locale.currency(contribution_401k, grouping=True)
-        contribution_roth = locale.currency(self.get_roth_amount() / pay_periods, grouping=True)
+        contribution_roth = locale.currency(self.get_annual_roth_amount() / pay_periods, grouping=True)
         cont_employer_amount = locale.currency(cont_employer_amount, grouping=True)
 
         index = self.tk_list_pair('Retirement Contributions:', '', root, index, 3, anchor='w', color='green')

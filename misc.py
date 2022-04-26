@@ -233,10 +233,13 @@ class BracketWindow(Window):
         :param root: The tk Root window.
         :param tax_bracket: The calling tax bracket.
         """
-        title = f"Define Tax Bracket: {tax_bracket.data('name')}"
+        title = f"Define Tax Brackets for \"{tax_bracket.data('name')}\""
 
         self._rate = tk.DoubleVar()
         self._upper = tk.DoubleVar()
+
+        self._instructions = "Enter a rate and the upper bound for the tax bracket. The lower bound will be " \
+                             "calculated based on existing brackets."
 
         super().__init__(root, parent, tax_bracket, title)
 
@@ -268,31 +271,46 @@ class BracketWindow(Window):
         frame = self._frame
         bracket_list = self._fin_obj.get_brackets()
 
-        tk.Label(frame, text=self._fin_obj.name().title()).grid(column=0, row=0, columnspan=6)
-        tk.Label(frame, text="").grid(column=0, row=1)
+        index = 0
+        tk.Label(frame, text=self._fin_obj.name().title(), anchor='w', font=('bold', 12))\
+            .grid(column=0, row=index, columnspan=6, sticky=W+E)
+        index += 1
+        tk.Label(frame, text=self._fin_obj.desc().title(), anchor='w')\
+            .grid(column=0, row=index, columnspan=6, sticky=W+E)
+        index += 1
+        tk.Label(frame, text="").grid(column=0, row=index)
+        tk.Label(frame, text=self._instructions, anchor='w', wraplength=325, justify='left')\
+            .grid(column=0, row=index, columnspan=6, sticky=W+E)
+        index += 1
+        tk.Frame(frame, height=8).grid(column=0, row=index, columnspan=6, sticky=W+E)
+        index += 1
 
-        tk.Label(frame, text='Tax Rate').grid(column=0, row=2, columnspan=2)
-        tk.Entry(frame, textvariable=self._rate).grid(column=0, row=3, columnspan=2)
-        tk.Label(frame, text='Upper Range').grid(column=2, row=2, columnspan=2)
-        tk.Entry(frame, textvariable=self._upper).grid(column=2, row=3, columnspan=2)
+        tk.Label(frame, text='Tax Rate').grid(column=0, row=index, columnspan=2)
+        tk.Label(frame, text='Upper Range').grid(column=2, row=index, columnspan=2)
+        index += 1
+
+        tk.Entry(frame, textvariable=self._rate).grid(column=0, row=index, columnspan=2)
+        tk.Entry(frame, textvariable=self._upper).grid(column=2, row=index, columnspan=2)
         add_button = tk.Button(frame, text='Add', width=6)
-        add_button.grid(column=6, row=3, sticky=W+E)
+        add_button.grid(column=6, row=index, sticky=W+E, padx=(1, 0))
         add_button.bind("<Button-1>", lambda e: self.new_bracket())
+        index += 1
 
-        last = 6
         for i in range(len(bracket_list)):
             if i == 0:
                 lower = 0
             else:
                 lower = bracket_list[i-1].upper + 1
-            upper = f'${lower:,} to ${bracket_list[i].upper:,}'
+            tax_range = f'${lower:,} to ${bracket_list[i].upper:,}'
 
-            tk.Label(frame, text=f'{bracket_list[i].rate}%').grid(column=0, row=6 + i, columnspan=2, sticky=W + E)
-            tk.Label(frame, text=upper).grid(column=2, row=6 + i, columnspan=2, sticky=W + E)
+            tk.Label(frame, text=f'{bracket_list[i].rate}%', anchor='w', justify='left')\
+                .grid(column=0, row=index, columnspan=2, sticky=W + E, pady=(2, 0))
+            tk.Label(frame, text=tax_range, anchor='w', justify='left')\
+                .grid(column=2, row=index, columnspan=2, sticky=W + E, pady=(2, 0))
             del_button = tk.Button(frame, text="Delete", width=6)
-            del_button.bind("<Button-1>", lambda e, p=bracket_list[i]: self.delete_extra_payment(p))
-            del_button.grid(column=6, row=6 + i, columnspan=2, sticky=W + E)
-            last += 1
+            del_button.bind("<Button-1>", lambda e, p=bracket_list[i]: self.delete_bracket(p))
+            del_button.grid(column=6, row=index, columnspan=2, sticky=W + E, pady=(2, 0))
+            index += 1
 
 
 class ExtraPaymentWindow(Window):
