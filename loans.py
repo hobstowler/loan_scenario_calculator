@@ -1,12 +1,12 @@
 # Author: Hobs Towler
 # Date: 12/1/2021
 # Description:
-
+import locale
 import math
 import tkinter
 import tkinter as tk
 from datetime import date
-from tkinter import W, E, LEFT, RIGHT, N, S, X, Y, BOTH
+from tkinter import W, E, LEFT, RIGHT, N, S, X, Y, BOTH, ttk, BOTTOM
 
 from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -299,7 +299,7 @@ class Mortgage(Loan):
         stats = tk.Frame(root, height=290)
         stats.pack(fill=X, padx=10, pady=15)
         stats.pack_propagate(False)
-        self.stat_detail(stats)
+        self.get_detail_stat(stats)
 
         # MAIN GRAPH
         graph = tk.Frame(stats)
@@ -324,7 +324,7 @@ class Mortgage(Loan):
         tk.Label(summary, text=interest_string, anchor=W)
         row = 0
         for c in summary.winfo_children():
-            c.grid(column=0, columnspan=5, row=row, sticky=W+E)
+            c.grid(column=0, columnspan=5, row=row, sticky=W + E)
             if row > 0:
                 c.grid(padx=(10, 0))
             row += 1
@@ -333,17 +333,45 @@ class Mortgage(Loan):
         detail.pack(fill=BOTH, expand=True, padx=10, pady=15)
         detail.pack_propagate(False)
 
-        loan_detail = tk.Frame(detail, width=300)
-        loan_detail.pack(side=LEFT, expand=True, fill=Y, padx=15)
-        tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 12))\
-            .grid(column=0, row=0, columnspan=2)
+        # loan_detail = tk.Frame(detail, width=300)
+        # loan_detail.pack(side=LEFT, expand=True, fill=Y, padx=15)
+        # tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 12))\
+        #    .grid(column=0, row=0, columnspan=2)
 
-        extra_detail = tk.Frame(detail, width=300)
-        extra_detail.pack(side=RIGHT, expand=True, fill=Y, padx=15)
-        tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 12))\
-            .grid(column=0, row=0, columnspan=2)
+        # extra_detail = tk.Frame(detail, width=300)
+        # extra_detail.pack(side=RIGHT, expand=True, fill=Y, padx=15)
+        # tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 12))\
+        #    .grid(column=0, row=0, columnspan=2)
 
-    def stat_detail(self, root):
+        tree = ttk.Treeview(detail)
+        tree.pack(side=BOTTOM, expand=True, fill=BOTH)
+        tree['columns'] = ('normal', 'normal interest', 'accelerated', 'accelerated interest', 'extra payment')
+        tree.column('normal', width=50)
+        tree.heading('normal', text='Principal')
+        tree.column('normal interest', width=50)
+        tree.heading('normal interest', text='Interest')
+        tree.column('accelerated', width=50)
+        tree.heading('accelerated', text='Accelerated')
+        tree.column('accelerated interest', width=50)
+        tree.heading('accelerated interest', text='Interest')
+        tree.column('extra payment', width=50)
+        tree.heading('extra payment', text='Extra Payment')
+
+        s1 = comparison.get('no extra').get('schedule')
+        s2 = comparison.get('extra').get('schedule')
+        for i in range(len(s1)):
+            tree.insert('', 'end', f'{i}', text=f'Month: {i}')
+            tree.set(f'{i}', 'normal', f'{locale.currency(s1[i][1], grouping=True)}')
+            tree.set(f'{i}', 'normal interest', f'{locale.currency(s1[i][2], grouping=True)}')
+            if i < len(s2):
+                # print(i)
+                tree.set(f'{i}', 'accelerated', f'{locale.currency(s2[i][1], grouping=True)}')
+                tree.set(f'{i}', 'accelerated interest', f'{locale.currency(s2[i][2], grouping=True)}')
+                tree.set(f'{i}', 'extra payment', f'{locale.currency(s2[i][3], grouping=True)}')
+            elif i == len(s2):
+                tree.set(f'{i}', 'accelerated', f'$0.00')
+
+    def get_detail_stat(self, root):
         stat_detail = tk.Frame(root, width=200)
         stat_detail.pack(side=LEFT, fill=Y, padx=(0, 10), pady=(15, 0))
         stat_detail.columnconfigure(0, weight=1)
