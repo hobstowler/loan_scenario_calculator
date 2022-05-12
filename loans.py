@@ -124,7 +124,7 @@ class Loan(FinanceObj):
                 total_interest += interest
                 total += extra + interest + principal
             else:
-                schedule.append([0, 0, 0])
+                schedule.append([0, 0, 0, 0])
 
         amortization.update({'total': round(total, 2)})
         amortization.update({'total interest': round(total_interest, 2)})
@@ -325,7 +325,7 @@ class Mortgage(Loan):
         summary.grid_propagate(False)
 
         savings_string = f'You could pay off your mortgage {years_saved} year(s) and {months_saved} month(s) earlier.'
-        interest_string = f'You could save ${interest_saved:,} in interest over the life of the loan.'
+        interest_string = f'You could save {locale.currency(interest_saved, grouping=True)} in interest over the life of the loan.'
 
         savings_header = tk.Label(summary, text='By making extra payments...', font=('bold', 13), anchor=W)
         savings_header['fg'] = Style.color('detail subtitle')
@@ -342,17 +342,10 @@ class Mortgage(Loan):
         detail.pack(fill=BOTH, expand=True, padx=10, pady=15)
         detail.pack_propagate(False)
 
-        # loan_detail = tk.Frame(detail, width=300)
-        # loan_detail.pack(side=LEFT, expand=True, fill=Y, padx=15)
-        # tk.Label(loan_detail, text="Loan Detail without Extra Payments", font=('bold', 12))\
-        #    .grid(column=0, row=0, columnspan=2)
+        self.create_amortization(detail, comparison)
 
-        # extra_detail = tk.Frame(detail, width=300)
-        # extra_detail.pack(side=RIGHT, expand=True, fill=Y, padx=15)
-        # tk.Label(extra_detail, text="Loan Detail with Extra Payments", font=('bold', 12))\
-        #    .grid(column=0, row=0, columnspan=2)
-
-        tree = ttk.Treeview(detail)
+    def create_amortization(self, root, schedules):
+        tree = ttk.Treeview(root)
         tree.pack(side=BOTTOM, expand=True, fill=BOTH)
         tree['columns'] = ('normal', 'normal interest', 'accelerated', 'accelerated interest', 'extra payment')
         tree.column('normal', width=50)
@@ -366,8 +359,8 @@ class Mortgage(Loan):
         tree.column('extra payment', width=50)
         tree.heading('extra payment', text='Extra Payment')
 
-        s1 = comparison.get('no extra').get('schedule')
-        s2 = comparison.get('extra').get('schedule')
+        s1 = schedules.get('no extra').get('schedule')
+        s2 = schedules.get('extra').get('schedule')
         for i in range(len(s1)):
             tree.insert('', 'end', f'{i}', text=f'Month: {i}')
             tree.set(f'{i}', 'normal', f'{locale.currency(s1[i][1], grouping=True)}')
