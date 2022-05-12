@@ -12,7 +12,7 @@ from matplotlib import pyplot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from misc import ErrorBox, Style, ExtraPaymentWindow, ExtraPayment
-from income import FinanceObj
+from financeObj import FinanceObj
 
 
 class Loan(FinanceObj):
@@ -285,6 +285,11 @@ class Mortgage(Loan):
 
         return frame, index
 
+    # TODO implement
+    def launch_comparison_tool(self):
+        print('party')
+        pass
+
     def get_detail(self, root):
         self.calc_total_monthly()
         comparison = self.compare_schedules()
@@ -294,10 +299,14 @@ class Mortgage(Loan):
         interest_saved = differences.get('interest saved')
 
         super().get_detail(root, desc=self.data('mortgage company'))
+        compare_loans = tk.Label(root, text="Compare Mortgages >>", anchor='e')
+        compare_loans.pack(fill=X, padx=10, pady=0)
+        compare_loans['fg'] =  Style.color('detail subtitle')
+        compare_loans.bind("<Button-1>", lambda e: self.launch_comparison_tool())
 
         # BASE STATS WINDOW
         stats = tk.Frame(root, height=290)
-        stats.pack(fill=X, padx=10, pady=15)
+        stats.pack(fill=X, padx=10, pady=(0, 0))
         stats.pack_propagate(False)
         self.get_detail_stat(stats)
 

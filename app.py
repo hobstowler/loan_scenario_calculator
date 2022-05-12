@@ -6,7 +6,8 @@ import locale
 import tkinter as tk
 from tkinter import N, W, S, E, RIGHT, ttk
 
-from income import FinanceObj, Job, Assets, Expenses, TaxBracket
+from financeObj import FinanceObj
+from income import Job, Assets, Expenses, TaxBracket
 from loans import Loan, Mortgage, Student, Auto, Personal
 from misc import Style, Bracket
 from scenario import Scenario
@@ -526,11 +527,11 @@ def main():
 
     fin_vars.update({
         'scenarios': [Scenario(app, 'test scenario', 'scenario description')],
-        'jobs': [Job(app, 'Data Analyst II', 'Cerner Corporation'), Job(app, 'Data Analyst I', 'Cerner Corporation')],
+        'jobs': [Job(app, 'Data Analyst II', 'Xerox Corporation'), Job(app, 'Data Analyst I', 'Xerox Corporation')],
         'assets': [Assets(app, 'test', "A new Asset")],
         'expenses': [Expenses(app, 'exp', 'Test Expense')],
-        'mortgages': [Mortgage(app, '7129 Grand Ave', 'Kansas City, MO 64114')],
-        'student loans': [Student(app, 'Virginia Tech', 'BA in English Literature')],
+        'mortgages': [Mortgage(app, '1600 Pennsylvania Ave', 'Washington, DC 20500')],
+        'student loans': [Student(app, 'Virginia Tech', 'BS in Computer Science')],
         'loans': [Loan(app, 'test loan', 'test description')],
         'taxes': [federal_single, federal_married]
     })
