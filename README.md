@@ -11,9 +11,21 @@ That's not to call this endeavor a failure, far from it. I've learned a lot abou
 ## What is it?
 It's an application born out of my need for visualizing data and quickly tinkering with the details. There's still a lot of work to be done, but it's starting to come together.
 
-## What will it do?
-### Mortgages
+## What can it do?
+### Scenarios
+
+
+### Loans
+- Compare loan schedules and rates with and without extra payments included.
+- See how adding extra payments to your loan can affect the amount of interest you pay and the life of the loan.
+
+#### Mortgages
 <img src=https://user-images.githubusercontent.com/91224707/168078549-cd1af87f-8cf6-49d4-9a25-53238894a59a.png width=60% />
+
+#### Student Loans
 
 ### Jobs
 <img src=https://user-images.githubusercontent.com/91224707/168078672-e71b8576-c21e-4ff6-897b-88044e3e47bb.png width=60% />
+
+### Misc
+Track assets and monthly expenses to include in your scenarios
